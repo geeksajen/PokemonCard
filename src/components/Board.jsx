@@ -1,16 +1,17 @@
 import React from 'react';
 import Card from './Card';
 
-const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench }) => {
+const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, damageTaken, onDragStartBench }) => {
   return (
     <div style={{
       display: 'flex',
-      flexDirection: isTopPlayer ? 'column-reverse' : 'column',
-      gap: '20px',
+      flexDirection: isTopPlayer ? 'row-reverse' : 'row',
+      gap: '40px',
       padding: '20px',
       flex: 1,
       justifyContent: 'center',
-      alignItems: 'center'
+      alignItems: 'center',
+      width: '100%'
     }}>
       {/* 戰鬥區 (Active Pokemon) */}
       <div 
@@ -31,11 +32,14 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
         }}
       >
         {activePokemon ? (
-          <Card 
-            card={activePokemon} 
-            isSelectable={!!onActiveClick} 
-            onClick={() => onActiveClick && onActiveClick(activePokemon)} 
-          />
+          <div className={damageTaken ? 'shake-anim' : ''} style={{ position: 'relative' }}>
+            {damageTaken && <div className="damage-text">-{damageTaken}</div>}
+            <Card 
+              card={activePokemon} 
+              isSelectable={!!onActiveClick} 
+              onClick={() => onActiveClick && onActiveClick(activePokemon)} 
+            />
+          </div>
         ) : (
           <span style={{ color: 'var(--color-text-muted)', pointerEvents: 'none' }}>戰鬥區</span>
         )}
@@ -74,7 +78,11 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
               }}
             >
               {benchPokemon ? (
-                <div style={{ pointerEvents: onBenchClick ? 'auto' : 'none' }}>
+                <div 
+                  style={{ pointerEvents: onBenchClick ? 'auto' : 'none' }}
+                  draggable={!!onDragStartBench}
+                  onDragStart={(e) => onDragStartBench && onDragStartBench(e, idx)}
+                >
                   <Card 
                     card={benchPokemon} 
                     isSelectable={!!onBenchClick}

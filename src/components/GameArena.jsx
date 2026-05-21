@@ -7,6 +7,19 @@ import Hand from './Hand';
 const GameArena = () => {
   const [gameState, setGameState] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
+  const [damageAnim, setDamageAnim] = useState(null); // { target: 'top' | 'bottom', damage: number }
+  const [toast, setToast] = useState({ id: 0, message: '' });
+  const [showSettings, setShowSettings] = useState(false);
+  const [showLog, setShowLog] = useState(false);
+
+  const showToast = (message) => {
+    setToast({ id: Date.now(), message });
+  };
+
+  const pushLog = (state, playerId, actionStr) => {
+    if (!state.logs) state.logs = [];
+    state.logs.push({ player: playerId, action: actionStr, time: Date.now() });
+  };
   
   useEffect(() => {
     const initialState = createInitialGameState();
@@ -27,6 +40,7 @@ const GameArena = () => {
   const endTurn = () => {
     setGameState(prev => {
       const newState = structuredClone(prev);
+      pushLog(newState, prev.currentPlayer, '結束了回合');
       const nextPlayerId = newState.currentPlayer === 'player1' ? 'player2' : 'player1';
       newState.currentPlayer = nextPlayerId;
       newState.hasAttachedEnergyThisTurn = false;
@@ -62,6 +76,7 @@ const GameArena = () => {
           const p = newState.players[currentPlayerId];
           p.activePokemon = targetCard;
           p.hand = p.hand.filter(c => c.instanceId !== targetCard.instanceId);
+          pushLog(newState, currentPlayerId, `將 ${targetCard.name} 放置於戰鬥區`);
           return newState;
         });
         setSelectedCard(null);
@@ -74,11 +89,12 @@ const GameArena = () => {
           p.activePokemon.attachedEnergy = [...(p.activePokemon.attachedEnergy || []), targetCard];
           p.hand = p.hand.filter(c => c.instanceId !== targetCard.instanceId);
           newState.hasAttachedEnergyThisTurn = true;
+          pushLog(newState, currentPlayerId, `為戰鬥區的 ${p.activePokemon.name} 填附了 ${targetCard.name}`);
           return newState;
         });
         setSelectedCard(null);
       } else if (gameState.hasAttachedEnergyThisTurn) {
-        alert('這回合已經填附過能量了！');
+        showToast('這回合已經填附過能量了！');
       }
     }
   };
@@ -91,6 +107,7 @@ const GameArena = () => {
           const p = newState.players[currentPlayerId];
           p.bench.push(targetCard);
           p.hand = p.hand.filter(c => c.instanceId !== targetCard.instanceId);
+          pushLog(newState, currentPlayerId, `將 ${targetCard.name} 放置於備戰區`);
           return newState;
         });
         setSelectedCard(null);
@@ -105,12 +122,13 @@ const GameArena = () => {
             target.attachedEnergy = [...(target.attachedEnergy || []), targetCard];
             p.hand = p.hand.filter(c => c.instanceId !== targetCard.instanceId);
             newState.hasAttachedEnergyThisTurn = true;
+            pushLog(newState, currentPlayerId, `為備戰區的 ${target.name} 填附了 ${targetCard.name}`);
           }
           return newState;
         });
         setSelectedCard(null);
       } else {
-        alert('這回合已經填附過能量了！');
+        showToast('這回合已經填附過能量了！');
       }
     }
   };
@@ -121,12 +139,45 @@ const GameArena = () => {
   };
 
   const handleMyBenchClick = (existingPokemon, index) => {
+    if (!currentPlayer.activePokemon && existingPokemon) {
+      setGameState(prev => {
+        const newState = structuredClone(prev);
+        const p = newState.players[currentPlayerId];
+        p.activePokemon = p.bench[index];
+        p.bench.splice(index, 1);
+        pushLog(newState, currentPlayerId, `將備戰區的 ${p.activePokemon.name} 推上戰鬥區`);
+        return newState;
+      });
+      return;
+    }
+
     if (!selectedCard) return;
     placeCardInBench(selectedCard, existingPokemon, index);
   };
 
+  const handleDragStartBench = (e, index) => {
+    e.dataTransfer.setData('sourceBenchIndex', index.toString());
+  };
+
   const handleDropActive = (e) => {
     e.preventDefault();
+    const sourceBenchIndex = e.dataTransfer.getData('sourceBenchIndex');
+    
+    if (sourceBenchIndex !== '') {
+      const idx = parseInt(sourceBenchIndex, 10);
+      if (!currentPlayer.activePokemon) {
+        setGameState(prev => {
+          const newState = structuredClone(prev);
+          const p = newState.players[currentPlayerId];
+          p.activePokemon = p.bench[idx];
+          p.bench.splice(idx, 1);
+          pushLog(newState, currentPlayerId, `將備戰區的 ${p.activePokemon.name} 推上戰鬥區`);
+          return newState;
+        });
+      }
+      return;
+    }
+
     const cardId = e.dataTransfer.getData('cardId');
     const targetCard = currentPlayer.hand.find(c => c.instanceId === cardId);
     if (targetCard) placeCardInActive(targetCard);
@@ -141,20 +192,20 @@ const GameArena = () => {
 
   const handleAttackClick = () => {
     if (gameState.hasAttackedThisTurn) {
-      alert('這回合已經攻擊過了！'); return;
+      showToast('這回合已經攻擊過了！'); return;
     }
     if (!currentPlayer.activePokemon) {
-      alert('你的戰鬥區沒有寶可夢！'); return;
+      showToast('你的戰鬥區沒有寶可夢！'); return;
     }
     if (!opponent.activePokemon) {
-      alert('對手戰鬥區沒有寶可夢，請先結束回合讓對手派出寶可夢！'); return;
+      showToast('對手戰鬥區沒有寶可夢，請先結束回合讓對手派出寶可夢！'); return;
     }
 
     const attacker = currentPlayer.activePokemon;
     const energyCount = attacker.attachedEnergy ? attacker.attachedEnergy.length : 0;
     
     if (energyCount < attacker.attack.cost.length) {
-      alert(`能量不足無法攻擊！需要 ${attacker.attack.cost.length} 個能量。`);
+      showToast(`能量不足無法攻擊！需要 ${attacker.attack.cost.length} 個能量。`);
       return;
     }
 
@@ -165,17 +216,27 @@ const GameArena = () => {
       
       opp.activePokemon.currentHp -= damage;
       
+      pushLog(newState, currentPlayerId, `使用 ${attacker.name} 發動攻擊，造成 ${damage} 點傷害`);
+      
+      setDamageAnim({ damage });
+      setTimeout(() => setDamageAnim(null), 1000);
+      
       if (opp.activePokemon.currentHp <= 0) {
-        opp.activePokemon = null; 
-        newState.players[currentPlayerId].prizes -= 1;
-        
-        if (newState.players[currentPlayerId].prizes <= 0) {
-          newState.winner = currentPlayerId;
-        } else {
-          alert(`成功擊倒對手！拿取一張獎賞卡。剩餘獎賞卡：${newState.players[currentPlayerId].prizes}`);
-        }
-      } else {
-        alert(`造成了 ${damage} 點傷害！`);
+        pushLog(newState, currentPlayerId, `擊倒了對手的 ${opp.activePokemon.name}！拿取一張獎賞卡。`);
+        setTimeout(() => {
+          setGameState(current => {
+            const nextState = structuredClone(current);
+            const targetOpp = nextState.players[opponentId];
+            if (targetOpp.activePokemon && targetOpp.activePokemon.currentHp <= 0) {
+               targetOpp.activePokemon = null; 
+               nextState.players[currentPlayerId].prizes -= 1;
+               if (nextState.players[currentPlayerId].prizes <= 0) {
+                 nextState.winner = currentPlayerId;
+               }
+            }
+            return nextState;
+          });
+        }, 1000);
       }
       
       newState.hasAttackedThisTurn = true;
@@ -201,43 +262,120 @@ const GameArena = () => {
   const bottomPlayer = isPlayer1Turn ? gameState.players.player1 : gameState.players.player2;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingBottom: '40px' }}>
-      <div style={{ transform: 'rotate(180deg)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+      {toast.message && (
+        <div key={toast.id} className="custom-toast show">
+          {toast.message}
+        </div>
+      )}
+
+      {/* HUD 頂部對手資訊 */}
+      <div className="hud-panel hud-top-left">
+        <div>
+          <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>對手</div>
+          <div style={{ fontWeight: 'bold' }}>{isPlayer1Turn ? '玩家 2' : '玩家 1'}</div>
+        </div>
+        <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '15px' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>剩餘獎賞卡</div>
+          <div style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.2rem' }}>{topPlayer.prizes}</div>
+        </div>
+      </div>
+
+      {/* HUD 右上角設定與紀錄 */}
+      <div style={{ position: 'absolute', top: '20px', right: '20px', display: 'flex', gap: '15px', zIndex: 50 }}>
+        <div className="hud-panel" style={{ position: 'static', padding: '10px', cursor: 'pointer' }} onClick={() => setShowLog(true)}>
+          <span style={{ fontSize: '1.5rem' }}>📜</span>
+        </div>
+        <div className="hud-panel" style={{ position: 'static', padding: '10px', cursor: 'pointer' }} onClick={() => setShowSettings(true)}>
+          <span style={{ fontSize: '1.5rem' }}>⚙️</span>
+        </div>
+      </div>
+
+      {/* HUD 底部玩家資訊 */}
+      <div className="hud-panel hud-bottom-left" style={{ boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' }}>
+        <div>
+          <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>你的回合</div>
+          <div style={{ fontWeight: 'bold', color: 'var(--color-primary)' }}>{isPlayer1Turn ? '玩家 1' : '玩家 2'}</div>
+        </div>
+        <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '15px' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>剩餘獎賞卡</div>
+          <div style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.2rem' }}>{bottomPlayer.prizes}</div>
+        </div>
+      </div>
+
+      {/* HUD 右下角動作區 */}
+      <div className="hud-panel hud-bottom-right">
+        <button 
+          onClick={handleAttackClick} 
+          disabled={gameState.hasAttackedThisTurn}
+          style={{ 
+            background: gameState.hasAttackedThisTurn ? 'var(--color-bg-panel)' : 'var(--color-danger)', 
+            padding: '10px 20px', fontSize: '1.1rem'
+          }}
+        >
+          發動攻擊
+        </button>
+        <button onClick={endTurn} style={{ padding: '10px 20px', fontSize: '1.1rem' }}>結束回合</button>
+      </div>
+
+      {/* 設定彈窗 */}
+      {showSettings && (
+        <div className="modal-overlay" onClick={() => setShowSettings(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h2 style={{ marginBottom: '20px' }}>遊戲設定</h2>
+            <button 
+              onClick={() => window.location.reload()} 
+              style={{ display: 'block', width: '100%', marginBottom: '15px', padding: '12px', background: 'var(--color-danger)', fontSize: '1.1rem' }}
+            >
+              重新開始遊戲
+            </button>
+            <button 
+              onClick={() => setShowSettings(false)} 
+              style={{ display: 'block', width: '100%', padding: '12px', background: 'rgba(255,255,255,0.1)', fontSize: '1.1rem' }}
+            >
+              關閉
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 對戰紀錄抽屜 */}
+      <div className={`log-drawer ${showLog ? 'open' : ''}`}>
+        <div className="log-header">
+          對戰紀錄
+          <button onClick={() => setShowLog(false)} style={{ background: 'transparent', color: 'white', fontSize: '1.5rem', padding: '0 5px' }}>×</button>
+        </div>
+        <div className="log-content">
+          {gameState.logs && gameState.logs.length > 0 ? (
+            [...gameState.logs].reverse().map((log, idx) => {
+              const time = new Date(log.time).toLocaleTimeString('zh-TW', { hour12: false });
+              return (
+                <div key={idx} className="log-entry">
+                  <span className={log.player === 'player1' ? 'log-player1' : 'log-player2'}>
+                    {log.player === 'player1' ? '玩家 1' : '玩家 2'}
+                  </span>
+                  {' '}{log.action}
+                  <span className="log-time">{time}</span>
+                </div>
+              );
+            })
+          ) : (
+            <div style={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginTop: '20px' }}>尚未有任何紀錄</div>
+          )}
+        </div>
+      </div>
+
+      <div className="hand-wrapper-top">
          <Hand hand={topPlayer.hand} isCurrentPlayer={false} />
       </div>
       
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', justifyContent: 'center', padding: '100px 0' }}>
         <Board 
           activePokemon={topPlayer.activePokemon} 
           bench={topPlayer.bench} 
           isTopPlayer={true} 
+          damageTaken={damageAnim ? damageAnim.damage : null}
         />
-        
-        <div className="glass-panel" style={{ 
-          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          display: 'flex', gap: '20px', padding: '10px 20px', alignItems: 'center', zIndex: 10
-        }}>
-          <div>
-            <span style={{ color: 'var(--color-text-muted)' }}>剩餘獎賞卡</span>
-            <div style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.2rem' }}>
-              對手: {topPlayer.prizes} | 你: {bottomPlayer.prizes}
-            </div>
-          </div>
-          
-          <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '20px' }}>
-            <button 
-              onClick={handleAttackClick} 
-              disabled={gameState.hasAttackedThisTurn}
-              style={{ 
-                background: gameState.hasAttackedThisTurn ? 'var(--color-bg-panel)' : 'var(--color-danger)', 
-                marginRight: '10px' 
-              }}
-            >
-              發動攻擊
-            </button>
-            <button onClick={endTurn}>結束回合 ({isPlayer1Turn ? '玩家1' : '玩家2'})</button>
-          </div>
-        </div>
 
         <Board 
           activePokemon={bottomPlayer.activePokemon} 
@@ -247,14 +385,16 @@ const GameArena = () => {
           onBenchClick={handleMyBenchClick}
           onDropActive={handleDropActive}
           onDropBench={handleDropBench}
+          onDragStartBench={handleDragStartBench}
         />
       </div>
 
-      <div style={{ position: 'relative' }}>
+      <div className={`hand-wrapper-bottom ${selectedCard ? 'hand-active' : ''}`}>
         {selectedCard && (
-          <div style={{ position: 'absolute', top: '-40px', left: '50%', transform: 'translateX(-50%)', 
-                        background: 'rgba(59, 130, 246, 0.8)', padding: '5px 15px', borderRadius: '20px', 
-                        fontSize: '0.9rem', pointerEvents: 'none', zIndex: 20 }}>
+          <div style={{ position: 'absolute', top: '-50px', left: '50%', transform: 'translateX(-50%)', 
+                        background: 'rgba(59, 130, 246, 0.9)', padding: '8px 20px', borderRadius: '20px', 
+                        fontSize: '1rem', fontWeight: 'bold', pointerEvents: 'none', zIndex: 40,
+                        boxShadow: '0 4px 10px rgba(0,0,0,0.5)', whiteSpace: 'nowrap' }}>
             選中了：{selectedCard.name} (請點擊戰鬥區或備戰區放置)
           </div>
         )}

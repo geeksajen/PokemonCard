@@ -9,6 +9,8 @@ export const createInitialGameState = () => {
     // 限制每回合的行動
     hasAttachedEnergyThisTurn: false,
     hasAttackedThisTurn: false,
+    
+    logs: [], // 對戰紀錄
 
     players: {
       player1: {

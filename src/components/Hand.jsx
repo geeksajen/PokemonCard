@@ -8,9 +8,7 @@ const Hand = ({ hand, onCardClick, isCurrentPlayer, onDragStart }) => {
       gap: '10px',
       padding: '20px',
       justifyContent: 'center',
-      minHeight: '260px',
-      background: 'rgba(0,0,0,0.2)',
-      borderTop: '1px solid rgba(255,255,255,0.1)'
+      minHeight: '260px'
     }}>
       {hand.map((card, index) => (
         <div key={card.instanceId} style={{
