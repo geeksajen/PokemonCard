@@ -9,9 +9,9 @@
   --color-success: #22c55e;
   --color-energy: #fbbf24;
   
-  --card-width: 150px;
-  --card-height: 210px;
-  --card-border-radius: 10px;
+  --card-width: 120px;
+  --card-height: 168px;
+  --card-border-radius: 8px;
   --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --card-shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
   
@@ -26,7 +26,7 @@
 
 body {
   font-family: var(--font-main);
-  background: radial-gradient(circle at top, #1e293b, #020617);
+  background: radial-gradient(circle at top, #0f766e, #042f2e);
   color: var(--color-text);
   height: 100vh;
   overflow: hidden;
@@ -43,7 +43,7 @@ h1, h2, h3, h4, h5, h6 {
   bottom: 0;
   left: 0;
   right: 0;
-  transform: translateY(180px); /* 隱藏大部分 */
+  transform: translateY(120px); /* 隱藏大部分，因為卡片縮小了所以距離也要縮小 */
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 30;
 }
@@ -52,12 +52,27 @@ h1, h2, h3, h4, h5, h6 {
   transform: translateY(0);
 }
 
+.hand-wrapper-bottom.is-dragging {
+  transform: translateY(120px) !important;
+  pointer-events: none; /* 防止手牌區的隱形邊界擋住戰鬥區的放置判定 */
+}
+
+/* Individual card hover in hand */
+.hand-card {
+  cursor: pointer;
+}
+.hand-card:hover {
+  transform: translateY(-30px) scale(1.15) rotate(0deg) !important;
+  z-index: 10;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+}
+
 .hand-wrapper-top {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  transform: translateY(-180px) rotate(180deg);
+  transform: translateY(-120px) rotate(180deg);
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 30;
 }
@@ -268,3 +283,46 @@ button:disabled {
 .log-player1 { color: #60a5fa; font-weight: bold; }
 .log-player2 { color: #f87171; font-weight: bold; }
 .log-time { color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-top: 4px; display: block; }
+
+/* Turn Transition Splash Screen */
+.turn-transition-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10, 15, 30, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.5; transform: scale(0.98); }
+  50% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.5; transform: scale(0.98); }
+}
+
+.ready-button {
+  margin-top: 40px;
+  padding: 15px 40px;
+  font-size: 1.5rem;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 30px;
+  border: none;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4);
+  transition: all 0.2s;
+}
+
+.ready-button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 15px 25px rgba(59, 130, 246, 0.6);
+}
+.ready-button:active {
+  transform: translateY(0) scale(0.95);
+}

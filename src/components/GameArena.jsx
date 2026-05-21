@@ -3,6 +3,7 @@ import { createInitialGameState } from '../models/gameState';
 import { CardTypes } from '../models/cards';
 import Board from './Board';
 import Hand from './Hand';
+import { sfxPlace, sfxAttack, sfxDamage, sfxEndTurn, sfxVictory, sfxError, AudioSettings, startBGM, stopBGM } from '../utils/sounds';
 
 const GameArena = () => {
   const [gameState, setGameState] = useState(null);
@@ -11,6 +12,25 @@ const GameArena = () => {
   const [toast, setToast] = useState({ id: 0, message: '' });
   const [showSettings, setShowSettings] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [showTurnTransition, setShowTurnTransition] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [bgmMuted, setBgmMuted] = useState(true); // 預設未播放，等待玩家互動
+  const [sfxMuted, setSfxMuted] = useState(false);
+
+  const toggleBGM = () => {
+    if (bgmMuted) {
+      startBGM();
+      setBgmMuted(false);
+    } else {
+      stopBGM();
+      setBgmMuted(true);
+    }
+  };
+
+  const toggleSFX = () => {
+    AudioSettings.sfxMuted = !sfxMuted;
+    setSfxMuted(!sfxMuted);
+  };
 
   const showToast = (message) => {
     setToast({ id: Date.now(), message });
@@ -53,6 +73,8 @@ const GameArena = () => {
       return newState;
     });
     setSelectedCard(null);
+    setShowTurnTransition(true);
+    sfxEndTurn();
   };
 
   const handleHandCardClick = (card) => {
@@ -64,8 +86,13 @@ const GameArena = () => {
   };
 
   const handleDragStart = (e, card) => {
-    setSelectedCard(card);
     e.dataTransfer.setData('cardId', card.instanceId);
+    setIsDragging(true);
+  };
+
+  const handleDragEnd = () => {
+    // 延遲解除 is-dragging，讓瀏覽器有時間重新計算 :hover
+    setTimeout(() => setIsDragging(false), 50);
   };
 
   const placeCardInActive = (targetCard) => {
@@ -80,6 +107,7 @@ const GameArena = () => {
           return newState;
         });
         setSelectedCard(null);
+        sfxPlace();
       }
     } else if (targetCard.type === CardTypes.ENERGY) {
       if (currentPlayer.activePokemon && !gameState.hasAttachedEnergyThisTurn) {
@@ -93,8 +121,10 @@ const GameArena = () => {
           return newState;
         });
         setSelectedCard(null);
+        sfxPlace();
       } else if (gameState.hasAttachedEnergyThisTurn) {
         showToast('這回合已經填附過能量了！');
+        sfxError();
       }
     }
   };
@@ -111,6 +141,7 @@ const GameArena = () => {
           return newState;
         });
         setSelectedCard(null);
+        sfxPlace();
       }
     } else if (targetCard.type === CardTypes.ENERGY && existingPokemon) {
       if (!gameState.hasAttachedEnergyThisTurn) {
@@ -161,6 +192,7 @@ const GameArena = () => {
 
   const handleDropActive = (e) => {
     e.preventDefault();
+    setIsDragging(false);
     const sourceBenchIndex = e.dataTransfer.getData('sourceBenchIndex');
     
     if (sourceBenchIndex !== '') {
@@ -185,6 +217,7 @@ const GameArena = () => {
 
   const handleDropBench = (e, existingPokemon, index) => {
     e.preventDefault();
+    setIsDragging(false);
     const cardId = e.dataTransfer.getData('cardId');
     const targetCard = currentPlayer.hand.find(c => c.instanceId === cardId);
     if (targetCard) placeCardInBench(targetCard, existingPokemon, index);
@@ -192,13 +225,13 @@ const GameArena = () => {
 
   const handleAttackClick = () => {
     if (gameState.hasAttackedThisTurn) {
-      showToast('這回合已經攻擊過了！'); return;
+      showToast('這回合已經攻擊過了！'); sfxError(); return;
     }
     if (!currentPlayer.activePokemon) {
-      showToast('你的戰鬥區沒有寶可夢！'); return;
+      showToast('你的戰鬥區沒有寶可夢！'); sfxError(); return;
     }
     if (!opponent.activePokemon) {
-      showToast('對手戰鬥區沒有寶可夢，請先結束回合讓對手派出寶可夢！'); return;
+      showToast('對手戰鬥區沒有寶可夢，請先結束回合讓對手派出寶可夢！'); sfxError(); return;
     }
 
     const attacker = currentPlayer.activePokemon;
@@ -206,6 +239,7 @@ const GameArena = () => {
     
     if (energyCount < attacker.attack.cost.length) {
       showToast(`能量不足無法攻擊！需要 ${attacker.attack.cost.length} 個能量。`);
+      sfxError();
       return;
     }
 
@@ -218,8 +252,9 @@ const GameArena = () => {
       
       pushLog(newState, currentPlayerId, `使用 ${attacker.name} 發動攻擊，造成 ${damage} 點傷害`);
       
+      sfxAttack();
       setDamageAnim({ damage });
-      setTimeout(() => setDamageAnim(null), 1000);
+      setTimeout(() => { setDamageAnim(null); sfxDamage(); }, 300);
       
       if (opp.activePokemon.currentHp <= 0) {
         pushLog(newState, currentPlayerId, `擊倒了對手的 ${opp.activePokemon.name}！拿取一張獎賞卡。`);
@@ -232,6 +267,7 @@ const GameArena = () => {
                nextState.players[currentPlayerId].prizes -= 1;
                if (nextState.players[currentPlayerId].prizes <= 0) {
                  nextState.winner = currentPlayerId;
+                 sfxVictory();
                }
             }
             return nextState;
@@ -262,22 +298,24 @@ const GameArena = () => {
   const bottomPlayer = isPlayer1Turn ? gameState.players.player1 : gameState.players.player2;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       {toast.message && (
         <div key={toast.id} className="custom-toast show">
           {toast.message}
         </div>
       )}
 
-      {/* HUD 頂部對手資訊 */}
-      <div className="hud-panel hud-top-left">
-        <div>
-          <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>對手</div>
-          <div style={{ fontWeight: 'bold' }}>{isPlayer1Turn ? '玩家 2' : '玩家 1'}</div>
-        </div>
-        <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '15px' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>剩餘獎賞卡</div>
-          <div style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.2rem' }}>{topPlayer.prizes}</div>
+      {/* HUD 頂部對手資訊與設定 */}
+      <div className="hud-panel hud-top-left" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '20px' }}>
+          <div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>對手</div>
+            <div style={{ fontWeight: 'bold' }}>{isPlayer1Turn ? '玩家 2' : '玩家 1'}</div>
+          </div>
+          <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '15px' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>剩餘獎賞卡</div>
+            <div style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.2rem' }}>{topPlayer.prizes}</div>
+          </div>
         </div>
       </div>
 
@@ -323,6 +361,21 @@ const GameArena = () => {
         <div className="modal-overlay" onClick={() => setShowSettings(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <h2 style={{ marginBottom: '20px' }}>遊戲設定</h2>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+              <button 
+                onClick={toggleBGM} 
+                style={{ flex: 1, marginRight: '5px', padding: '12px', background: bgmMuted ? 'rgba(255,255,255,0.1)' : 'var(--color-primary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                {bgmMuted ? '🔇 音樂 (關)' : '🎵 音樂 (開)'}
+              </button>
+              <button 
+                onClick={toggleSFX} 
+                style={{ flex: 1, marginLeft: '5px', padding: '12px', background: sfxMuted ? 'rgba(255,255,255,0.1)' : 'var(--color-primary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                {sfxMuted ? '🔈 音效 (關)' : '🔊 音效 (開)'}
+              </button>
+            </div>
             <button 
               onClick={() => window.location.reload()} 
               style={{ display: 'block', width: '100%', marginBottom: '15px', padding: '12px', background: 'var(--color-danger)', fontSize: '1.1rem' }}
@@ -365,11 +418,26 @@ const GameArena = () => {
         </div>
       </div>
 
-      <div className="hand-wrapper-top">
-         <Hand hand={topPlayer.hand} isCurrentPlayer={false} />
+      {showTurnTransition && !gameState.winner && (
+        <div className="turn-transition-overlay" onClick={() => setShowTurnTransition(false)} style={{ cursor: 'pointer' }}>
+          <h1 style={{ fontSize: '4rem', marginBottom: '20px', color: isPlayer1Turn ? '#60a5fa' : '#f87171' }}>
+            換 {isPlayer1Turn ? '玩家 1' : '玩家 2'} 的回合了！
+          </h1>
+          <p style={{ fontSize: '1.5rem', color: 'rgba(255,255,255,0.7)', animation: 'pulse 2s infinite' }}>
+            (點擊畫面任意處繼續)
+          </p>
+        </div>
+      )}
+
+      {/* 對手手牌實體佔位 */}
+      <div style={{ height: '40px', position: 'relative', zIndex: 30, flexShrink: 0 }}>
+        <div className="hand-wrapper-top">
+           <Hand hand={topPlayer.hand} isCurrentPlayer={false} />
+        </div>
       </div>
       
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', justifyContent: 'center', padding: '100px 0' }}>
+      {/* 戰鬥區 (置中排版) */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', justifyContent: 'center', padding: '10px 0', gap: '20px', overflowY: 'auto' }}>
         <Board 
           activePokemon={topPlayer.activePokemon} 
           bench={topPlayer.bench} 
@@ -389,21 +457,25 @@ const GameArena = () => {
         />
       </div>
 
-      <div className={`hand-wrapper-bottom ${selectedCard ? 'hand-active' : ''}`}>
-        {selectedCard && (
-          <div style={{ position: 'absolute', top: '-50px', left: '50%', transform: 'translateX(-50%)', 
-                        background: 'rgba(59, 130, 246, 0.9)', padding: '8px 20px', borderRadius: '20px', 
-                        fontSize: '1rem', fontWeight: 'bold', pointerEvents: 'none', zIndex: 40,
-                        boxShadow: '0 4px 10px rgba(0,0,0,0.5)', whiteSpace: 'nowrap' }}>
-            選中了：{selectedCard.name} (請點擊戰鬥區或備戰區放置)
-          </div>
-        )}
-        <Hand 
-          hand={bottomPlayer.hand} 
-          isCurrentPlayer={true} 
-          onCardClick={handleHandCardClick} 
-          onDragStart={handleDragStart}
-        />
+      {/* 玩家手牌實體佔位 */}
+      <div style={{ height: '50px', position: 'relative', zIndex: 40, flexShrink: 0 }}>
+        <div className={`hand-wrapper-bottom ${selectedCard && !isDragging ? 'hand-active' : ''} ${isDragging ? 'is-dragging' : ''}`}>
+          {selectedCard && (
+            <div style={{ position: 'absolute', top: '-50px', left: '50%', transform: 'translateX(-50%)', 
+                          background: 'rgba(59, 130, 246, 0.9)', padding: '8px 20px', borderRadius: '20px', 
+                          fontSize: '1rem', fontWeight: 'bold', pointerEvents: 'none', zIndex: 40,
+                          boxShadow: '0 4px 10px rgba(0,0,0,0.5)', whiteSpace: 'nowrap' }}>
+              選中了：{selectedCard.name} (請點擊戰鬥區或備戰區放置)
+            </div>
+          )}
+          <Hand 
+            hand={bottomPlayer.hand} 
+            isCurrentPlayer={true} 
+            onCardClick={handleHandCardClick} 
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          />
+        </div>
       </div>
     </div>
   );

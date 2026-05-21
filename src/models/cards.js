@@ -20,7 +20,7 @@ export const cardDatabase = {
     hp: 60,
     maxHp: 60,
     energyType: EnergyTypes.FIRE,
-    image: '/images/charmander.png',
+    image: './images/charmander.png',
     attack: {
       name: '火花',
       cost: [EnergyTypes.FIRE],
@@ -34,7 +34,7 @@ export const cardDatabase = {
     hp: 60,
     maxHp: 60,
     energyType: EnergyTypes.WATER,
-    image: '/images/squirtle.png',
+    image: './images/squirtle.png',
     attack: {
       name: '水槍',
       cost: [EnergyTypes.WATER],
@@ -48,7 +48,7 @@ export const cardDatabase = {
     hp: 70,
     maxHp: 70,
     energyType: EnergyTypes.GRASS,
-    image: '/images/bulbasaur.png',
+    image: './images/bulbasaur.png',
     attack: {
       name: '藤鞭',
       cost: [EnergyTypes.GRASS],
@@ -62,7 +62,7 @@ export const cardDatabase = {
     hp: 60,
     maxHp: 60,
     energyType: EnergyTypes.ELECTRIC,
-    image: '/images/pikachu.png',
+    image: './images/pikachu.png',
     attack: {
       name: '電擊',
       cost: [EnergyTypes.ELECTRIC],

@@ -27,7 +27,7 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
           justifyContent: 'center',
           color: '#facc15',
           fontWeight: 'bold',
-          fontSize: '1.2rem',
+          fontSize: '1.0rem',
           userSelect: 'none'
         }}
       >
@@ -54,7 +54,7 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        padding: '10px',
+        padding: '8px',
         cursor: isSelectable ? 'pointer' : 'default',
         transform: isSelectable ? 'translateY(0)' : 'none',
         transition: 'all 0.2s ease',
@@ -75,9 +75,9 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
       )}
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 1 }}>
-        <h4 style={{ fontSize: '0.9rem', margin: 0, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>{card.name}</h4>
+        <h4 style={{ fontSize: '0.8rem', margin: 0, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>{card.name}</h4>
         {card.type === CardTypes.POKEMON && (
-          <span style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: 'bold' }}>HP {card.currentHp}</span>
+          <span style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: 'bold' }}>HP {card.currentHp}</span>
         )}
       </div>
 
@@ -85,14 +85,14 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
         <>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, position: 'relative' }}>
             {card.image ? (
-              <img src={card.image} alt={card.name} style={{ width: '100%', height: '100px', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+              <img src={card.image} alt={card.name} style={{ width: '100%', height: '80px', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
             ) : (
-              <div style={{ width: '80%', height: '80px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}></div>
+              <div style={{ width: '80%', height: '60px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}></div>
             )}
           </div>
           
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '8px', borderRadius: '6px', zIndex: 1 }}>
-            <div style={{ fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px', borderRadius: '6px', zIndex: 1 }}>
+            <div style={{ fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
               <span>{card.attack.name}</span>
               <span style={{ color: 'var(--color-danger)' }}>{card.attack.damage}</span>
             </div>
@@ -106,9 +106,9 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
              <div style={{ position: 'absolute', bottom: '-5px', right: '-5px', display: 'flex', zIndex: 2 }}>
                {card.attachedEnergy.map((energy, idx) => (
                  <div key={idx} style={{
-                   width: '20px', height: '20px', borderRadius: '50%',
+                   width: '16px', height: '16px', borderRadius: '50%',
                    background: getEnergyColor(energy.energyType),
-                   border: '2px solid white', marginLeft: '-10px',
+                   border: '1px solid white', marginLeft: '-6px',
                    boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
                  }}></div>
                ))}
