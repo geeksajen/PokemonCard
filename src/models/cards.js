@@ -1,7 +1,8 @@
 // 簡化的卡牌資料庫
 export const CardTypes = {
   POKEMON: 'pokemon',
-  ENERGY: 'energy'
+  ENERGY: 'energy',
+  TRAINER: 'trainer'
 };
 
 export const EnergyTypes = {
@@ -79,7 +80,7 @@ export const cardDatabase = {
     energyType: EnergyTypes.FIRE,
     evolvesFrom: '小火龍',
     stage: 1,
-    image: '', 
+    image: './images/charmeleon.png',
     attack: {
       name: '火焰放射',
       cost: [EnergyTypes.FIRE, EnergyTypes.FIRE],
@@ -95,7 +96,7 @@ export const cardDatabase = {
     energyType: EnergyTypes.WATER,
     evolvesFrom: '傑尼龜',
     stage: 1,
-    image: '', 
+    image: './images/wartortle.png',
     attack: {
       name: '水砲',
       cost: [EnergyTypes.WATER, EnergyTypes.WATER],
@@ -111,7 +112,7 @@ export const cardDatabase = {
     energyType: EnergyTypes.GRASS,
     evolvesFrom: '妙蛙種子',
     stage: 1,
-    image: '', 
+    image: './images/ivysaur.png',
     attack: {
       name: '飛葉快刀',
       cost: [EnergyTypes.GRASS, EnergyTypes.GRASS],
@@ -127,7 +128,7 @@ export const cardDatabase = {
     energyType: EnergyTypes.ELECTRIC,
     evolvesFrom: '皮卡丘',
     stage: 1,
-    image: '', 
+    image: './images/raichu.png',
     attack: {
       name: '十萬伏特',
       cost: [EnergyTypes.ELECTRIC, EnergyTypes.ELECTRIC],
@@ -157,31 +158,72 @@ export const cardDatabase = {
     type: CardTypes.ENERGY,
     name: '雷能量',
     energyType: EnergyTypes.ELECTRIC
+  },
+  't-potion': {
+    id: 't-potion',
+    type: CardTypes.TRAINER,
+    name: '傷藥',
+    description: '回復一隻寶可夢 20 點 HP。'
+  },
+  't-pokeball': {
+    id: 't-pokeball',
+    type: CardTypes.TRAINER,
+    name: '精靈球',
+    description: '從牌庫尋找一張寶可夢卡加入手牌，然後洗牌。'
+  },
+  't-prof': {
+    id: 't-prof',
+    type: CardTypes.TRAINER,
+    name: '大木博士',
+    description: '捨棄你的所有手牌，然後從牌庫抽出 7 張卡。'
   }
 };
 
-// 產生一副隨機的測試牌組
-export const generateStarterDeck = () => {
+// 產生特定主題的純色牌組 (20張)
+export const generateThemeDeck = (theme) => {
   const deck = [];
-  const pokemonIds = ['p-001', 'p-002', 'p-003', 'p-004'];
-  const energyIds = ['e-fire', 'e-water', 'e-grass', 'e-electric'];
   
-  // 隨機放入 8 張基礎寶可夢，4張進化寶可夢，8 張能量
-  for (let i = 0; i < 8; i++) {
-    const randomPokemon = pokemonIds[Math.floor(Math.random() * pokemonIds.length)];
-    deck.push({ ...cardDatabase[randomPokemon], instanceId: `deck-p-${i}-${Date.now()}`, attachedEnergy: [], currentHp: cardDatabase[randomPokemon].hp });
+  const themeMap = {
+    'fire': { basic: 'p-001', ev1: 'p-001-ev1', energy: 'e-fire' },
+    'water': { basic: 'p-002', ev1: 'p-002-ev1', energy: 'e-water' },
+    'grass': { basic: 'p-003', ev1: 'p-003-ev1', energy: 'e-grass' },
+    'electric': { basic: 'p-004', ev1: 'p-004-ev1', energy: 'e-electric' }
+  };
+
+  const selectedTheme = themeMap[theme] || themeMap['fire']; // 預設火
+
+  // 7 張基礎寶可夢
+  for (let i = 0; i < 7; i++) {
+    deck.push({ 
+      ...cardDatabase[selectedTheme.basic], 
+      instanceId: `deck-p-${i}-${Date.now()}`, 
+      attachedEnergy: [], 
+      currentHp: cardDatabase[selectedTheme.basic].hp 
+    });
   }
   
-  const evIds = ['p-001-ev1', 'p-002-ev1', 'p-003-ev1', 'p-004-ev1'];
+  // 4 張一階進化寶可夢
   for (let i = 0; i < 4; i++) {
-    const randomEv = evIds[Math.floor(Math.random() * evIds.length)];
-    deck.push({ ...cardDatabase[randomEv], instanceId: `deck-pev-${i}-${Date.now()}`, attachedEnergy: [], currentHp: cardDatabase[randomEv].hp });
+    deck.push({ 
+      ...cardDatabase[selectedTheme.ev1], 
+      instanceId: `deck-pev-${i}-${Date.now()}`, 
+      attachedEnergy: [], 
+      currentHp: cardDatabase[selectedTheme.ev1].hp 
+    });
   }
   
-  for (let i = 0; i < 8; i++) {
-    const randomEnergy = energyIds[Math.floor(Math.random() * energyIds.length)];
-    deck.push({ ...cardDatabase[randomEnergy], instanceId: `deck-e-${i}-${Date.now()}` });
+  // 6 張屬性對應能量
+  for (let i = 0; i < 6; i++) {
+    deck.push({ 
+      ...cardDatabase[selectedTheme.energy], 
+      instanceId: `deck-e-${i}-${Date.now()}` 
+    });
   }
+
+  // 3 張實用訓練家卡
+  deck.push({ ...cardDatabase['t-potion'], instanceId: `deck-t-pot-${Date.now()}` });
+  deck.push({ ...cardDatabase['t-pokeball'], instanceId: `deck-t-ball-${Date.now()}` });
+  deck.push({ ...cardDatabase['t-prof'], instanceId: `deck-t-prof-${Date.now()}` });
   
   // 洗牌
   return deck.sort(() => Math.random() - 0.5);

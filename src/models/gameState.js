@@ -1,6 +1,6 @@
-import { generateStarterDeck } from './cards';
+import { generateThemeDeck } from './cards';
 
-export const createInitialGameState = () => {
+export const createInitialGameState = (player1Theme = 'fire', player2Theme = 'water') => {
   return {
     turn: 1,
     currentPlayer: 'player1', // 'player1' or 'player2'
@@ -16,7 +16,7 @@ export const createInitialGameState = () => {
       player1: {
         id: 'player1',
         name: 'Player 1',
-        deck: generateStarterDeck(),
+        deck: generateThemeDeck(player1Theme),
         hand: [],
         activePokemon: null,
         bench: [], // Max 3
@@ -25,7 +25,7 @@ export const createInitialGameState = () => {
       player2: {
         id: 'player2',
         name: 'Player 2',
-        deck: generateStarterDeck(),
+        deck: generateThemeDeck(player2Theme),
         hand: [],
         activePokemon: null,
         bench: [], // Max 3

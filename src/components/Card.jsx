@@ -40,7 +40,11 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
 
   const bgStyle = card.type === CardTypes.ENERGY 
     ? getEnergyColor(card.energyType)
-    : 'linear-gradient(135deg, #334155, #0f172a)'; // Pokemon base background
+    : card.type === CardTypes.TRAINER
+      ? 'linear-gradient(135deg, #14b8a6, #0f766e)' // Trainer cards: Teal/Cyan
+      : card.stage === 1
+        ? 'linear-gradient(135deg, #4f46e5, #a855f7, #eab308)' // Evolution cards: Premium Foil (Indigo/Purple/Gold)
+        : 'linear-gradient(135deg, #334155, #0f172a)'; // Basic Pokemon
 
   return (
     <div 
@@ -58,7 +62,10 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
         cursor: isSelectable ? 'pointer' : 'default',
         transform: isSelectable ? 'translateY(0)' : 'none',
         transition: 'all 0.2s ease',
-        boxShadow: isSelectable ? 'var(--card-shadow-hover)' : 'var(--card-shadow)',
+        boxShadow: card.stage === 1 
+          ? (isSelectable ? '0 0 20px rgba(234, 179, 8, 0.6)' : 'inset 0 0 10px rgba(234, 179, 8, 0.4)') 
+          : (isSelectable ? 'var(--card-shadow-hover)' : 'var(--card-shadow)'),
+        border: card.stage === 1 ? '1px solid rgba(234, 179, 8, 0.5)' : 'none',
       }}
       onMouseEnter={(e) => {
         if(isSelectable) e.currentTarget.style.transform = 'translateY(-5px)';
@@ -75,7 +82,14 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
       )}
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 1 }}>
-        <h4 style={{ fontSize: '0.8rem', margin: 0, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>{card.name}</h4>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <h4 style={{ fontSize: '0.8rem', margin: 0, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>{card.name}</h4>
+          {card.stage === 1 && (
+            <span style={{ fontSize: '0.6rem', background: '#eab308', color: '#000', padding: '1px 4px', borderRadius: '4px', fontWeight: 'bold' }}>
+              進化
+            </span>
+          )}
+        </div>
         {card.type === CardTypes.POKEMON && (
           <span style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: 'bold' }}>HP {card.currentHp}</span>
         )}

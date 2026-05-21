@@ -3,9 +3,10 @@ import { createInitialGameState } from '../models/gameState';
 import { CardTypes } from '../models/cards';
 import Board from './Board';
 import Hand from './Hand';
+import Card from './Card';
 import { sfxPlace, sfxAttack, sfxDamage, sfxEndTurn, sfxVictory, sfxError, AudioSettings, startBGM, stopBGM } from '../utils/sounds';
 
-const GameArena = () => {
+const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
   const [gameState, setGameState] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [damageAnim, setDamageAnim] = useState(null); // { target: 'top' | 'bottom', damage: number }
@@ -16,6 +17,8 @@ const GameArena = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [bgmMuted, setBgmMuted] = useState(true); // 預設未播放，等待玩家互動
   const [sfxMuted, setSfxMuted] = useState(false);
+  const [showDeckSearch, setShowDeckSearch] = useState(false);
+  const [cardToConsume, setCardToConsume] = useState(null);
 
   const toggleBGM = () => {
     if (bgmMuted) {
@@ -42,13 +45,13 @@ const GameArena = () => {
   };
   
   useEffect(() => {
-    const initialState = createInitialGameState();
+    const initialState = createInitialGameState(p1Theme, p2Theme);
     for(let i=0; i<7; i++) {
       initialState.players.player1.hand.push(initialState.players.player1.deck.pop());
       initialState.players.player2.hand.push(initialState.players.player2.deck.pop());
     }
     setGameState(initialState);
-  }, []);
+  }, [p1Theme, p2Theme]);
 
   if (!gameState) return <div style={{ color: 'white', padding: '2rem' }}>載入遊戲中...</div>;
 
@@ -104,6 +107,37 @@ const GameArena = () => {
   const handleDragEnd = () => {
     // 延遲解除 is-dragging，讓瀏覽器有時間重新計算 :hover
     setTimeout(() => setIsDragging(false), 50);
+  };
+
+  const handleDropBoard = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const cardId = e.dataTransfer.getData('cardId');
+    if (!currentPlayer) return;
+    const targetCard = currentPlayer.hand.find(c => c.instanceId === cardId);
+    if (!targetCard || targetCard.type !== CardTypes.TRAINER) return;
+
+    if (targetCard.id === 't-prof') {
+      setGameState(prev => {
+        const newState = structuredClone(prev);
+        const p = newState.players[currentPlayerId];
+        p.hand = []; // 清空手牌
+        let drawn = 0;
+        for (let i = 0; i < 7; i++) {
+          if (p.deck.length > 0) {
+            p.hand.push(p.deck.pop());
+            drawn++;
+          }
+        }
+        pushLog(newState, currentPlayerId, `使用了大木博士，捨棄手牌並抽取了 ${drawn} 張牌`);
+        return newState;
+      });
+      setSelectedCard(null);
+      sfxPlace();
+    } else if (targetCard.id === 't-pokeball') {
+      setCardToConsume(targetCard);
+      setShowDeckSearch(true);
+    }
   };
 
   const placeCardInActive = (targetCard) => {
@@ -162,6 +196,24 @@ const GameArena = () => {
       } else if (gameState.hasAttachedEnergyThisTurn) {
         showToast('這回合已經填附過能量了！');
         sfxError();
+      }
+    } else if (targetCard.type === CardTypes.TRAINER && targetCard.id === 't-potion') {
+      if (currentPlayer.activePokemon) {
+        if (currentPlayer.activePokemon.currentHp >= currentPlayer.activePokemon.maxHp) {
+          showToast('寶可夢 HP 已滿，無法使用傷藥！');
+          sfxError();
+          return;
+        }
+        setGameState(prev => {
+          const newState = structuredClone(prev);
+          const p = newState.players[currentPlayerId];
+          p.activePokemon.currentHp = Math.min(p.activePokemon.maxHp, p.activePokemon.currentHp + 20);
+          p.hand = p.hand.filter(c => c.instanceId !== targetCard.instanceId);
+          pushLog(newState, currentPlayerId, `對戰鬥區的 ${p.activePokemon.name} 使用了傷藥，回復 20 點 HP`);
+          return newState;
+        });
+        setSelectedCard(null);
+        sfxPlace();
       }
     }
   };
@@ -228,6 +280,25 @@ const GameArena = () => {
         showToast('這回合已經填附過能量了！');
         sfxError();
       }
+    } else if (targetCard.type === CardTypes.TRAINER && targetCard.id === 't-potion' && existingPokemon) {
+      if (existingPokemon.currentHp >= existingPokemon.maxHp) {
+        showToast('寶可夢 HP 已滿，無法使用傷藥！');
+        sfxError();
+        return;
+      }
+      setGameState(prev => {
+        const newState = structuredClone(prev);
+        const p = newState.players[currentPlayerId];
+        const targetIdx = p.bench.findIndex(c => c.instanceId === existingPokemon.instanceId);
+        if (targetIdx !== -1) {
+          p.bench[targetIdx].currentHp = Math.min(p.bench[targetIdx].maxHp, p.bench[targetIdx].currentHp + 20);
+          p.hand = p.hand.filter(c => c.instanceId !== targetCard.instanceId);
+          pushLog(newState, currentPlayerId, `對備戰區的 ${p.bench[targetIdx].name} 使用了傷藥，回復 20 點 HP`);
+        }
+        return newState;
+      });
+      setSelectedCard(null);
+      sfxPlace();
     }
   };
 
@@ -357,8 +428,8 @@ const GameArena = () => {
         <h1 style={{ fontSize: '3rem', color: 'var(--color-primary)' }}>
           {gameState.winner === 'player1' ? '玩家 1' : '玩家 2'} 獲勝！
         </h1>
-        <button onClick={() => window.location.reload()} style={{ marginTop: '2rem', padding: '1rem 2rem', fontSize: '1.2rem' }}>
-          再來一局
+        <button onClick={onReturnLobby} style={{ marginTop: '2rem', padding: '1rem 2rem', fontSize: '1.2rem' }}>
+          返回大廳
         </button>
       </div>
     );
@@ -456,10 +527,10 @@ const GameArena = () => {
               </button>
             </div>
             <button 
-              onClick={() => window.location.reload()} 
+              onClick={onReturnLobby} 
               style={{ display: 'block', width: '100%', marginBottom: '15px', padding: '12px', background: 'var(--color-danger)', fontSize: '1.1rem' }}
             >
-              重新開始遊戲
+              返回大廳
             </button>
             <button 
               onClick={() => setShowSettings(false)} 
@@ -516,7 +587,11 @@ const GameArena = () => {
       </div>
       
       {/* 戰鬥區 (置中排版) */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', justifyContent: 'center', padding: '10px 0', gap: '20px', overflowY: 'auto' }}>
+      <div 
+        style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', justifyContent: 'center', padding: '10px 0', gap: '20px', overflowY: 'auto' }}
+        onDragOver={(e) => { e.preventDefault(); }}
+        onDrop={handleDropBoard}
+      >
         <Board 
           activePokemon={topPlayer.activePokemon} 
           bench={topPlayer.bench} 
@@ -556,6 +631,69 @@ const GameArena = () => {
           />
         </div>
       </div>
+
+      {/* 牌庫檢索彈窗 (精靈球) */}
+      {showDeckSearch && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '80%', maxWidth: '800px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <h2 style={{ marginBottom: '20px' }}>從牌庫選擇一張寶可夢</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+              {currentPlayer.deck.filter(c => c.type === CardTypes.POKEMON).map(card => (
+                <div 
+                  key={card.instanceId} 
+                  onClick={() => {
+                    setGameState(prev => {
+                      const newState = structuredClone(prev);
+                      const p = newState.players[currentPlayerId];
+                      const idx = p.deck.findIndex(c => c.instanceId === card.instanceId);
+                      if (idx !== -1) {
+                        const [pulledCard] = p.deck.splice(idx, 1);
+                        p.hand.push(pulledCard);
+                        // 洗牌
+                        p.deck.sort(() => Math.random() - 0.5);
+                        // 移除精靈球卡
+                        if (cardToConsume) {
+                          p.hand = p.hand.filter(c => c.instanceId !== cardToConsume.instanceId);
+                        }
+                        pushLog(newState, currentPlayerId, `使用了精靈球，從牌庫抽出了 ${pulledCard.name}`);
+                      }
+                      return newState;
+                    });
+                    setShowDeckSearch(false);
+                    setCardToConsume(null);
+                    sfxPlace();
+                  }}
+                  style={{ cursor: 'pointer', transform: 'scale(0.8)', transformOrigin: 'top left', width: '120px', height: '168px' }}
+                >
+                  <Card card={card} />
+                </div>
+              ))}
+              {currentPlayer.deck.filter(c => c.type === CardTypes.POKEMON).length === 0 && (
+                <div style={{ padding: '2rem' }}>牌庫中已經沒有寶可夢卡了！</div>
+              )}
+            </div>
+            <button 
+              onClick={() => {
+                setShowDeckSearch(false);
+                setCardToConsume(null);
+                // 取消時卡牌仍然消耗
+                setGameState(prev => {
+                  const newState = structuredClone(prev);
+                  const p = newState.players[currentPlayerId];
+                  if (cardToConsume) {
+                    p.hand = p.hand.filter(c => c.instanceId !== cardToConsume.instanceId);
+                  }
+                  pushLog(newState, currentPlayerId, `使用了精靈球，但沒有選擇任何寶可夢`);
+                  return newState;
+                });
+              }} 
+              style={{ display: 'block', width: '100%', marginTop: '20px', padding: '12px', background: 'var(--color-danger)', fontSize: '1.1rem' }}
+            >
+              取消 / 關閉
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
