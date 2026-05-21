@@ -58,6 +58,12 @@ const GameArena = () => {
   const opponent = gameState.players[opponentId];
 
   const endTurn = () => {
+    if (!currentPlayer.activePokemon && currentPlayer.bench.length > 0) {
+      showToast('戰鬥區空缺，請先從備戰區推派一隻寶可夢上場！');
+      sfxError();
+      return;
+    }
+
     setGameState(prev => {
       const newState = structuredClone(prev);
       pushLog(newState, prev.currentPlayer, '結束了回合');
@@ -69,6 +75,11 @@ const GameArena = () => {
       const nextPlayer = newState.players[nextPlayerId];
       if (nextPlayer.deck.length > 0) {
         nextPlayer.hand.push(nextPlayer.deck.pop());
+        pushLog(newState, 'system', `回合開始，${nextPlayer.name} 抽了一張牌`);
+      } else {
+        newState.winner = prev.currentPlayer;
+        pushLog(newState, 'system', `${nextPlayer.name} 牌組耗盡，${newState.players[prev.currentPlayer].name} 獲得勝利！`);
+        sfxVictory();
       }
       return newState;
     });
@@ -97,7 +108,7 @@ const GameArena = () => {
 
   const placeCardInActive = (targetCard) => {
     if (targetCard.type === CardTypes.POKEMON) {
-      if (!currentPlayer.activePokemon) {
+      if (!currentPlayer.activePokemon && !targetCard.stage) {
         setGameState(prev => {
           const newState = structuredClone(prev);
           const p = newState.players[currentPlayerId];
@@ -108,6 +119,32 @@ const GameArena = () => {
         });
         setSelectedCard(null);
         sfxPlace();
+      } else if (currentPlayer.activePokemon && targetCard.stage === 1 && currentPlayer.activePokemon.name === targetCard.evolvesFrom) {
+        // 進化戰鬥區寶可夢
+        setGameState(prev => {
+          const newState = structuredClone(prev);
+          const p = newState.players[currentPlayerId];
+          const oldActive = p.activePokemon;
+          // 計算傷害並繼承
+          const damage = oldActive.maxHp - oldActive.currentHp;
+          
+          const newEvolvedCard = { ...targetCard };
+          newEvolvedCard.attachedEnergy = oldActive.attachedEnergy || [];
+          newEvolvedCard.currentHp = Math.max(10, newEvolvedCard.maxHp - damage); // 繼承傷害
+          
+          p.activePokemon = newEvolvedCard;
+          p.hand = p.hand.filter(c => c.instanceId !== targetCard.instanceId);
+          pushLog(newState, currentPlayerId, `將戰鬥區的 ${oldActive.name} 進化成 ${newEvolvedCard.name}！`);
+          return newState;
+        });
+        setSelectedCard(null);
+        sfxPlace();
+      } else if (!currentPlayer.activePokemon && targetCard.stage === 1) {
+        showToast('無法直接打出進化寶可夢！必須先打出基礎寶可夢。');
+        sfxError();
+      } else {
+        showToast('無法進化！對象不符。');
+        sfxError();
       }
     } else if (targetCard.type === CardTypes.ENERGY) {
       if (currentPlayer.activePokemon && !gameState.hasAttachedEnergyThisTurn) {
@@ -131,7 +168,7 @@ const GameArena = () => {
 
   const placeCardInBench = (targetCard, existingPokemon, index) => {
     if (targetCard.type === CardTypes.POKEMON) {
-      if (!existingPokemon && currentPlayer.bench.length < 3) {
+      if (!existingPokemon && currentPlayer.bench.length < 3 && !targetCard.stage) {
         setGameState(prev => {
           const newState = structuredClone(prev);
           const p = newState.players[currentPlayerId];
@@ -142,6 +179,34 @@ const GameArena = () => {
         });
         setSelectedCard(null);
         sfxPlace();
+      } else if (existingPokemon && targetCard.stage === 1 && existingPokemon.name === targetCard.evolvesFrom) {
+        // 進化備戰區寶可夢
+        setGameState(prev => {
+          const newState = structuredClone(prev);
+          const p = newState.players[currentPlayerId];
+          const targetIdx = p.bench.findIndex(c => c.instanceId === existingPokemon.instanceId);
+          if (targetIdx !== -1) {
+            const oldBench = p.bench[targetIdx];
+            const damage = oldBench.maxHp - oldBench.currentHp;
+            
+            const newEvolvedCard = { ...targetCard };
+            newEvolvedCard.attachedEnergy = oldBench.attachedEnergy || [];
+            newEvolvedCard.currentHp = Math.max(10, newEvolvedCard.maxHp - damage);
+            
+            p.bench[targetIdx] = newEvolvedCard;
+            p.hand = p.hand.filter(c => c.instanceId !== targetCard.instanceId);
+            pushLog(newState, currentPlayerId, `將備戰區的 ${oldBench.name} 進化成 ${newEvolvedCard.name}！`);
+          }
+          return newState;
+        });
+        setSelectedCard(null);
+        sfxPlace();
+      } else if (!existingPokemon && targetCard.stage === 1) {
+        showToast('無法直接打出進化寶可夢！必須先打出基礎寶可夢。');
+        sfxError();
+      } else if (existingPokemon) {
+        showToast('無法進化！對象不符。');
+        sfxError();
       }
     } else if (targetCard.type === CardTypes.ENERGY && existingPokemon) {
       if (!gameState.hasAttachedEnergyThisTurn) {
@@ -158,8 +223,10 @@ const GameArena = () => {
           return newState;
         });
         setSelectedCard(null);
+        sfxPlace();
       } else {
         showToast('這回合已經填附過能量了！');
+        sfxError();
       }
     }
   };
@@ -268,6 +335,10 @@ const GameArena = () => {
                if (nextState.players[currentPlayerId].prizes <= 0) {
                  nextState.winner = currentPlayerId;
                  sfxVictory();
+               } else if (targetOpp.bench.length === 0) {
+                 pushLog(nextState, 'system', `${targetOpp.name} 場上已無寶可夢可遞補，${nextState.players[currentPlayerId].name} 獲得勝利！`);
+                 nextState.winner = currentPlayerId;
+                 sfxVictory();
                }
             }
             return nextState;
@@ -316,6 +387,10 @@ const GameArena = () => {
             <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>剩餘獎賞卡</div>
             <div style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.2rem' }}>{topPlayer.prizes}</div>
           </div>
+          <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '15px' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>牌庫</div>
+            <div style={{ color: 'var(--color-primary)', fontWeight: 'bold', fontSize: '1.2rem' }}>{topPlayer.deck.length}</div>
+          </div>
         </div>
       </div>
 
@@ -338,6 +413,10 @@ const GameArena = () => {
         <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '15px' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>剩餘獎賞卡</div>
           <div style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.2rem' }}>{bottomPlayer.prizes}</div>
+        </div>
+        <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '15px' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>牌庫</div>
+          <div style={{ color: 'var(--color-primary)', fontWeight: 'bold', fontSize: '1.2rem' }}>{bottomPlayer.deck.length}</div>
         </div>
       </div>
 
