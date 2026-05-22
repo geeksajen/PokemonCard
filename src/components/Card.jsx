@@ -38,13 +38,15 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
 
   if (!card) return <div style={{ width: 'var(--card-width)', height: 'var(--card-height)' }}></div>;
 
-  const bgStyle = card.type === CardTypes.ENERGY 
+  const bgStyle = card.type === CardTypes.ENERGY
     ? getEnergyColor(card.energyType)
     : card.type === CardTypes.TRAINER
-      ? 'linear-gradient(135deg, #14b8a6, #0f766e)' // Trainer cards: Teal/Cyan
-      : card.stage === 1
-        ? 'linear-gradient(135deg, #4f46e5, #a855f7, #eab308)' // Evolution cards: Premium Foil (Indigo/Purple/Gold)
-        : 'linear-gradient(135deg, #334155, #0f172a)'; // Basic Pokemon
+      ? 'linear-gradient(135deg, #14b8a6, #0f766e)' // Supporter cards: Teal/Cyan
+      : card.type === CardTypes.ITEM
+        ? 'linear-gradient(135deg, #f59e0b, #b45309)' // Item cards: Amber/Orange
+        : card.stage === 1
+          ? 'linear-gradient(135deg, #4f46e5, #a855f7, #eab308)' // Evolution cards: Premium Foil (Indigo/Purple/Gold)
+          : 'linear-gradient(135deg, #334155, #0f172a)'; // Basic Pokemon
 
   return (
     <div 
@@ -140,6 +142,17 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
           }}>
             ⚡
           </div>
+        </div>
+      )}
+
+      {(card.type === CardTypes.ITEM || card.type === CardTypes.TRAINER) && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', zIndex: 1, textAlign: 'center', padding: '0 4px' }}>
+          <div style={{ fontSize: '1.8rem', textShadow: '0 2px 4px rgba(0,0,0,0.4)' }}>
+            {card.type === CardTypes.ITEM ? '🎒' : '👤'}
+          </div>
+          <p style={{ fontSize: '0.6rem', margin: 0, lineHeight: 1.35, color: 'rgba(255,255,255,0.92)' }}>
+            {card.description}
+          </p>
         </div>
       )}
     </div>

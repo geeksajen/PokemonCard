@@ -11,8 +11,8 @@ import DeckSearchModal from './arena/DeckSearchModal';
 import WinnerScreen from './arena/WinnerScreen';
 import { useGameEngine } from '../hooks/useGameEngine';
 
-const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
-  const engine = useGameEngine(p1Theme, p2Theme);
+const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
+  const engine = useGameEngine(p1Theme, p2Theme, vsAI);
 
   // 純 UI 開關，與遊戲邏輯無關，留在此處管理
   const [showSettings, setShowSettings] = useState(false);
@@ -25,7 +25,6 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
   const {
     gameState,
     currentPlayerId,
-    currentPlayer,
     selectedCard,
     damageAnim,
     toast,
@@ -34,6 +33,7 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
     bgmMuted,
     sfxMuted,
     showDeckSearch,
+    deckSearchCards,
     attackAnim,
     drawnCardAnim,
     faintAnim,
@@ -56,12 +56,23 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
   } = engine;
 
   if (gameState.winner) {
-    return <WinnerScreen winner={gameState.winner} onReturnLobby={onReturnLobby} />;
+    return <WinnerScreen winner={gameState.winner} vsAI={vsAI} onReturnLobby={onReturnLobby} />;
   }
 
   const isPlayer1Turn = currentPlayerId === 'player1';
-  const topPlayer = isPlayer1Turn ? gameState.players.player2 : gameState.players.player1;
-  const bottomPlayer = isPlayer1Turn ? gameState.players.player1 : gameState.players.player2;
+  // 單人模式：人類(player1)固定在下方、AI(player2)固定在上方。雙人熱座沿用翻轉。
+  const topPlayer = vsAI
+    ? gameState.players.player2
+    : (isPlayer1Turn ? gameState.players.player2 : gameState.players.player1);
+  const bottomPlayer = vsAI
+    ? gameState.players.player1
+    : (isPlayer1Turn ? gameState.players.player1 : gameState.players.player2);
+
+  // 是否允許下方玩家操作（雙人模式恆為真；單人模式僅限人類回合）
+  const humanCanAct = !vsAI || isPlayer1Turn;
+  const topLabel = vsAI ? '🤖 電腦' : (isPlayer1Turn ? '玩家 2' : '玩家 1');
+  const bottomLabel = vsAI ? '玩家 1' : (isPlayer1Turn ? '玩家 1' : '玩家 2');
+  const turnText = humanCanAct ? '你的回合' : '對手回合中…';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
@@ -72,7 +83,10 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
       )}
 
       <HudOverlay
-        isPlayer1Turn={isPlayer1Turn}
+        topLabel={topLabel}
+        bottomLabel={bottomLabel}
+        turnText={turnText}
+        actionsEnabled={humanCanAct}
         topPlayer={topPlayer}
         bottomPlayer={bottomPlayer}
         hasAttackedThisTurn={gameState.hasAttackedThisTurn}
@@ -110,7 +124,7 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
       <div
         style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', justifyContent: 'center', padding: '10px 0', gap: '20px', overflowY: 'auto' }}
         onDragOver={(e) => { e.preventDefault(); }}
-        onDrop={handleDropBoard}
+        onDrop={humanCanAct ? handleDropBoard : (e) => e.preventDefault()}
       >
         {faintAnim && (
           <div style={{ position: 'absolute', zIndex: 60, top: '50%', left: '50%', pointerEvents: 'none' }}>
@@ -157,11 +171,11 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
           activePokemon={bottomPlayer.activePokemon}
           bench={bottomPlayer.bench}
           isTopPlayer={false}
-          onActiveClick={handleMyActiveClick}
-          onBenchClick={handleMyBenchClick}
-          onDropActive={handleDropActive}
-          onDropBench={handleDropBench}
-          onDragStartBench={handleDragStartBench}
+          onActiveClick={humanCanAct ? handleMyActiveClick : undefined}
+          onBenchClick={humanCanAct ? handleMyBenchClick : undefined}
+          onDropActive={humanCanAct ? handleDropActive : undefined}
+          onDropBench={humanCanAct ? handleDropBench : undefined}
+          onDragStartBench={humanCanAct ? handleDragStartBench : undefined}
         />
       </div>
 
@@ -179,8 +193,8 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
           <Hand
             hand={bottomPlayer.hand}
             isCurrentPlayer={true}
-            onCardClick={handleHandCardClick}
-            onDragStart={handleDragStart}
+            onCardClick={humanCanAct ? handleHandCardClick : undefined}
+            onDragStart={humanCanAct ? handleDragStart : undefined}
             onDragEnd={handleDragEnd}
             drawnCardAnim={drawnCardAnim}
           />
@@ -189,7 +203,7 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
 
       {showDeckSearch && (
         <DeckSearchModal
-          deck={currentPlayer.deck}
+          deck={deckSearchCards}
           onPick={handlePickFromDeck}
           onCancel={handleCancelDeckSearch}
         />

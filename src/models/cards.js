@@ -2,7 +2,8 @@
 export const CardTypes = {
   POKEMON: 'pokemon',
   ENERGY: 'energy',
-  TRAINER: 'trainer'
+  TRAINER: 'trainer', // 支援者：每回合行動受限的強力效果（如大木博士）
+  ITEM: 'item' // 物品：可自由使用的輔助道具（傷藥、精靈球等）
 };
 
 export const EnergyTypes = {
@@ -161,15 +162,41 @@ export const cardDatabase = {
   },
   't-potion': {
     id: 't-potion',
-    type: CardTypes.TRAINER,
+    type: CardTypes.ITEM,
     name: '傷藥',
+    heal: 20,
     description: '回復一隻寶可夢 20 點 HP。'
   },
   't-pokeball': {
     id: 't-pokeball',
-    type: CardTypes.TRAINER,
+    type: CardTypes.ITEM,
     name: '精靈球',
     description: '從牌庫尋找一張寶可夢卡加入手牌，然後洗牌。'
+  },
+  'i-hyperpotion': {
+    id: 'i-hyperpotion',
+    type: CardTypes.ITEM,
+    name: '高級傷藥',
+    heal: 50,
+    description: '回復一隻寶可夢 50 點 HP。'
+  },
+  'i-switch': {
+    id: 'i-switch',
+    type: CardTypes.ITEM,
+    name: '寶可夢交換器',
+    description: '將戰鬥區的寶可夢與一隻備戰區的寶可夢互換。'
+  },
+  'i-energy-retrieval': {
+    id: 'i-energy-retrieval',
+    type: CardTypes.ITEM,
+    name: '能量回收',
+    description: '從棄牌區拿回最多 2 張能量卡加入手牌。'
+  },
+  'i-greatball': {
+    id: 'i-greatball',
+    type: CardTypes.ITEM,
+    name: '超級球',
+    description: '查看牌庫頂的 7 張卡，從中挑選 1 張寶可夢加入手牌，然後洗牌。'
   },
   't-prof': {
     id: 't-prof',
@@ -212,19 +239,23 @@ export const generateThemeDeck = (theme) => {
     });
   }
   
-  // 6 張屬性對應能量
-  for (let i = 0; i < 6; i++) {
-    deck.push({ 
-      ...cardDatabase[selectedTheme.energy], 
-      instanceId: `deck-e-${i}-${Date.now()}` 
+  // 5 張屬性對應能量
+  for (let i = 0; i < 5; i++) {
+    deck.push({
+      ...cardDatabase[selectedTheme.energy],
+      instanceId: `deck-e-${i}-${Date.now()}`
     });
   }
 
-  // 3 張實用訓練家卡
+  // 7 張物品 / 支援者卡
   deck.push({ ...cardDatabase['t-potion'], instanceId: `deck-t-pot-${Date.now()}` });
+  deck.push({ ...cardDatabase['i-hyperpotion'], instanceId: `deck-i-hpot-${Date.now()}` });
   deck.push({ ...cardDatabase['t-pokeball'], instanceId: `deck-t-ball-${Date.now()}` });
+  deck.push({ ...cardDatabase['i-greatball'], instanceId: `deck-i-gball-${Date.now()}` });
+  deck.push({ ...cardDatabase['i-switch'], instanceId: `deck-i-switch-${Date.now()}` });
+  deck.push({ ...cardDatabase['i-energy-retrieval'], instanceId: `deck-i-eret-${Date.now()}` });
   deck.push({ ...cardDatabase['t-prof'], instanceId: `deck-t-prof-${Date.now()}` });
-  
+
   // 洗牌
   return deck.sort(() => Math.random() - 0.5);
 };

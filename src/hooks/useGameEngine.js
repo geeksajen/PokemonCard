@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createInitialGameState } from '../models/gameState';
 import { CardTypes } from '../models/cards';
+import { decideAIAction } from '../game/ai';
 import {
   getOpponentId,
   playCardOnPokemon,
@@ -8,6 +9,7 @@ import {
   playProfessor,
   pullPokemonFromDeck,
   cancelPokeball,
+  retrieveEnergy,
   canAttack,
   applyAttackDamage,
   resolveKnockout,
@@ -28,8 +30,9 @@ import {
 
 // 集中管理遊戲狀態、UI 狀態與所有副作用（state 更新 / 音效 / 動畫 / 提示）。
 // 規則判定一律委派給 src/game/rules.js 的純函式。
-export const useGameEngine = (p1Theme, p2Theme) => {
+export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
   const [gameState, setGameState] = useState(null);
+  const aiActiveRef = useRef(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [damageAnim, setDamageAnim] = useState(null);
   const [toast, setToast] = useState({ id: 0, message: '' });
@@ -39,6 +42,7 @@ export const useGameEngine = (p1Theme, p2Theme) => {
   const [sfxMuted, setSfxMuted] = useState(false);
   const [showDeckSearch, setShowDeckSearch] = useState(false);
   const [cardToConsume, setCardToConsume] = useState(null);
+  const [deckSearchTopN, setDeckSearchTopN] = useState(null); // null=全牌庫；數字=只看牌庫頂 N 張
   const [attackAnim, setAttackAnim] = useState(null);
   const [drawnCardAnim, setDrawnCardAnim] = useState(null);
   const [faintAnim, setFaintAnim] = useState(null);
@@ -81,6 +85,65 @@ export const useGameEngine = (p1Theme, p2Theme) => {
     setSfxMuted(!sfxMuted);
   };
 
+  // ---- AI 對手回合 -------------------------------------------------------
+  // 輪到 player2 且為單人模式時，逐步執行 AI 決策（含動畫延遲），結束後換回人類。
+  // 必須在任何提前 return 之前呼叫，以符合 Hooks 規則；proceedToDraw / performAttack
+  // 為後方宣告的函式，因 effect callback 於 render 完成後才執行，前向參照可正常解析。
+  useEffect(() => {
+    if (!vsAI || !gameState || gameState.winner) return;
+    if (gameState.currentPlayer !== 'player2') {
+      aiActiveRef.current = false;
+      return;
+    }
+    if (aiActiveRef.current) return;
+    aiActiveRef.current = true;
+
+    let working = gameState;
+    let steps = 0;
+
+    const finishTurn = () => {
+      aiActiveRef.current = false;
+      proceedToDraw(endTurnState(working).state);
+    };
+
+    const step = () => {
+      if (!working || working.winner || steps++ > 40) {
+        aiActiveRef.current = false;
+        return;
+      }
+      const action = decideAIAction(working, 'player2');
+
+      if (action.kind === 'end') return finishTurn();
+
+      if (action.kind === 'attack') {
+        performAttack(working, 'player2', false, (resolved) => {
+          working = resolved;
+          if (resolved.winner) {
+            aiActiveRef.current = false;
+            return;
+          }
+          setTimeout(step, 800);
+        });
+        return;
+      }
+
+      const result =
+        action.kind === 'promote'
+          ? promoteFromBench(working, 'player2', action.benchIndex)
+          : playCardOnPokemon(working, 'player2', action.card, action.location);
+
+      if (!result.ok) return finishTurn(); // 決策無法執行就結束，避免卡死
+      working = result.state;
+      setGameState(result.state);
+      sfxPlace();
+      setTimeout(step, 650);
+    };
+
+    const timer = setTimeout(step, 700);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vsAI, gameState?.currentPlayer, gameState?.winner]);
+
   if (!gameState) {
     return { loading: true };
   }
@@ -89,6 +152,11 @@ export const useGameEngine = (p1Theme, p2Theme) => {
   const currentPlayer = gameState.players[currentPlayerId];
   const opponentId = getOpponentId(currentPlayerId);
   const opponent = gameState.players[opponentId];
+
+  // 超級球只看牌庫頂 N 張（deck 尾端為頂端，因抽牌用 pop）；精靈球看全牌庫
+  const deckSearchCards = deckSearchTopN
+    ? currentPlayer.deck.slice(-deckSearchTopN)
+    : currentPlayer.deck;
 
   // ---- 手牌互動 ----------------------------------------------------------
   const handleHandCardClick = (card) => {
@@ -157,13 +225,20 @@ export const useGameEngine = (p1Theme, p2Theme) => {
     setIsDragging(false);
     const cardId = e.dataTransfer.getData('cardId');
     const card = currentPlayer.hand.find((c) => c.instanceId === cardId);
-    if (!card || card.type !== CardTypes.TRAINER) return;
+    if (!card || (card.type !== CardTypes.TRAINER && card.type !== CardTypes.ITEM)) return;
 
     if (card.id === 't-prof') {
       applyResult(playProfessor(gameState, currentPlayerId, card));
     } else if (card.id === 't-pokeball') {
+      setDeckSearchTopN(null);
       setCardToConsume(card);
       setShowDeckSearch(true);
+    } else if (card.id === 'i-greatball') {
+      setDeckSearchTopN(7);
+      setCardToConsume(card);
+      setShowDeckSearch(true);
+    } else if (card.id === 'i-energy-retrieval') {
+      applyResult(retrieveEnergy(gameState, currentPlayerId, card));
     }
   };
 
@@ -173,41 +248,88 @@ export const useGameEngine = (p1Theme, p2Theme) => {
     setGameState(result.state);
     setShowDeckSearch(false);
     setCardToConsume(null);
+    setDeckSearchTopN(null);
     sfxPlace();
   };
 
   const handleCancelDeckSearch = () => {
     setShowDeckSearch(false);
     setCardToConsume(null);
+    setDeckSearchTopN(null);
     setGameState(cancelPokeball(gameState, currentPlayerId, cardToConsume).state);
   };
 
   // ---- 回合流程 ----------------------------------------------------------
+  // 為新的當前玩家抽牌並播放抽牌動畫（AI 模式下取代「點擊繼續」過場）
+  const proceedToDraw = (state) => {
+    const { state: drawn, drawnCardId, deckOut } = drawForTurn(state);
+    setGameState(drawn);
+    if (deckOut) {
+      sfxVictory();
+    } else if (drawnCardId) {
+      setDrawnCardAnim({ cardId: drawnCardId, playerId: drawn.currentPlayer });
+      setTimeout(() => setDrawnCardAnim(null), 2200);
+    }
+  };
+
   const endTurn = () => {
     if (!currentPlayer.activePokemon && currentPlayer.bench.length > 0) {
       showToast('戰鬥區空缺，請先從備戰區推派一隻寶可夢上場！');
       sfxError();
       return;
     }
-    setGameState(endTurnState(gameState).state);
+    const ended = endTurnState(gameState).state;
     setSelectedCard(null);
-    setShowTurnTransition(true);
     sfxEndTurn();
+    if (vsAI) {
+      // 單人模式不需要「換手過場」，直接抽牌交給對手；AI 回合由下方 effect 接手
+      proceedToDraw(ended);
+    } else {
+      setGameState(ended);
+      setShowTurnTransition(true);
+    }
   };
 
   const handleTurnTransitionClick = () => {
     setShowTurnTransition(false);
-    const { state, drawnCardId, deckOut } = drawForTurn(gameState);
-    setGameState(state);
-    if (deckOut) {
-      sfxVictory();
-    } else if (drawnCardId) {
-      setDrawnCardAnim({ cardId: drawnCardId, playerId: state.currentPlayer });
-      setTimeout(() => setDrawnCardAnim(null), 2200);
-    }
+    proceedToDraw(gameState);
   };
 
   // ---- 攻擊 --------------------------------------------------------------
+  // 共用攻擊流程（人類與 AI 皆走此處）。defenderIsTop 決定擊倒動畫位置，
+  // onDone(finalState) 在攻擊完全結算後呼叫。
+  const performAttack = (state, attackerId, defenderIsTop, onDone) => {
+    const attacker = state.players[attackerId].activePokemon;
+    sfxAttack();
+    setAttackAnim({ type: attacker.energyType || 'fire', isPlayer1: attackerId === 'player1' });
+
+    setTimeout(() => {
+      setAttackAnim(null);
+      sfxDamage();
+
+      const { state: afterDamage, damage, knockedOut, faintedPokemon } = applyAttackDamage(
+        state,
+        attackerId
+      );
+      setGameState(afterDamage);
+      setDamageAnim({ damage });
+      setTimeout(() => setDamageAnim(null), 500);
+
+      if (knockedOut) {
+        setFaintAnim({ pokemon: faintedPokemon, isTopPlayer: defenderIsTop });
+        setTimeout(() => {
+          setFaintAnim(null);
+          const { state: resolved, winner } = resolveKnockout(afterDamage, attackerId, faintedPokemon);
+          setGameState(resolved);
+          if (winner) sfxVictory();
+          if (onDone) onDone(resolved);
+        }, 1000);
+      } else if (onDone) {
+        onDone(afterDamage);
+      }
+    }, 400);
+  };
+
   const handleAttackClick = () => {
     const check = canAttack(gameState, currentPlayerId);
     if (!check.ok) {
@@ -215,41 +337,8 @@ export const useGameEngine = (p1Theme, p2Theme) => {
       sfxError();
       return;
     }
-
-    sfxAttack();
-    setAttackAnim({
-      type: currentPlayer.activePokemon.energyType || 'fire',
-      isPlayer1: currentPlayerId === 'player1',
-    });
-
-    setTimeout(() => {
-      setAttackAnim(null);
-      sfxDamage();
-
-      const { state, damage, knockedOut, faintedPokemon } = applyAttackDamage(
-        gameState,
-        currentPlayerId
-      );
-      setGameState(state);
-      setDamageAnim({ damage });
-      setTimeout(() => setDamageAnim(null), 500);
-
-      if (knockedOut) {
-        setFaintAnim({ pokemon: faintedPokemon, isTopPlayer: true });
-        setTimeout(() => {
-          setFaintAnim(null);
-          setGameState((current) => {
-            const { state: resolved, winner } = resolveKnockout(
-              current,
-              currentPlayerId,
-              faintedPokemon
-            );
-            if (winner) sfxVictory();
-            return resolved;
-          });
-        }, 1000);
-      }
-    }, 400);
+    // 人類玩家固定在下方，被攻擊的對手永遠在上方
+    performAttack(gameState, currentPlayerId, true);
   };
 
   return {
@@ -268,6 +357,7 @@ export const useGameEngine = (p1Theme, p2Theme) => {
     bgmMuted,
     sfxMuted,
     showDeckSearch,
+    deckSearchCards,
     attackAnim,
     drawnCardAnim,
     faintAnim,

@@ -2,7 +2,10 @@ import React from 'react';
 
 // 四角 HUD：左上對手資訊、右上設定/紀錄、左下玩家資訊、右下動作按鈕
 const HudOverlay = ({
-  isPlayer1Turn,
+  topLabel,
+  bottomLabel,
+  turnText,
+  actionsEnabled = true,
   topPlayer,
   bottomPlayer,
   hasAttackedThisTurn,
@@ -17,7 +20,7 @@ const HudOverlay = ({
       <div style={{ display: 'flex', gap: '20px' }}>
         <div>
           <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>對手</div>
-          <div style={{ fontWeight: 'bold' }}>{isPlayer1Turn ? '玩家 2' : '玩家 1'}</div>
+          <div style={{ fontWeight: 'bold' }}>{topLabel}</div>
         </div>
         <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '15px' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>剩餘獎賞卡</div>
@@ -43,8 +46,8 @@ const HudOverlay = ({
     {/* 左下：玩家資訊 */}
     <div className="hud-panel hud-bottom-left" style={{ boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' }}>
       <div>
-        <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>你的回合</div>
-        <div style={{ fontWeight: 'bold', color: 'var(--color-primary)' }}>{isPlayer1Turn ? '玩家 1' : '玩家 2'}</div>
+        <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>{turnText}</div>
+        <div style={{ fontWeight: 'bold', color: 'var(--color-primary)' }}>{bottomLabel}</div>
       </div>
       <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '15px' }}>
         <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>剩餘獎賞卡</div>
@@ -60,15 +63,15 @@ const HudOverlay = ({
     <div className="hud-panel hud-bottom-right">
       <button
         onClick={onAttack}
-        disabled={hasAttackedThisTurn}
+        disabled={hasAttackedThisTurn || !actionsEnabled}
         style={{
-          background: hasAttackedThisTurn ? 'var(--color-bg-panel)' : 'var(--color-danger)',
+          background: (hasAttackedThisTurn || !actionsEnabled) ? 'var(--color-bg-panel)' : 'var(--color-danger)',
           padding: '10px 20px', fontSize: '1.1rem',
         }}
       >
         發動攻擊
       </button>
-      <button onClick={onEndTurn} style={{ padding: '10px 20px', fontSize: '1.1rem' }}>結束回合</button>
+      <button onClick={onEndTurn} disabled={!actionsEnabled} style={{ padding: '10px 20px', fontSize: '1.1rem' }}>結束回合</button>
     </div>
   </>
 );

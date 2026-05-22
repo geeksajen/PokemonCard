@@ -109,7 +109,7 @@ const attachEnergy = (state, playerId, card, location) => {
   return { ok: true, state: newState };
 };
 
-// ---- 使用傷藥 ------------------------------------------------------------
+// ---- 使用傷藥（回復量由 card.heal 決定）-----------------------------------
 const applyPotion = (state, playerId, card, location) => {
   const newState = structuredClone(state);
   const p = newState.players[playerId];
@@ -118,20 +118,43 @@ const applyPotion = (state, playerId, card, location) => {
   if (target.currentHp >= target.maxHp) {
     return { ok: false, error: '寶可夢 HP 已滿，無法使用傷藥！' };
   }
+  const heal = card.heal || 20;
   const zoneLabel = location.zone === 'active' ? '戰鬥區' : '備戰區';
-  target.currentHp = Math.min(target.maxHp, target.currentHp + 20);
+  target.currentHp = Math.min(target.maxHp, target.currentHp + heal);
   p.discardPile.push(card);
   removeFromHand(p, card.instanceId);
-  pushLog(newState, playerId, `對${zoneLabel}的 ${target.name} 使用了傷藥，回復 20 點 HP`);
+  pushLog(newState, playerId, `對${zoneLabel}的 ${target.name} 使用了${card.name}，回復 ${heal} 點 HP`);
   return { ok: true, state: newState };
 };
 
-// 對某個位置打出一張手牌（寶可夢 / 能量 / 傷藥）
+// ---- 寶可夢交換器：戰鬥區 ↔ 指定備戰區互換 --------------------------------
+const applySwitch = (state, playerId, card, location) => {
+  // 只能對備戰區的寶可夢使用
+  if (location.zone !== 'bench') return { ok: false, error: null };
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+  const benchPokemon = p.bench[location.index];
+  if (!benchPokemon) return { ok: false, error: null };
+  if (!p.activePokemon) {
+    return { ok: false, error: '戰鬥區沒有寶可夢可供交換，請直接推派上場！' };
+  }
+  const active = p.activePokemon;
+  p.activePokemon = benchPokemon;
+  p.bench[location.index] = active;
+  p.discardPile.push(card);
+  removeFromHand(p, card.instanceId);
+  pushLog(newState, playerId, `使用了寶可夢交換器，將 ${active.name} 換下、${benchPokemon.name} 上場`);
+  return { ok: true, state: newState };
+};
+
+// 對某個位置打出一張手牌（寶可夢 / 能量 / 需指定目標的物品）
 export const playCardOnPokemon = (state, playerId, card, location) => {
   if (card.type === CardTypes.POKEMON) return playPokemon(state, playerId, card, location);
   if (card.type === CardTypes.ENERGY) return attachEnergy(state, playerId, card, location);
-  if (card.type === CardTypes.TRAINER && card.id === 't-potion')
-    return applyPotion(state, playerId, card, location);
+  if (card.type === CardTypes.ITEM) {
+    if (card.heal) return applyPotion(state, playerId, card, location);
+    if (card.id === 'i-switch') return applySwitch(state, playerId, card, location);
+  }
   return { ok: false, error: null };
 };
 
@@ -177,12 +200,12 @@ export const pullPokemonFromDeck = (state, playerId, pickedInstanceId, consumeCa
       p.discardPile.push(consumeCard);
       removeFromHand(p, consumeCard.instanceId);
     }
-    pushLog(newState, playerId, `使用了精靈球，從牌庫抽出了 ${pulled.name}`);
+    pushLog(newState, playerId, `使用了${consumeCard?.name || '精靈球'}，從牌庫抽出了 ${pulled.name}`);
   }
   return { ok: true, state: newState };
 };
 
-// 取消精靈球（卡牌仍消耗）
+// 取消牌庫檢索（卡牌仍消耗）
 export const cancelPokeball = (state, playerId, consumeCard) => {
   const newState = structuredClone(state);
   const p = newState.players[playerId];
@@ -190,7 +213,27 @@ export const cancelPokeball = (state, playerId, consumeCard) => {
     p.discardPile.push(consumeCard);
     removeFromHand(p, consumeCard.instanceId);
   }
-  pushLog(newState, playerId, `使用了精靈球，但沒有選擇任何寶可夢`);
+  pushLog(newState, playerId, `使用了${consumeCard?.name || '精靈球'}，但沒有選擇任何寶可夢`);
+  return { ok: true, state: newState };
+};
+
+// ---- 能量回收：從棄牌區拿回最多 2 張能量 ----------------------------------
+export const retrieveEnergy = (state, playerId, card) => {
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+  const energyIndexes = [];
+  for (let i = p.discardPile.length - 1; i >= 0 && energyIndexes.length < 2; i--) {
+    if (p.discardPile[i].type === CardTypes.ENERGY) energyIndexes.push(i);
+  }
+  if (energyIndexes.length === 0) {
+    return { ok: false, error: '棄牌區沒有能量卡可以回收！' };
+  }
+  // 由大到小移除，避免索引位移
+  const retrieved = energyIndexes.map((i) => p.discardPile.splice(i, 1)[0]);
+  p.hand.push(...retrieved);
+  p.discardPile.push(card);
+  removeFromHand(p, card.instanceId);
+  pushLog(newState, playerId, `使用了能量回收，從棄牌區拿回了 ${retrieved.length} 張能量卡`);
   return { ok: true, state: newState };
 };
 
