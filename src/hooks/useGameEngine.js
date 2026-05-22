@@ -266,7 +266,11 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     setGameState(drawn);
     if (deckOut) {
       sfxVictory();
-    } else if (drawnCardId) {
+      return;
+    }
+    // 單人模式下，AI（player2）的抽牌不播放中央特寫，避免替對手「亮牌」
+    const hideDraw = vsAI && drawn.currentPlayer === 'player2';
+    if (drawnCardId && !hideDraw) {
       setDrawnCardAnim({ cardId: drawnCardId, playerId: drawn.currentPlayer });
       setTimeout(() => setDrawnCardAnim(null), 2200);
     }
@@ -301,7 +305,8 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
   const performAttack = (state, attackerId, defenderIsTop, onDone) => {
     const attacker = state.players[attackerId].activePokemon;
     sfxAttack();
-    setAttackAnim({ type: attacker.energyType || 'fire', isPlayer1: attackerId === 'player1' });
+    // toTop：投射物飛行方向，朝被攻擊方（defender 在上 → 往上，在下 → 往下）
+    setAttackAnim({ type: attacker.energyType || 'fire', toTop: defenderIsTop });
 
     setTimeout(() => {
       setAttackAnim(null);

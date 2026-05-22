@@ -137,7 +137,11 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
         )}
         {attackAnim && (
           <div className="projectile-container">
-            <div className={`projectile fx-${attackAnim.type} ${attackAnim.type === 'grass' ? 'anim-grass-up' : 'anim-up'}`}></div>
+            <div className={`projectile fx-${attackAnim.type} ${
+              attackAnim.type === 'grass'
+                ? (attackAnim.toTop ? 'anim-grass-up' : 'anim-grass-down')
+                : (attackAnim.toTop ? 'anim-up' : 'anim-down')
+            }`}></div>
           </div>
         )}
 
