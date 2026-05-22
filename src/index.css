@@ -430,3 +430,24 @@ button:disabled {
   animation: draw-fly-in-top 2.0s cubic-bezier(0.2, 0.8, 0.2, 1) forwards !important;
   z-index: 50;
 }
+
+/* --- Faint (Death) Animations --- */
+@keyframes faint-fly-top {
+  0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; filter: grayscale(0%); }
+  20% { transform: translate(-50%, -50%) scale(1.1) rotate(-10deg); opacity: 1; filter: grayscale(50%); }
+  100% { transform: translate(calc(40vw - 50%), calc(-5vh - 50%)) scale(0.2) rotate(360deg); opacity: 0; filter: grayscale(100%); }
+}
+
+@keyframes faint-fly-bottom {
+  0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; filter: grayscale(0%); }
+  20% { transform: translate(-50%, -50%) scale(1.1) rotate(10deg); opacity: 1; filter: grayscale(50%); }
+  100% { transform: translate(calc(40vw - 50%), calc(5vh - 50%)) scale(0.2) rotate(-360deg); opacity: 0; filter: grayscale(100%); }
+}
+
+.faint-top {
+  animation: faint-fly-top 1.0s cubic-bezier(0.5, 0, 0.2, 1) forwards;
+}
+
+.faint-bottom {
+  animation: faint-fly-bottom 1.0s cubic-bezier(0.5, 0, 0.2, 1) forwards;
+}

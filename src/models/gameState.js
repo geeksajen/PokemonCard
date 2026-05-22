@@ -20,6 +20,7 @@ export const createInitialGameState = (player1Theme = 'fire', player2Theme = 'wa
         hand: [],
         activePokemon: null,
         bench: [], // Max 3
+        discardPile: [], // 棄牌區
         prizes: 3, // 取代真實卡牌的獎賞卡，這裡簡化為數字(剩餘需要擊敗的數量)
       },
       player2: {
@@ -29,6 +30,7 @@ export const createInitialGameState = (player1Theme = 'fire', player2Theme = 'wa
         hand: [],
         activePokemon: null,
         bench: [], // Max 3
+        discardPile: [], // 棄牌區
         prizes: 3,
       }
     }

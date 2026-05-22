@@ -6,6 +6,53 @@ import Hand from './Hand';
 import Card from './Card';
 import { sfxPlace, sfxAttack, sfxDamage, sfxEndTurn, sfxVictory, sfxError, AudioSettings, startBGM, stopBGM } from '../utils/sounds';
 
+// 牌庫 / 棄牌區 單張卡片小元件
+// 卡片本身使用 CSS 變數 --card-width=120px, --card-height=168px
+// 我們想要放大到 1.4x，讓牌庫跟棄牌區一樣大
+const BASE_W = 120, BASE_H = 168, PILE_SCALE = 1.0;
+const SLOT_W = Math.round(BASE_W * PILE_SCALE); // 168px
+const SLOT_H = Math.round(BASE_H * PILE_SCALE); // 235px
+
+const PileSlot = ({ label, labelColor, card, isEmpty, isFaceDown, labelOnTop }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+    {labelOnTop && (
+      <span style={{ fontSize: '0.68rem', fontWeight: '600', color: labelColor || 'rgba(255,255,255,0.55)', whiteSpace: 'nowrap' }}>{label}</span>
+    )}
+    <div style={{ width: `${SLOT_W}px`, height: `${SLOT_H}px`, position: 'relative', flexShrink: 0, borderRadius: '10px', overflow: 'hidden' }}>
+      {isEmpty ? (
+        <div style={{ width: '100%', height: '100%', border: '2px dashed rgba(255,255,255,0.3)', borderRadius: '10px', boxSizing: 'border-box' }} />
+      ) : (
+        <div style={{ position: 'absolute', top: 0, left: 0, width: `${BASE_W}px`, height: `${BASE_H}px`, transform: `scale(${PILE_SCALE})`, transformOrigin: 'top left', pointerEvents: 'none' }}>
+          <Card card={card} isFaceDown={!!isFaceDown} />
+        </div>
+      )}
+    </div>
+    {!labelOnTop && (
+      <span style={{ fontSize: '0.68rem', fontWeight: '600', color: labelColor || 'rgba(255,255,255,0.55)', whiteSpace: 'nowrap' }}>{label}</span>
+    )}
+  </div>
+);
+
+
+// 牌庫 + 棄牌 水平小組
+const PilePair = ({ deckCount, discardTop, discardCount, labelOnTop }) => (
+  <div style={{ display: 'flex', flexDirection: 'row', gap: '10px', alignItems: 'flex-start' }}>
+    <PileSlot
+      label={`牌庫 ${deckCount}`}
+      labelColor={deckCount <= 5 ? 'var(--color-danger)' : 'rgba(255,255,255,0.55)'}
+      isFaceDown={true}
+      labelOnTop={labelOnTop}
+    />
+    <PileSlot
+      label={`棄牌 ${discardCount}`}
+      card={discardTop}
+      isEmpty={!discardCount}
+      isFaceDown={false}
+      labelOnTop={labelOnTop}
+    />
+  </div>
+);
+
 const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
   const [gameState, setGameState] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -21,6 +68,7 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
   const [cardToConsume, setCardToConsume] = useState(null);
   const [attackAnim, setAttackAnim] = useState(null); // { type: 'fire', isPlayer1: true }
   const [drawnCardAnim, setDrawnCardAnim] = useState(null); // { cardId: '...', playerId: '...' }
+  const [faintAnim, setFaintAnim] = useState(null); // { pokemon: Card, isTopPlayer: boolean }
 
   const toggleBGM = () => {
     if (bgmMuted) {
@@ -140,6 +188,8 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
       setGameState(prev => {
         const newState = structuredClone(prev);
         const p = newState.players[currentPlayerId];
+        p.discardPile.push(targetCard); // 將大木博士丟入棄牌區
+        p.discardPile.push(...p.hand); // 捨棄全部手牌到棄牌區
         p.hand = []; // 清空手牌
         let drawn = 0;
         for (let i = 0; i < 7; i++) {
@@ -227,6 +277,7 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
           const newState = structuredClone(prev);
           const p = newState.players[currentPlayerId];
           p.activePokemon.currentHp = Math.min(p.activePokemon.maxHp, p.activePokemon.currentHp + 20);
+          p.discardPile.push(targetCard);
           p.hand = p.hand.filter(c => c.instanceId !== targetCard.instanceId);
           pushLog(newState, currentPlayerId, `對戰鬥區的 ${p.activePokemon.name} 使用了傷藥，回復 20 點 HP`);
           return newState;
@@ -311,6 +362,7 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
         const targetIdx = p.bench.findIndex(c => c.instanceId === existingPokemon.instanceId);
         if (targetIdx !== -1) {
           p.bench[targetIdx].currentHp = Math.min(p.bench[targetIdx].maxHp, p.bench[targetIdx].currentHp + 20);
+          p.discardPile.push(targetCard);
           p.hand = p.hand.filter(c => c.instanceId !== targetCard.instanceId);
           pushLog(newState, currentPlayerId, `對備戰區的 ${p.bench[targetIdx].name} 使用了傷藥，回復 20 點 HP`);
         }
@@ -427,25 +479,34 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
         // 檢查是否擊倒
         if (opp.activePokemon.currentHp <= 0) {
           pushLog(newState, currentPlayerId, `擊倒了對手的 ${opp.activePokemon.name}！拿取一張獎賞卡。`);
+          
+          const faintedPokemon = structuredClone(opp.activePokemon);
+          setFaintAnim({ pokemon: faintedPokemon, isTopPlayer: true });
+          opp.activePokemon = null; // 從戰鬥區隱藏
+          
           setTimeout(() => {
+            setFaintAnim(null);
             setGameState(current => {
               const nextState = structuredClone(current);
               const targetOpp = nextState.players[opponentId];
-              if (targetOpp.activePokemon && targetOpp.activePokemon.currentHp <= 0) {
-                 targetOpp.activePokemon = null; 
-                 nextState.players[currentPlayerId].prizes -= 1;
-                 if (nextState.players[currentPlayerId].prizes <= 0) {
-                   nextState.winner = currentPlayerId;
-                   sfxVictory();
-                 } else if (targetOpp.bench.length === 0) {
-                   pushLog(nextState, 'system', `${targetOpp.name} 場上已無寶可夢可遞補，${nextState.players[currentPlayerId].name} 獲得勝利！`);
-                   nextState.winner = currentPlayerId;
-                   sfxVictory();
-                 }
+              
+              targetOpp.discardPile.push(faintedPokemon);
+              if (faintedPokemon.attachedEnergy) {
+                 targetOpp.discardPile.push(...faintedPokemon.attachedEnergy);
+              }
+              
+              nextState.players[currentPlayerId].prizes -= 1;
+              if (nextState.players[currentPlayerId].prizes <= 0) {
+                nextState.winner = currentPlayerId;
+                sfxVictory();
+              } else if (targetOpp.bench.length === 0) {
+                pushLog(nextState, 'system', `${targetOpp.name} 場上已無寶可夢可遞補，${nextState.players[currentPlayerId].name} 獲得勝利！`);
+                nextState.winner = currentPlayerId;
+                sfxVictory();
               }
               return nextState;
             });
-          }, 1000);
+          }, 1000); // 1 秒後才結算勝負與放入棄牌區
         }
         
         newState.hasAttackedThisTurn = true;
@@ -617,48 +678,58 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
            <Hand hand={topPlayer.hand} isCurrentPlayer={false} drawnCardAnim={drawnCardAnim} />
         </div>
       </div>
-      
-      {/* 戰鬥區 (置中排版) */}
-      <div 
+
+      {/* 戰鬥區 */}
+      <div
         style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', justifyContent: 'center', padding: '10px 0', gap: '20px', overflowY: 'auto' }}
         onDragOver={(e) => { e.preventDefault(); }}
         onDrop={handleDropBoard}
       >
-        {/* 對手牌庫 (右上) */}
-        <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ transform: 'scale(0.7)', transformOrigin: 'top right' }}>
-            <Card isFaceDown={true} />
+        {/* 陣亡動畫 */}
+        {faintAnim && (
+          <div style={{ position: 'absolute', zIndex: 60, top: '50%', left: '50%', pointerEvents: 'none' }}>
+            <div className={`faint-anim-wrapper ${faintAnim.isTopPlayer ? 'faint-top' : 'faint-bottom'}`}>
+              <div style={{ transform: 'scale(0.7)' }}>
+                <Card card={faintAnim.pokemon} isFaceDown={false} />
+              </div>
+            </div>
           </div>
-          <div style={{ color: topPlayer.deck.length <= 5 ? 'var(--color-danger)' : 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 'bold' }}>
-            剩餘 {topPlayer.deck.length}
-          </div>
-        </div>
-
-        {/* 玩家牌庫 (右下) */}
-        <div style={{ position: 'absolute', bottom: '10px', right: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ color: bottomPlayer.deck.length <= 5 ? 'var(--color-danger)' : 'var(--color-text)', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '5px' }}>
-            剩餘 {bottomPlayer.deck.length}
-          </div>
-          <div style={{ transform: 'scale(0.8)', transformOrigin: 'bottom right' }}>
-            <Card isFaceDown={true} />
-          </div>
-        </div>
+        )}
         {attackAnim && (
           <div className="projectile-container">
             <div className={`projectile fx-${attackAnim.type} ${attackAnim.type === 'grass' ? 'anim-grass-up' : 'anim-up'}`}></div>
           </div>
         )}
 
-        <Board 
-          activePokemon={topPlayer.activePokemon} 
-          bench={topPlayer.bench} 
-          isTopPlayer={true} 
+        {/* 對手牌區群組: 水平並排，靠中線上緣，標籤在下方 */}
+        <div style={{ position: 'absolute', bottom: 'calc(50% + 8px)', right: '16px', zIndex: 5 }}>
+          <PilePair
+            deckCount={topPlayer.deck.length}
+            discardTop={topPlayer.discardPile[topPlayer.discardPile.length - 1]}
+            discardCount={topPlayer.discardPile.length}
+            labelOnTop={false}
+          />
+        </div>
+
+        {/* 玩家牌區群組: 水平並排，靠中線下緣，標籤在上方 */}
+        <div style={{ position: 'absolute', top: 'calc(50% + 8px)', right: '16px', zIndex: 5 }}>
+          <PilePair
+            deckCount={bottomPlayer.deck.length}
+            discardTop={bottomPlayer.discardPile[bottomPlayer.discardPile.length - 1]}
+            discardCount={bottomPlayer.discardPile.length}
+            labelOnTop={true}
+          />
+        </div>
+
+        <Board
+          activePokemon={topPlayer.activePokemon}
+          bench={topPlayer.bench}
+          isTopPlayer={true}
           damageTaken={damageAnim ? damageAnim.damage : null}
         />
-
-        <Board 
-          activePokemon={bottomPlayer.activePokemon} 
-          bench={bottomPlayer.bench} 
+        <Board
+          activePokemon={bottomPlayer.activePokemon}
+          bench={bottomPlayer.bench}
           isTopPlayer={false}
           onActiveClick={handleMyActiveClick}
           onBenchClick={handleMyBenchClick}
@@ -709,8 +780,9 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
                         p.hand.push(pulledCard);
                         // 洗牌
                         p.deck.sort(() => Math.random() - 0.5);
-                        // 移除精靈球卡
+                        // 移除精靈球卡並放入棄牌區
                         if (cardToConsume) {
+                          p.discardPile.push(cardToConsume);
                           p.hand = p.hand.filter(c => c.instanceId !== cardToConsume.instanceId);
                         }
                         pushLog(newState, currentPlayerId, `使用了精靈球，從牌庫抽出了 ${pulledCard.name}`);
@@ -739,6 +811,7 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
                   const newState = structuredClone(prev);
                   const p = newState.players[currentPlayerId];
                   if (cardToConsume) {
+                    p.discardPile.push(cardToConsume);
                     p.hand = p.hand.filter(c => c.instanceId !== cardToConsume.instanceId);
                   }
                   pushLog(newState, currentPlayerId, `使用了精靈球，但沒有選擇任何寶可夢`);
