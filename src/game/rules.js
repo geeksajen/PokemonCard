@@ -1,0 +1,295 @@
+// 純遊戲規則層
+// 所有函式皆為 (state, ...args) => 結果，內部以 structuredClone 維持不可變性。
+// 不依賴 React，不觸發音效/動畫，方便單元測試。
+//
+// 慣例：
+//  - 成功的「放置/動作」會直接寫入 state.logs，並回傳 { ok: true, state }
+//  - 失敗時回傳 { ok: false, error }（error 為 null 代表「靜默無效」，不顯示提示）
+import { CardTypes } from '../models/cards';
+
+export const getOpponentId = (playerId) =>
+  playerId === 'player1' ? 'player2' : 'player1';
+
+export const pushLog = (state, player, action) => {
+  if (!state.logs) state.logs = [];
+  state.logs.push({ player, action, time: Date.now() });
+};
+
+// 進化：繼承能量與既有傷害
+const evolveCard = (oldCard, evoCard) => {
+  const damage = oldCard.maxHp - oldCard.currentHp;
+  return {
+    ...evoCard,
+    attachedEnergy: oldCard.attachedEnergy || [],
+    currentHp: Math.max(10, evoCard.maxHp - damage),
+  };
+};
+
+// 讀取某位置上的寶可夢。location: { zone: 'active' } | { zone: 'bench', index }
+const readSlot = (player, location) =>
+  location.zone === 'active' ? player.activePokemon : player.bench[location.index];
+
+const removeFromHand = (player, instanceId) => {
+  player.hand = player.hand.filter((c) => c.instanceId !== instanceId);
+};
+
+// ---- 放置 / 進化寶可夢 ----------------------------------------------------
+const playPokemon = (state, playerId, card, location) => {
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+  const existing = readSlot(p, location);
+  const zoneLabel = location.zone === 'active' ? '戰鬥區' : '備戰區';
+
+  // 放置基礎寶可夢
+  const canPlaceBasic =
+    !existing && !card.stage && (location.zone === 'active' || p.bench.length < 3);
+  if (canPlaceBasic) {
+    if (location.zone === 'active') {
+      p.activePokemon = card;
+    } else {
+      p.bench.push(card);
+    }
+    removeFromHand(p, card.instanceId);
+    pushLog(newState, playerId, `將 ${card.name} 放置於${zoneLabel}`);
+    return { ok: true, state: newState };
+  }
+
+  // 進化
+  if (existing && card.stage === 1 && existing.name === card.evolvesFrom) {
+    const evolved = evolveCard(existing, card);
+    if (location.zone === 'active') {
+      p.activePokemon = evolved;
+    } else {
+      const idx = p.bench.findIndex((c) => c.instanceId === existing.instanceId);
+      if (idx !== -1) p.bench[idx] = evolved;
+    }
+    removeFromHand(p, card.instanceId);
+    pushLog(newState, playerId, `將${zoneLabel}的 ${existing.name} 進化成 ${evolved.name}！`);
+    return { ok: true, state: newState };
+  }
+
+  if (!existing && card.stage === 1) {
+    return { ok: false, error: '無法直接打出進化寶可夢！必須先打出基礎寶可夢。' };
+  }
+  if (existing) {
+    return { ok: false, error: '無法進化！對象不符。' };
+  }
+  // 備戰區已滿等情況：靜默無效
+  return { ok: false, error: null };
+};
+
+// ---- 填附能量 ------------------------------------------------------------
+const attachEnergy = (state, playerId, card, location) => {
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+
+  // 戰鬥區：先檢查本回合是否已填附（保留原行為，即使沒有寶可夢也會跳提示）
+  if (location.zone === 'active') {
+    if (newState.hasAttachedEnergyThisTurn) {
+      return { ok: false, error: '這回合已經填附過能量了！' };
+    }
+    if (!p.activePokemon) return { ok: false, error: null };
+    p.activePokemon.attachedEnergy = [...(p.activePokemon.attachedEnergy || []), card];
+    removeFromHand(p, card.instanceId);
+    newState.hasAttachedEnergyThisTurn = true;
+    pushLog(newState, playerId, `為戰鬥區的 ${p.activePokemon.name} 填附了 ${card.name}`);
+    return { ok: true, state: newState };
+  }
+
+  // 備戰區：必須有目標寶可夢才會作用
+  const target = p.bench[location.index];
+  if (!target) return { ok: false, error: null };
+  if (newState.hasAttachedEnergyThisTurn) {
+    return { ok: false, error: '這回合已經填附過能量了！' };
+  }
+  target.attachedEnergy = [...(target.attachedEnergy || []), card];
+  removeFromHand(p, card.instanceId);
+  newState.hasAttachedEnergyThisTurn = true;
+  pushLog(newState, playerId, `為備戰區的 ${target.name} 填附了 ${card.name}`);
+  return { ok: true, state: newState };
+};
+
+// ---- 使用傷藥 ------------------------------------------------------------
+const applyPotion = (state, playerId, card, location) => {
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+  const target = readSlot(p, location);
+  if (!target) return { ok: false, error: null };
+  if (target.currentHp >= target.maxHp) {
+    return { ok: false, error: '寶可夢 HP 已滿，無法使用傷藥！' };
+  }
+  const zoneLabel = location.zone === 'active' ? '戰鬥區' : '備戰區';
+  target.currentHp = Math.min(target.maxHp, target.currentHp + 20);
+  p.discardPile.push(card);
+  removeFromHand(p, card.instanceId);
+  pushLog(newState, playerId, `對${zoneLabel}的 ${target.name} 使用了傷藥，回復 20 點 HP`);
+  return { ok: true, state: newState };
+};
+
+// 對某個位置打出一張手牌（寶可夢 / 能量 / 傷藥）
+export const playCardOnPokemon = (state, playerId, card, location) => {
+  if (card.type === CardTypes.POKEMON) return playPokemon(state, playerId, card, location);
+  if (card.type === CardTypes.ENERGY) return attachEnergy(state, playerId, card, location);
+  if (card.type === CardTypes.TRAINER && card.id === 't-potion')
+    return applyPotion(state, playerId, card, location);
+  return { ok: false, error: null };
+};
+
+// ---- 從備戰區推派上場 -----------------------------------------------------
+export const promoteFromBench = (state, playerId, benchIndex) => {
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+  if (p.activePokemon || !p.bench[benchIndex]) return { ok: false, state: newState };
+  p.activePokemon = p.bench[benchIndex];
+  p.bench.splice(benchIndex, 1);
+  pushLog(newState, playerId, `將備戰區的 ${p.activePokemon.name} 推上戰鬥區`);
+  return { ok: true, state: newState };
+};
+
+// ---- 訓練家：大木博士 -----------------------------------------------------
+export const playProfessor = (state, playerId, card) => {
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+  p.discardPile.push(card);
+  p.discardPile.push(...p.hand);
+  p.hand = [];
+  let drawn = 0;
+  for (let i = 0; i < 7; i++) {
+    if (p.deck.length > 0) {
+      p.hand.push(p.deck.pop());
+      drawn++;
+    }
+  }
+  pushLog(newState, playerId, `使用了大木博士，捨棄手牌並抽取了 ${drawn} 張牌`);
+  return newState;
+};
+
+// ---- 訓練家：精靈球（從牌庫挑一張寶可夢）---------------------------------
+export const pullPokemonFromDeck = (state, playerId, pickedInstanceId, consumeCard) => {
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+  const idx = p.deck.findIndex((c) => c.instanceId === pickedInstanceId);
+  if (idx !== -1) {
+    const [pulled] = p.deck.splice(idx, 1);
+    p.hand.push(pulled);
+    p.deck.sort(() => Math.random() - 0.5); // 洗牌
+    if (consumeCard) {
+      p.discardPile.push(consumeCard);
+      removeFromHand(p, consumeCard.instanceId);
+    }
+    pushLog(newState, playerId, `使用了精靈球，從牌庫抽出了 ${pulled.name}`);
+  }
+  return newState;
+};
+
+// 取消精靈球（卡牌仍消耗）
+export const cancelPokeball = (state, playerId, consumeCard) => {
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+  if (consumeCard) {
+    p.discardPile.push(consumeCard);
+    removeFromHand(p, consumeCard.instanceId);
+  }
+  pushLog(newState, playerId, `使用了精靈球，但沒有選擇任何寶可夢`);
+  return newState;
+};
+
+// ---- 攻擊 ----------------------------------------------------------------
+// 攻擊前置檢查，回傳 { ok, error }
+export const canAttack = (state, attackerId) => {
+  const me = state.players[attackerId];
+  const opp = state.players[getOpponentId(attackerId)];
+  if (state.hasAttackedThisTurn) return { ok: false, error: '這回合已經攻擊過了！' };
+  if (!me.activePokemon) return { ok: false, error: '你的戰鬥區沒有寶可夢！' };
+  if (!opp.activePokemon)
+    return { ok: false, error: '對手戰鬥區沒有寶可夢，請先結束回合讓對手派出寶可夢！' };
+  const energyCount = me.activePokemon.attachedEnergy
+    ? me.activePokemon.attachedEnergy.length
+    : 0;
+  if (energyCount < me.activePokemon.attack.cost.length) {
+    return { ok: false, error: `能量不足無法攻擊！需要 ${me.activePokemon.attack.cost.length} 個能量。` };
+  }
+  return { ok: true };
+};
+
+// 結算傷害（不含擊倒後的棄牌/獎賞，那由 resolveKnockout 處理）
+// 回傳 { state, damage, knockedOut, faintedPokemon }
+export const applyAttackDamage = (state, attackerId) => {
+  const newState = structuredClone(state);
+  const opponentId = getOpponentId(attackerId);
+  const attacker = newState.players[attackerId].activePokemon;
+  const opp = newState.players[opponentId];
+  const damage = attacker.attack.damage;
+
+  opp.activePokemon.currentHp -= damage;
+  pushLog(newState, attackerId, `使用 ${attacker.name} 發動攻擊，造成 ${damage} 點傷害`);
+
+  let knockedOut = false;
+  let faintedPokemon = null;
+  if (opp.activePokemon.currentHp <= 0) {
+    knockedOut = true;
+    pushLog(newState, attackerId, `擊倒了對手的 ${opp.activePokemon.name}！拿取一張獎賞卡。`);
+    faintedPokemon = structuredClone(opp.activePokemon);
+    opp.activePokemon = null; // 從戰鬥區隱藏（棄牌延後到動畫結束）
+  }
+
+  newState.hasAttackedThisTurn = true;
+  return { state: newState, damage, knockedOut, faintedPokemon };
+};
+
+// 擊倒後結算：放入棄牌區、扣除獎賞卡、判定勝負
+// 回傳 { state, winner }
+export const resolveKnockout = (state, attackerId, faintedPokemon) => {
+  const newState = structuredClone(state);
+  const opponentId = getOpponentId(attackerId);
+  const opp = newState.players[opponentId];
+  const me = newState.players[attackerId];
+
+  opp.discardPile.push(faintedPokemon);
+  if (faintedPokemon.attachedEnergy) {
+    opp.discardPile.push(...faintedPokemon.attachedEnergy);
+  }
+
+  me.prizes -= 1;
+  let winner = null;
+  if (me.prizes <= 0) {
+    winner = attackerId;
+    newState.winner = winner;
+  } else if (opp.bench.length === 0) {
+    pushLog(newState, 'system', `${opp.name} 場上已無寶可夢可遞補，${me.name} 獲得勝利！`);
+    winner = attackerId;
+    newState.winner = winner;
+  }
+  return { state: newState, winner };
+};
+
+// ---- 回合流程 ------------------------------------------------------------
+// 結束回合：切換玩家並重置旗標。回傳 state（驗證由呼叫端負責）
+export const endTurnState = (state) => {
+  const newState = structuredClone(state);
+  pushLog(newState, state.currentPlayer, '結束了回合');
+  newState.currentPlayer = getOpponentId(state.currentPlayer);
+  newState.hasAttachedEnergyThisTurn = false;
+  newState.hasAttackedThisTurn = false;
+  return newState;
+};
+
+// 回合開始抽牌。回傳 { state, drawnCardId, deckOut }
+export const drawForTurn = (state) => {
+  const newState = structuredClone(state);
+  const nextPlayer = newState.players[newState.currentPlayer];
+  if (nextPlayer.deck.length > 0) {
+    const drawn = nextPlayer.deck.pop();
+    nextPlayer.hand.push(drawn);
+    pushLog(newState, 'system', `回合開始，${nextPlayer.name} 抽了一張牌`);
+    return { state: newState, drawnCardId: drawn.instanceId, deckOut: false };
+  }
+  const prevPlayerId = getOpponentId(newState.currentPlayer);
+  newState.winner = prevPlayerId;
+  pushLog(
+    newState,
+    'system',
+    `${nextPlayer.name} 牌組耗盡，${newState.players[prevPlayerId].name} 獲得勝利！`
+  );
+  return { state: newState, drawnCardId: null, deckOut: true };
+};
