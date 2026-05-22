@@ -19,6 +19,8 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
   const [sfxMuted, setSfxMuted] = useState(false);
   const [showDeckSearch, setShowDeckSearch] = useState(false);
   const [cardToConsume, setCardToConsume] = useState(null);
+  const [attackAnim, setAttackAnim] = useState(null); // { type: 'fire', isPlayer1: true }
+  const [drawnCardAnim, setDrawnCardAnim] = useState(null); // { cardId: '...', playerId: '...' }
 
   const toggleBGM = () => {
     if (bgmMuted) {
@@ -74,21 +76,38 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
       newState.currentPlayer = nextPlayerId;
       newState.hasAttachedEnergyThisTurn = false;
       newState.hasAttackedThisTurn = false;
-      
-      const nextPlayer = newState.players[nextPlayerId];
-      if (nextPlayer.deck.length > 0) {
-        nextPlayer.hand.push(nextPlayer.deck.pop());
-        pushLog(newState, 'system', `回合開始，${nextPlayer.name} 抽了一張牌`);
-      } else {
-        newState.winner = prev.currentPlayer;
-        pushLog(newState, 'system', `${nextPlayer.name} 牌組耗盡，${newState.players[prev.currentPlayer].name} 獲得勝利！`);
-        sfxVictory();
-      }
       return newState;
     });
+
     setSelectedCard(null);
     setShowTurnTransition(true);
     sfxEndTurn();
+  };
+
+  const handleTurnTransitionClick = () => {
+    setShowTurnTransition(false);
+
+    const newState = structuredClone(gameState);
+    const nextPlayer = newState.players[newState.currentPlayer];
+    let drawnCardId = null;
+
+    if (nextPlayer.deck.length > 0) {
+      const drawnCard = nextPlayer.deck.pop();
+      nextPlayer.hand.push(drawnCard);
+      drawnCardId = drawnCard.instanceId;
+      pushLog(newState, 'system', `回合開始，${nextPlayer.name} 抽了一張牌`);
+    } else {
+      const prevPlayerId = newState.currentPlayer === 'player1' ? 'player2' : 'player1';
+      newState.winner = prevPlayerId;
+      pushLog(newState, 'system', `${nextPlayer.name} 牌組耗盡，${newState.players[prevPlayerId].name} 獲得勝利！`);
+      sfxVictory();
+    }
+    setGameState(newState);
+
+    if (drawnCardId) {
+      setDrawnCardAnim({ cardId: drawnCardId, playerId: currentPlayerId });
+      setTimeout(() => setDrawnCardAnim(null), 2200); // 配合 CSS 動畫的 2.0s 總時長
+    }
   };
 
   const handleHandCardClick = (card) => {
@@ -381,45 +400,58 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
       return;
     }
 
-    setGameState(prev => {
-      const newState = structuredClone(prev);
-      const opp = newState.players[opponentId];
-      const damage = attacker.attack.damage;
-      
-      opp.activePokemon.currentHp -= damage;
-      
-      pushLog(newState, currentPlayerId, `使用 ${attacker.name} 發動攻擊，造成 ${damage} 點傷害`);
-      
-      sfxAttack();
-      setDamageAnim({ damage });
-      setTimeout(() => { setDamageAnim(null); sfxDamage(); }, 300);
-      
-      if (opp.activePokemon.currentHp <= 0) {
-        pushLog(newState, currentPlayerId, `擊倒了對手的 ${opp.activePokemon.name}！拿取一張獎賞卡。`);
-        setTimeout(() => {
-          setGameState(current => {
-            const nextState = structuredClone(current);
-            const targetOpp = nextState.players[opponentId];
-            if (targetOpp.activePokemon && targetOpp.activePokemon.currentHp <= 0) {
-               targetOpp.activePokemon = null; 
-               nextState.players[currentPlayerId].prizes -= 1;
-               if (nextState.players[currentPlayerId].prizes <= 0) {
-                 nextState.winner = currentPlayerId;
-                 sfxVictory();
-               } else if (targetOpp.bench.length === 0) {
-                 pushLog(nextState, 'system', `${targetOpp.name} 場上已無寶可夢可遞補，${nextState.players[currentPlayerId].name} 獲得勝利！`);
-                 nextState.winner = currentPlayerId;
-                 sfxVictory();
-               }
-            }
-            return nextState;
-          });
-        }, 1000);
-      }
-      
-      newState.hasAttackedThisTurn = true;
-      return newState;
+    // 播放攻擊音效與粒子動畫
+    sfxAttack();
+    setAttackAnim({ 
+      type: attacker.energyType || 'fire', 
+      isPlayer1: currentPlayerId === 'player1' 
     });
+
+    // 延遲結算傷害 (等待動畫飛越)
+    setTimeout(() => {
+      setAttackAnim(null);
+      sfxDamage();
+      
+      setGameState(prev => {
+        const newState = structuredClone(prev);
+        const opp = newState.players[opponentId];
+        const damage = attacker.attack.damage;
+        
+        opp.activePokemon.currentHp -= damage;
+        pushLog(newState, currentPlayerId, `使用 ${attacker.name} 發動攻擊，造成 ${damage} 點傷害`);
+        setDamageAnim({ damage });
+        
+        // 清除傷害數字的延遲
+        setTimeout(() => setDamageAnim(null), 500);
+        
+        // 檢查是否擊倒
+        if (opp.activePokemon.currentHp <= 0) {
+          pushLog(newState, currentPlayerId, `擊倒了對手的 ${opp.activePokemon.name}！拿取一張獎賞卡。`);
+          setTimeout(() => {
+            setGameState(current => {
+              const nextState = structuredClone(current);
+              const targetOpp = nextState.players[opponentId];
+              if (targetOpp.activePokemon && targetOpp.activePokemon.currentHp <= 0) {
+                 targetOpp.activePokemon = null; 
+                 nextState.players[currentPlayerId].prizes -= 1;
+                 if (nextState.players[currentPlayerId].prizes <= 0) {
+                   nextState.winner = currentPlayerId;
+                   sfxVictory();
+                 } else if (targetOpp.bench.length === 0) {
+                   pushLog(nextState, 'system', `${targetOpp.name} 場上已無寶可夢可遞補，${nextState.players[currentPlayerId].name} 獲得勝利！`);
+                   nextState.winner = currentPlayerId;
+                   sfxVictory();
+                 }
+              }
+              return nextState;
+            });
+          }, 1000);
+        }
+        
+        newState.hasAttackedThisTurn = true;
+        return newState;
+      });
+    }, 400); // 400ms 為 CSS 動畫長度
   };
 
   if (gameState.winner) {
@@ -569,7 +601,7 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
       </div>
 
       {showTurnTransition && !gameState.winner && (
-        <div className="turn-transition-overlay" onClick={() => setShowTurnTransition(false)} style={{ cursor: 'pointer' }}>
+        <div className="turn-transition-overlay" onClick={handleTurnTransitionClick} style={{ cursor: 'pointer' }}>
           <h1 style={{ fontSize: '4rem', marginBottom: '20px', color: isPlayer1Turn ? '#60a5fa' : '#f87171' }}>
             換 {isPlayer1Turn ? '玩家 1' : '玩家 2'} 的回合了！
           </h1>
@@ -582,7 +614,7 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
       {/* 對手手牌實體佔位 */}
       <div style={{ height: '40px', position: 'relative', zIndex: 30, flexShrink: 0 }}>
         <div className="hand-wrapper-top">
-           <Hand hand={topPlayer.hand} isCurrentPlayer={false} />
+           <Hand hand={topPlayer.hand} isCurrentPlayer={false} drawnCardAnim={drawnCardAnim} />
         </div>
       </div>
       
@@ -592,6 +624,31 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
         onDragOver={(e) => { e.preventDefault(); }}
         onDrop={handleDropBoard}
       >
+        {/* 對手牌庫 (右上) */}
+        <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ transform: 'scale(0.7)', transformOrigin: 'top right' }}>
+            <Card isFaceDown={true} />
+          </div>
+          <div style={{ color: topPlayer.deck.length <= 5 ? 'var(--color-danger)' : 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 'bold' }}>
+            剩餘 {topPlayer.deck.length}
+          </div>
+        </div>
+
+        {/* 玩家牌庫 (右下) */}
+        <div style={{ position: 'absolute', bottom: '10px', right: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ color: bottomPlayer.deck.length <= 5 ? 'var(--color-danger)' : 'var(--color-text)', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '5px' }}>
+            剩餘 {bottomPlayer.deck.length}
+          </div>
+          <div style={{ transform: 'scale(0.8)', transformOrigin: 'bottom right' }}>
+            <Card isFaceDown={true} />
+          </div>
+        </div>
+        {attackAnim && (
+          <div className="projectile-container">
+            <div className={`projectile fx-${attackAnim.type} ${attackAnim.type === 'grass' ? 'anim-grass-up' : 'anim-up'}`}></div>
+          </div>
+        )}
+
         <Board 
           activePokemon={topPlayer.activePokemon} 
           bench={topPlayer.bench} 
@@ -628,6 +685,7 @@ const GameArena = ({ p1Theme, p2Theme, onReturnLobby }) => {
             onCardClick={handleHandCardClick} 
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
+            drawnCardAnim={drawnCardAnim}
           />
         </div>
       </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Card from './Card';
 import { sfxHover } from '../utils/sounds';
 
-const Hand = ({ hand, onCardClick, isCurrentPlayer, onDragStart, onDragEnd }) => {
+const Hand = ({ hand, onCardClick, isCurrentPlayer, onDragStart, onDragEnd, drawnCardAnim }) => {
   const [draggedCardId, setDraggedCardId] = useState(null);
 
   const handleDragStart = (e, card) => {
@@ -26,7 +26,7 @@ const Hand = ({ hand, onCardClick, isCurrentPlayer, onDragStart, onDragEnd }) =>
     }}>
       {hand.map((card, index) => (
         <div key={card.instanceId}
-          className={isCurrentPlayer ? 'hand-card' : ''}
+          className={`${isCurrentPlayer ? 'hand-card' : ''} ${drawnCardAnim?.cardId === card.instanceId ? (isCurrentPlayer ? 'anim-draw-bottom' : 'anim-draw-top') : ''}`}
           style={{
             transform: `translateY(${Math.abs(index - hand.length / 2) * 5}px) rotate(${(index - hand.length / 2) * 2}deg)`,
             transformOrigin: 'bottom center',
