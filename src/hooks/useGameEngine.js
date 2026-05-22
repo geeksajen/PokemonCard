@@ -160,9 +160,7 @@ export const useGameEngine = (p1Theme, p2Theme) => {
     if (!card || card.type !== CardTypes.TRAINER) return;
 
     if (card.id === 't-prof') {
-      setGameState(playProfessor(gameState, currentPlayerId, card));
-      setSelectedCard(null);
-      sfxPlace();
+      applyResult(playProfessor(gameState, currentPlayerId, card));
     } else if (card.id === 't-pokeball') {
       setCardToConsume(card);
       setShowDeckSearch(true);
@@ -171,7 +169,8 @@ export const useGameEngine = (p1Theme, p2Theme) => {
 
   // ---- 精靈球牌庫檢索 ----------------------------------------------------
   const handlePickFromDeck = (card) => {
-    setGameState(pullPokemonFromDeck(gameState, currentPlayerId, card.instanceId, cardToConsume));
+    const result = pullPokemonFromDeck(gameState, currentPlayerId, card.instanceId, cardToConsume);
+    setGameState(result.state);
     setShowDeckSearch(false);
     setCardToConsume(null);
     sfxPlace();
@@ -180,7 +179,7 @@ export const useGameEngine = (p1Theme, p2Theme) => {
   const handleCancelDeckSearch = () => {
     setShowDeckSearch(false);
     setCardToConsume(null);
-    setGameState(cancelPokeball(gameState, currentPlayerId, cardToConsume));
+    setGameState(cancelPokeball(gameState, currentPlayerId, cardToConsume).state);
   };
 
   // ---- 回合流程 ----------------------------------------------------------
@@ -190,7 +189,7 @@ export const useGameEngine = (p1Theme, p2Theme) => {
       sfxError();
       return;
     }
-    setGameState(endTurnState(gameState));
+    setGameState(endTurnState(gameState).state);
     setSelectedCard(null);
     setShowTurnTransition(true);
     sfxEndTurn();

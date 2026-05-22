@@ -139,7 +139,7 @@ export const playCardOnPokemon = (state, playerId, card, location) => {
 export const promoteFromBench = (state, playerId, benchIndex) => {
   const newState = structuredClone(state);
   const p = newState.players[playerId];
-  if (p.activePokemon || !p.bench[benchIndex]) return { ok: false, state: newState };
+  if (p.activePokemon || !p.bench[benchIndex]) return { ok: false, error: null };
   p.activePokemon = p.bench[benchIndex];
   p.bench.splice(benchIndex, 1);
   pushLog(newState, playerId, `將備戰區的 ${p.activePokemon.name} 推上戰鬥區`);
@@ -161,7 +161,7 @@ export const playProfessor = (state, playerId, card) => {
     }
   }
   pushLog(newState, playerId, `使用了大木博士，捨棄手牌並抽取了 ${drawn} 張牌`);
-  return newState;
+  return { ok: true, state: newState };
 };
 
 // ---- 訓練家：精靈球（從牌庫挑一張寶可夢）---------------------------------
@@ -179,7 +179,7 @@ export const pullPokemonFromDeck = (state, playerId, pickedInstanceId, consumeCa
     }
     pushLog(newState, playerId, `使用了精靈球，從牌庫抽出了 ${pulled.name}`);
   }
-  return newState;
+  return { ok: true, state: newState };
 };
 
 // 取消精靈球（卡牌仍消耗）
@@ -191,7 +191,7 @@ export const cancelPokeball = (state, playerId, consumeCard) => {
     removeFromHand(p, consumeCard.instanceId);
   }
   pushLog(newState, playerId, `使用了精靈球，但沒有選擇任何寶可夢`);
-  return newState;
+  return { ok: true, state: newState };
 };
 
 // ---- 攻擊 ----------------------------------------------------------------
@@ -234,7 +234,7 @@ export const applyAttackDamage = (state, attackerId) => {
   }
 
   newState.hasAttackedThisTurn = true;
-  return { state: newState, damage, knockedOut, faintedPokemon };
+  return { ok: true, state: newState, damage, knockedOut, faintedPokemon };
 };
 
 // 擊倒後結算：放入棄牌區、扣除獎賞卡、判定勝負
@@ -260,7 +260,7 @@ export const resolveKnockout = (state, attackerId, faintedPokemon) => {
     winner = attackerId;
     newState.winner = winner;
   }
-  return { state: newState, winner };
+  return { ok: true, state: newState, winner };
 };
 
 // ---- 回合流程 ------------------------------------------------------------
@@ -271,7 +271,7 @@ export const endTurnState = (state) => {
   newState.currentPlayer = getOpponentId(state.currentPlayer);
   newState.hasAttachedEnergyThisTurn = false;
   newState.hasAttackedThisTurn = false;
-  return newState;
+  return { ok: true, state: newState };
 };
 
 // 回合開始抽牌。回傳 { state, drawnCardId, deckOut }
@@ -282,7 +282,7 @@ export const drawForTurn = (state) => {
     const drawn = nextPlayer.deck.pop();
     nextPlayer.hand.push(drawn);
     pushLog(newState, 'system', `回合開始，${nextPlayer.name} 抽了一張牌`);
-    return { state: newState, drawnCardId: drawn.instanceId, deckOut: false };
+    return { ok: true, state: newState, drawnCardId: drawn.instanceId, deckOut: false };
   }
   const prevPlayerId = getOpponentId(newState.currentPlayer);
   newState.winner = prevPlayerId;
@@ -291,5 +291,5 @@ export const drawForTurn = (state) => {
     'system',
     `${nextPlayer.name} 牌組耗盡，${newState.players[prevPlayerId].name} 獲得勝利！`
   );
-  return { state: newState, drawnCardId: null, deckOut: true };
+  return { ok: true, state: newState, drawnCardId: null, deckOut: true };
 };
