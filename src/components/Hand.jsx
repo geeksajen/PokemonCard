@@ -1,21 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Card from './Card';
 import { sfxHover } from '../utils/sounds';
 
-const Hand = ({ hand, onCardClick, isCurrentPlayer, onDragStart, onDragEnd, drawnCardAnim }) => {
-  const [draggedCardId, setDraggedCardId] = useState(null);
-
-  const handleDragStart = (e, card) => {
-    if (onDragStart) onDragStart(e, card);
-    // 延遲隱藏原卡片，讓瀏覽器有時間先截取卡片的「幽靈拖曳殘影」
-    setTimeout(() => setDraggedCardId(card.instanceId), 0);
-  };
-
-  const handleDragEnd = (e, card) => {
-    if (onDragEnd) onDragEnd(e, card);
-    setDraggedCardId(null);
-  };
-
+const Hand = ({ hand, onCardClick, isCurrentPlayer, onPointerDragStart, dragState, drawnCardAnim }) => {
   return (
     <div style={{
       display: 'flex',
@@ -24,30 +11,35 @@ const Hand = ({ hand, onCardClick, isCurrentPlayer, onDragStart, onDragEnd, draw
       justifyContent: 'center',
       minHeight: '180px'
     }}>
-      {hand.map((card, index) => (
-        <div key={card.instanceId}
-          className={`${isCurrentPlayer ? 'hand-card' : ''} ${drawnCardAnim?.cardId === card.instanceId ? (isCurrentPlayer ? 'anim-draw-bottom' : 'anim-draw-top') : ''}`}
-          style={{
-            transform: `translateY(${Math.abs(index - hand.length / 2) * 5}px) rotate(${(index - hand.length / 2) * 2}deg)`,
-            transformOrigin: 'bottom center',
-            transition: 'all 0.3s ease',
-            margin: '0 -10px', // Overlap effect
-            opacity: draggedCardId === card.instanceId ? 0 : 1, // 拖拉時隱藏原本的卡片
-            pointerEvents: draggedCardId === card.instanceId ? 'none' : 'auto'
-          }}
-          draggable={isCurrentPlayer}
-          onDragStart={(e) => handleDragStart(e, card)}
-          onDragEnd={(e) => handleDragEnd(e, card)}
-          onMouseEnter={() => isCurrentPlayer && !draggedCardId && sfxHover()}
-        >
-          <Card 
-            card={card} 
-            isFaceDown={!isCurrentPlayer} 
-            isSelectable={isCurrentPlayer}
-            onClick={isCurrentPlayer ? onCardClick : undefined}
-          />
-        </div>
-      ))}
+      {hand.map((card, index) => {
+        const isBeingDragged = dragState?.isDragging && dragState.card?.instanceId === card.instanceId;
+        return (
+          <div key={card.instanceId}
+            className={`${isCurrentPlayer ? 'hand-card hand-card-draggable' : ''} ${drawnCardAnim?.cardId === card.instanceId ? (isCurrentPlayer ? 'anim-draw-bottom' : 'anim-draw-top') : ''}`}
+            style={{
+              transform: `translateY(${Math.abs(index - hand.length / 2) * 5}px) rotate(${(index - hand.length / 2) * 2}deg)`,
+              transformOrigin: 'bottom center',
+              transition: 'all 0.3s ease',
+              margin: '0 -10px', // Overlap effect
+              opacity: isBeingDragged ? 0 : 1, // 拖曳時隱藏原本的卡片
+              pointerEvents: isBeingDragged ? 'none' : 'auto'
+            }}
+            onPointerDown={(e) => {
+              if (isCurrentPlayer && onPointerDragStart) {
+                onPointerDragStart(card, e);
+              }
+            }}
+            onMouseEnter={() => isCurrentPlayer && !(dragState?.isDragging) && sfxHover()}
+          >
+            <Card 
+              card={card} 
+              isFaceDown={!isCurrentPlayer} 
+              isSelectable={isCurrentPlayer}
+              onClick={isCurrentPlayer ? onCardClick : undefined}
+            />
+          </div>
+        );
+      })}
       {hand.length === 0 && (
         <div style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center' }}>
           手牌為空

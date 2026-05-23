@@ -40,7 +40,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
   const [damageAnim, setDamageAnim] = useState(null);
   const [toast, setToast] = useState({ id: 0, message: '' });
   const [showTurnTransition, setShowTurnTransition] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+
   const [bgmMuted, setBgmMuted] = useState(true);
   const [sfxMuted, setSfxMuted] = useState(false);
   const [showDeckSearch, setShowDeckSearch] = useState(false);
@@ -166,19 +166,6 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     setSelectedCard((prev) => (prev?.instanceId === card.instanceId ? null : card));
   };
 
-  const handleDragStart = (e, card) => {
-    e.dataTransfer.setData('cardId', card.instanceId);
-    setIsDragging(true);
-  };
-
-  const handleDragEnd = () => {
-    setTimeout(() => setIsDragging(false), 50);
-  };
-
-  const handleDragStartBench = (e, index) => {
-    e.dataTransfer.setData('sourceBenchIndex', index.toString());
-  };
-
   // ---- 放置卡牌 ----------------------------------------------------------
   const playToLocation = (card, location) =>
     applyResult(playCardOnPokemon(gameState, currentPlayerId, card, location));
@@ -205,21 +192,6 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     playToLocation(selectedCard, { zone: 'bench', index });
   };
 
-  const handleDropActive = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const sourceBenchIndex = e.dataTransfer.getData('sourceBenchIndex');
-    if (sourceBenchIndex !== '') {
-      const idx = parseInt(sourceBenchIndex, 10);
-      const result = promoteFromBench(gameState, currentPlayerId, idx);
-      if (result.ok) setGameState(result.state);
-      return;
-    }
-    const cardId = e.dataTransfer.getData('cardId');
-    const card = currentPlayer.hand.find((c) => c.instanceId === cardId);
-    if (card) playToLocation(card, { zone: 'active' });
-  };
-
   const handleOpponentBenchClick = (existingPokemon, index) => {
     if (gameState?.pendingAction?.type === 'select_opponent_bench') {
       applyResult(resolveBossOrders(gameState, currentPlayerId, index));
@@ -230,32 +202,44 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     applyResult(cancelPendingAction(gameState, currentPlayerId));
   };
 
-  const handleDropBench = (e, existingPokemon, index) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const cardId = e.dataTransfer.getData('cardId');
-    const card = currentPlayer.hand.find((c) => c.instanceId === cardId);
-    if (card) playToLocation(card, { zone: 'bench', index });
-  };
+  // ---- 自訂拖曳放置 (Custom Drag & Drop) ----------------------------------
+  // 由 useDragDrop hook 的 onDrop callback 呼叫，接收 { card, source, zone }
+  const handleCustomDrop = ({ card, source, zone }) => {
+    if (!zone || !card) return;
 
-  // 拖到棋盤空白處：訓練家卡 / 無目標物品卡
-  // #1: 改由 card.effect.kind 分派，新增卡只需在 cardDatabase 設 effect 欄位
-  const handleDropBoard = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const cardId = e.dataTransfer.getData('cardId');
-    const card = currentPlayer.hand.find((c) => c.instanceId === cardId);
-    if (!card || (card.type !== CardTypes.TRAINER && card.type !== CardTypes.ITEM)) return;
+    // 備戰區 → 戰鬥區推派
+    if (source?.type === 'bench' && zone === 'my-active') {
+      const result = promoteFromBench(gameState, currentPlayerId, source.index);
+      if (result.ok) setGameState(result.state);
+      return;
+    }
 
-    const kind = card.effect?.kind;
-    if (!kind) return;
+    // 手牌 → 戰鬥區
+    if (zone === 'my-active') {
+      playToLocation(card, { zone: 'active' });
+      return;
+    }
 
-    if (kind === 'searchDeck') {
-      setDeckSearchTopN(card.effect.topN ?? null);
-      setCardToConsume(card);
-      setShowDeckSearch(true);
-    } else {
-      applyResult(resolveBoardCardEffect(gameState, currentPlayerId, card));
+    // 手牌 → 備戰區
+    if (zone.startsWith('my-bench-')) {
+      const index = parseInt(zone.split('-')[2], 10);
+      playToLocation(card, { zone: 'bench', index });
+      return;
+    }
+
+    // 手牌 → 棋盤空白處（訓練家/物品卡效果）
+    if (zone === 'board') {
+      if (card.type !== CardTypes.TRAINER && card.type !== CardTypes.ITEM) return;
+      const kind = card.effect?.kind;
+      if (!kind) return;
+
+      if (kind === 'searchDeck') {
+        setDeckSearchTopN(card.effect.topN ?? null);
+        setCardToConsume(card);
+        setShowDeckSearch(true);
+      } else {
+        applyResult(resolveBoardCardEffect(gameState, currentPlayerId, card));
+      }
     }
   };
 
@@ -375,7 +359,6 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     damageAnim,
     toast,
     showTurnTransition,
-    isDragging,
     bgmMuted,
     sfxMuted,
     showDeckSearch,
@@ -387,14 +370,9 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     toggleBGM,
     toggleSFX,
     handleHandCardClick,
-    handleDragStart,
-    handleDragEnd,
-    handleDragStartBench,
+    handleCustomDrop,
     handleMyActiveClick,
     handleMyBenchClick,
-    handleDropActive,
-    handleDropBench,
-    handleDropBoard,
     handlePickFromDeck,
     handleCancelDeckSearch,
     endTurn,

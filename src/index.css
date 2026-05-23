@@ -476,3 +476,55 @@ button:disabled {
 .faint-bottom {
   animation: faint-fly-bottom 1.0s cubic-bezier(0.5, 0, 0.2, 1) forwards;
 }
+
+/* --- Custom Drag & Drop System --- */
+
+/* Drop Zone 活躍脈動光芒 */
+@keyframes zone-pulse {
+  0%   { box-shadow: 0 0 8px rgba(56, 189, 248, 0.4), inset 0 0 8px rgba(56, 189, 248, 0.15); }
+  50%  { box-shadow: 0 0 20px rgba(56, 189, 248, 0.8), inset 0 0 15px rgba(56, 189, 248, 0.3); }
+  100% { box-shadow: 0 0 8px rgba(56, 189, 248, 0.4), inset 0 0 8px rgba(56, 189, 248, 0.15); }
+}
+
+.drop-zone-highlight {
+  border-color: rgba(56, 189, 248, 0.7) !important;
+  background: rgba(56, 189, 248, 0.08) !important;
+  animation: zone-pulse 1.2s ease-in-out infinite;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+/* 拖曳中全場亮度微降，聚焦拖曳卡牌 */
+.arena-dimmed {
+  filter: brightness(0.85);
+  transition: filter 0.3s ease;
+}
+
+/* 卡牌放置彈簧回彈動畫 */
+@keyframes card-drop-bounce {
+  0%   { transform: scale(1.15); }
+  40%  { transform: scale(0.92); }
+  70%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+.card-just-dropped {
+  animation: card-drop-bounce 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 手牌可拖曳元素 - 防止觸控裝置預設的手勢 */
+.hand-card-draggable {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 備戰區可拖曳元素 */
+.bench-card-draggable {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+.bench-card-draggable:active {
+  cursor: grabbing;
+}

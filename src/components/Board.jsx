@@ -1,7 +1,11 @@
 import React from 'react';
 import Card from './Card';
 
-const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, damageTaken, onDragStartBench }) => {
+const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, damageTaken, onBenchPointerDragStart, registerZone, dragState }) => {
+  // 是否正在拖曳中
+  const isDragging = dragState?.isDragging;
+  const hoverZone = dragState?.hoverZone;
+
   return (
     <div style={{
       display: 'flex',
@@ -15,9 +19,9 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
     }}>
       {/* 戰鬥區 (Active Pokemon) */}
       <div 
+        ref={!isTopPlayer && registerZone ? registerZone('my-active') : undefined}
         onClick={() => !activePokemon && onActiveClick && onActiveClick()}
-        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-        onDrop={(e) => { e.preventDefault(); e.stopPropagation(); onDropActive && onDropActive(e); }}
+        className={isDragging && !isTopPlayer && hoverZone === 'my-active' ? 'drop-zone-highlight' : ''}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -50,7 +54,7 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
       {/* 備戰區 (Bench) */}
       <div style={{
         display: 'flex',
-        gap: '0px', // 原本尺寸已縮小，適度調整間距
+        gap: '0px',
         justifyContent: 'center',
         background: 'rgba(255,255,255,0.05)',
         padding: '15px', 
@@ -59,14 +63,17 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
         {/* 固定 3 個備戰位置 */}
         {[0, 1, 2].map((idx) => {
           const benchPokemon = bench[idx];
+          const zoneId = `my-bench-${idx}`;
+          const isHovered = isDragging && !isTopPlayer && hoverZone === zoneId;
+
           return (
             <div 
-              key={idx} 
+              key={idx}
+              ref={!isTopPlayer && registerZone ? registerZone(zoneId) : undefined}
               onClick={() => !benchPokemon && onBenchClick && onBenchClick(null, idx)}
-              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-              onDrop={(e) => { e.preventDefault(); e.stopPropagation(); onDropBench && onDropBench(e, benchPokemon, idx); }}
+              className={isHovered ? 'drop-zone-highlight' : ''}
               style={{
-                width: 'var(--card-width)', // 必須與真實卡片同寬，否則會溢出導致重疊
+                width: 'var(--card-width)',
                 height: 'var(--card-height)',
                 border: '2px dashed rgba(255,255,255,0.1)',
                 borderRadius: '8px',
@@ -81,9 +88,13 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
             >
               {benchPokemon ? (
                 <div 
+                  className={onBenchPointerDragStart ? 'bench-card-draggable' : ''}
                   style={{ pointerEvents: onBenchClick ? 'auto' : 'none' }}
-                  draggable={!!onDragStartBench}
-                  onDragStart={(e) => onDragStartBench && onDragStartBench(e, idx)}
+                  onPointerDown={(e) => {
+                    if (onBenchPointerDragStart) {
+                      onBenchPointerDragStart(idx, e);
+                    }
+                  }}
                 >
                   <Card 
                     card={benchPokemon} 

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import Board from './Board';
 import Hand from './Hand';
 import Card from './Card';
+import DragOverlay from './DragOverlay';
 import PilePair from './arena/PilePair';
 import HudOverlay from './arena/HudOverlay';
 import SettingsModal from './arena/SettingsModal';
@@ -10,9 +11,11 @@ import TurnTransition from './arena/TurnTransition';
 import DeckSearchModal from './arena/DeckSearchModal';
 import WinnerScreen from './arena/WinnerScreen';
 import { useGameEngine } from '../hooks/useGameEngine';
+import { useDragDrop } from '../hooks/useDragDrop';
 
 const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
   const engine = useGameEngine(p1Theme, p2Theme, vsAI);
+  const { dragState, startDrag, registerZone, cancelDrag } = useDragDrop();
 
   // 純 UI 開關，與遊戲邏輯無關，留在此處管理
   const [showSettings, setShowSettings] = useState(false);
@@ -29,7 +32,6 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
     damageAnim,
     toast,
     showTurnTransition,
-    isDragging,
     bgmMuted,
     sfxMuted,
     showDeckSearch,
@@ -40,14 +42,9 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
     toggleBGM,
     toggleSFX,
     handleHandCardClick,
-    handleDragStart,
-    handleDragEnd,
-    handleDragStartBench,
+    handleCustomDrop,
     handleMyActiveClick,
     handleMyBenchClick,
-    handleDropActive,
-    handleDropBench,
-    handleDropBoard,
     handlePickFromDeck,
     handleCancelDeckSearch,
     endTurn,
@@ -75,6 +72,17 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
   const topLabel = vsAI ? '🤖 電腦' : (isPlayer1Turn ? '玩家 2' : '玩家 1');
   const bottomLabel = vsAI ? '玩家 1' : (isPlayer1Turn ? '玩家 1' : '玩家 2');
   const turnText = humanCanAct ? '你的回合' : '對手回合中…';
+
+  // ---- 拖曳開始 ----
+  const handlePointerDragStart = (card, event) => {
+    startDrag(card, { type: 'hand' }, event, handleCustomDrop);
+  };
+
+  const handleBenchPointerDragStart = (benchIndex, event) => {
+    const benchPokemon = bottomPlayer.bench[benchIndex];
+    if (!benchPokemon) return;
+    startDrag(benchPokemon, { type: 'bench', index: benchIndex }, event, handleCustomDrop);
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
@@ -124,9 +132,9 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
 
       {/* 戰鬥區 */}
       <div
-        style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', justifyContent: 'center', padding: '10px 0', gap: '20px', overflowY: 'auto' }}
-        onDragOver={(e) => { e.preventDefault(); }}
-        onDrop={humanCanAct ? handleDropBoard : (e) => e.preventDefault()}
+        ref={registerZone('board')}
+        className={dragState.isDragging ? 'arena-dimmed' : ''}
+        style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', justifyContent: 'center', padding: '10px 0', gap: '20px', overflowY: 'auto', transition: 'filter 0.3s ease' }}
       >
         {faintAnim && (
           <div style={{ position: 'absolute', zIndex: 60, top: '50%', left: '50%', pointerEvents: 'none' }}>
@@ -180,9 +188,9 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           isTopPlayer={false}
           onActiveClick={humanCanAct ? handleMyActiveClick : undefined}
           onBenchClick={humanCanAct ? handleMyBenchClick : undefined}
-          onDropActive={humanCanAct ? handleDropActive : undefined}
-          onDropBench={humanCanAct ? handleDropBench : undefined}
-          onDragStartBench={humanCanAct ? handleDragStartBench : undefined}
+          onBenchPointerDragStart={humanCanAct ? handleBenchPointerDragStart : undefined}
+          registerZone={registerZone}
+          dragState={dragState}
         />
       </div>
 
@@ -209,7 +217,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
 
       {/* 玩家手牌實體佔位 */}
       <div style={{ height: '50px', position: 'relative', zIndex: 40, flexShrink: 0 }}>
-        <div className={`hand-wrapper-bottom ${selectedCard && !isDragging ? 'hand-active' : ''} ${isDragging ? 'is-dragging' : ''}`}>
+        <div className={`hand-wrapper-bottom ${selectedCard && !dragState.isDragging ? 'hand-active' : ''} ${dragState.isDragging ? 'is-dragging' : ''}`}>
           {selectedCard && (
             <div style={{ position: 'absolute', top: '-50px', left: '50%', transform: 'translateX(-50%)',
                           background: 'rgba(59, 130, 246, 0.9)', padding: '8px 20px', borderRadius: '20px',
@@ -222,8 +230,8 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
             hand={bottomPlayer.hand}
             isCurrentPlayer={true}
             onCardClick={humanCanAct ? handleHandCardClick : undefined}
-            onDragStart={humanCanAct ? handleDragStart : undefined}
-            onDragEnd={handleDragEnd}
+            onPointerDragStart={humanCanAct ? handlePointerDragStart : undefined}
+            dragState={dragState}
             drawnCardAnim={drawnCardAnim}
           />
         </div>
@@ -236,6 +244,9 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           onCancel={handleCancelDeckSearch}
         />
       )}
+
+      {/* 拖曳浮層 - 最上層 */}
+      <DragOverlay dragState={dragState} />
     </div>
   );
 };
