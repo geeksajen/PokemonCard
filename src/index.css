@@ -371,6 +371,29 @@ button:disabled {
   clip-path: polygon(40% 0%, 100% 0%, 60% 40%, 100% 40%, 20% 100%, 40% 60%, 0% 60%);
 }
 
+.fx-psychic {
+  width: 60px; height: 60px;
+  background: radial-gradient(circle, #f0abfc, #a855f7);
+  border-radius: 50%;
+  box-shadow: 0 0 40px 20px rgba(168, 85, 247, 0.7);
+  filter: blur(2px);
+}
+
+.fx-fighting {
+  width: 70px; height: 30px;
+  background: radial-gradient(ellipse, #fdba74, #ea580c);
+  border-radius: 50% 20% 50% 20%;
+  box-shadow: 0 0 25px 10px rgba(234, 88, 12, 0.6);
+  transform: rotate(15deg);
+}
+
+.fx-normal {
+  width: 60px; height: 60px;
+  background: radial-gradient(circle, #ffffff, #9ca3af);
+  border-radius: 50%;
+  box-shadow: 0 0 30px 15px rgba(156, 163, 175, 0.5);
+}
+
 @keyframes fly-up {
   0% { transform: translateY(150px) scale(0.5); opacity: 0; }
   20% { opacity: 1; transform: translateY(100px) scale(1); }
@@ -424,11 +447,13 @@ button:disabled {
 .anim-draw-bottom {
   animation: draw-fly-in-bottom 2.0s cubic-bezier(0.2, 0.8, 0.2, 1) forwards !important;
   z-index: 50; /* Ensure drawn card is above others */
+  pointer-events: none; /* 抽牌動畫進行中關閉互動，避免 hover 的 !important 覆蓋動畫造成跳動放大 */
 }
 
 .anim-draw-top {
   animation: draw-fly-in-top 2.0s cubic-bezier(0.2, 0.8, 0.2, 1) forwards !important;
   z-index: 50;
+  pointer-events: none;
 }
 
 /* --- Faint (Death) Animations --- */

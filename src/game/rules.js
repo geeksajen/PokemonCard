@@ -5,7 +5,7 @@
 // 慣例：
 //  - 成功的「放置/動作」會直接寫入 state.logs，並回傳 { ok: true, state }
 //  - 失敗時回傳 { ok: false, error }（error 為 null 代表「靜默無效」，不顯示提示）
-import { CardTypes } from '../models/cards';
+import { CardTypes, EnergyTypes } from '../models/cards';
 
 export const getOpponentId = (playerId) =>
   playerId === 'player1' ? 'player2' : 'player1';
@@ -55,7 +55,7 @@ const playPokemon = (state, playerId, card, location) => {
   }
 
   // 進化
-  if (existing && card.stage === 1 && existing.name === card.evolvesFrom) {
+  if (existing && card.stage && existing.name === card.evolvesFrom) {
     const evolved = evolveCard(existing, card);
     if (location.zone === 'active') {
       p.activePokemon = evolved;
@@ -68,7 +68,7 @@ const playPokemon = (state, playerId, card, location) => {
     return { ok: true, state: newState };
   }
 
-  if (!existing && card.stage === 1) {
+  if (!existing && card.stage) {
     return { ok: false, error: '無法直接打出進化寶可夢！必須先打出基礎寶可夢。' };
   }
   if (existing) {
@@ -246,12 +246,29 @@ export const canAttack = (state, attackerId) => {
   if (!me.activePokemon) return { ok: false, error: '你的戰鬥區沒有寶可夢！' };
   if (!opp.activePokemon)
     return { ok: false, error: '對手戰鬥區沒有寶可夢，請先結束回合讓對手派出寶可夢！' };
-  const energyCount = me.activePokemon.attachedEnergy
-    ? me.activePokemon.attachedEnergy.length
-    : 0;
-  if (energyCount < me.activePokemon.attack.cost.length) {
-    return { ok: false, error: `能量不足無法攻擊！需要 ${me.activePokemon.attack.cost.length} 個能量。` };
+  const attachedEnergy = me.activePokemon.attachedEnergy || [];
+  const cost = me.activePokemon.attack.cost || [];
+
+  const pool = attachedEnergy.map(e => e.energyType);
+
+  // 首先滿足指定的屬性能量
+  for (const c of cost) {
+    if (c !== EnergyTypes.NORMAL) {
+      const idx = pool.indexOf(c);
+      if (idx !== -1) {
+        pool.splice(idx, 1);
+      } else {
+        return { ok: false, error: `能量屬性不符或不足！無法發動攻擊。` };
+      }
+    }
   }
+
+  // 剩下的成本由剩餘任意能量（無色）填補
+  const normalCostCount = cost.filter(c => c === EnergyTypes.NORMAL).length;
+  if (pool.length < normalCostCount) {
+    return { ok: false, error: `能量總數不足！無法發動攻擊。` };
+  }
+
   return { ok: true };
 };
 

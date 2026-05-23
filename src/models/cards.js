@@ -11,6 +11,8 @@ export const EnergyTypes = {
   WATER: 'water',
   GRASS: 'grass',
   ELECTRIC: 'electric',
+  PSYCHIC: 'psychic',
+  FIGHTING: 'fighting',
   NORMAL: 'normal'
 };
 
@@ -88,6 +90,22 @@ export const cardDatabase = {
       damage: 50
     }
   },
+  'p-001-ev2': {
+    id: 'p-001-ev2',
+    type: CardTypes.POKEMON,
+    name: '噴火龍',
+    hp: 150,
+    maxHp: 150,
+    energyType: EnergyTypes.FIRE,
+    evolvesFrom: '火恐龍',
+    stage: 2,
+    image: './images/charizard.png',
+    attack: {
+      name: '大字爆炎',
+      cost: [EnergyTypes.FIRE, EnergyTypes.FIRE, EnergyTypes.FIRE, EnergyTypes.FIRE],
+      damage: 100
+    }
+  },
   'p-002-ev1': {
     id: 'p-002-ev1',
     type: CardTypes.POKEMON,
@@ -102,6 +120,22 @@ export const cardDatabase = {
       name: '水砲',
       cost: [EnergyTypes.WATER, EnergyTypes.WATER],
       damage: 50
+    }
+  },
+  'p-002-ev2': {
+    id: 'p-002-ev2',
+    type: CardTypes.POKEMON,
+    name: '水箭龜',
+    hp: 140,
+    maxHp: 140,
+    energyType: EnergyTypes.WATER,
+    evolvesFrom: '卡咪龜',
+    stage: 2,
+    image: './images/blastoise.png',
+    attack: {
+      name: '水砲連發',
+      cost: [EnergyTypes.WATER, EnergyTypes.WATER, EnergyTypes.WATER],
+      damage: 80
     }
   },
   'p-003-ev1': {
@@ -120,6 +154,22 @@ export const cardDatabase = {
       damage: 50
     }
   },
+  'p-003-ev2': {
+    id: 'p-003-ev2',
+    type: CardTypes.POKEMON,
+    name: '妙蛙花',
+    hp: 140,
+    maxHp: 140,
+    energyType: EnergyTypes.GRASS,
+    evolvesFrom: '妙蛙草',
+    stage: 2,
+    image: './images/venusaur.png',
+    attack: {
+      name: '日光束',
+      cost: [EnergyTypes.GRASS, EnergyTypes.GRASS, EnergyTypes.GRASS, EnergyTypes.GRASS],
+      damage: 90
+    }
+  },
   'p-004-ev1': {
     id: 'p-004-ev1',
     type: CardTypes.POKEMON,
@@ -134,6 +184,48 @@ export const cardDatabase = {
       name: '十萬伏特',
       cost: [EnergyTypes.ELECTRIC, EnergyTypes.ELECTRIC],
       damage: 60
+    }
+  },
+  'p-150': {
+    id: 'p-150',
+    type: CardTypes.POKEMON,
+    name: '超夢',
+    hp: 130,
+    maxHp: 130,
+    energyType: EnergyTypes.PSYCHIC,
+    image: './images/mewtwo.png',
+    attack: {
+      name: '精神強念',
+      cost: [EnergyTypes.PSYCHIC, EnergyTypes.PSYCHIC],
+      damage: 60
+    }
+  },
+  'p-066': {
+    id: 'p-066',
+    type: CardTypes.POKEMON,
+    name: '腕力',
+    hp: 70,
+    maxHp: 70,
+    energyType: EnergyTypes.FIGHTING,
+    image: './images/machop.png',
+    attack: {
+      name: '空手劈',
+      cost: [EnergyTypes.FIGHTING],
+      damage: 20
+    }
+  },
+  'p-143': {
+    id: 'p-143',
+    type: CardTypes.POKEMON,
+    name: '卡比獸',
+    hp: 130,
+    maxHp: 130,
+    energyType: EnergyTypes.NORMAL,
+    image: './images/snorlax.png',
+    attack: {
+      name: '泰山壓頂',
+      cost: [EnergyTypes.NORMAL, EnergyTypes.NORMAL, EnergyTypes.NORMAL],
+      damage: 50
     }
   },
   'e-fire': {
@@ -159,6 +251,18 @@ export const cardDatabase = {
     type: CardTypes.ENERGY,
     name: '雷能量',
     energyType: EnergyTypes.ELECTRIC
+  },
+  'e-psychic': {
+    id: 'e-psychic',
+    type: CardTypes.ENERGY,
+    name: '超能能量',
+    energyType: EnergyTypes.PSYCHIC
+  },
+  'e-fighting': {
+    id: 'e-fighting',
+    type: CardTypes.ENERGY,
+    name: '格鬥能量',
+    energyType: EnergyTypes.FIGHTING
   },
   't-potion': {
     id: 't-potion',
@@ -211,16 +315,19 @@ export const generateThemeDeck = (theme) => {
   const deck = [];
   
   const themeMap = {
-    'fire': { basic: 'p-001', ev1: 'p-001-ev1', energy: 'e-fire' },
-    'water': { basic: 'p-002', ev1: 'p-002-ev1', energy: 'e-water' },
-    'grass': { basic: 'p-003', ev1: 'p-003-ev1', energy: 'e-grass' },
-    'electric': { basic: 'p-004', ev1: 'p-004-ev1', energy: 'e-electric' }
+    'fire': { basic: 'p-001', ev1: 'p-001-ev1', ev2: 'p-001-ev2', energy: 'e-fire' },
+    'water': { basic: 'p-002', ev1: 'p-002-ev1', ev2: 'p-002-ev2', energy: 'e-water' },
+    'grass': { basic: 'p-003', ev1: 'p-003-ev1', ev2: 'p-003-ev2', energy: 'e-grass' },
+    'electric': { basic: 'p-004', ev1: 'p-004-ev1', energy: 'e-electric' },
+    'psychic': { basic: 'p-150', energy: 'e-psychic' },
+    'fighting': { basic: 'p-066', energy: 'e-fighting' },
+    'normal': { basic: 'p-143', energy: 'e-psychic' } // 卡比獸可以用任意能量，先預設混超能
   };
 
   const selectedTheme = themeMap[theme] || themeMap['fire']; // 預設火
 
-  // 7 張基礎寶可夢
-  for (let i = 0; i < 7; i++) {
+  // 6 張基礎寶可夢
+  for (let i = 0; i < 6; i++) {
     deck.push({ 
       ...cardDatabase[selectedTheme.basic], 
       instanceId: `deck-p-${i}-${Date.now()}`, 
@@ -229,8 +336,8 @@ export const generateThemeDeck = (theme) => {
     });
   }
   
-  // 4 張一階進化寶可夢
-  for (let i = 0; i < 4; i++) {
+  // 3 張一階進化寶可夢
+  for (let i = 0; i < 3; i++) {
     deck.push({ 
       ...cardDatabase[selectedTheme.ev1], 
       instanceId: `deck-pev-${i}-${Date.now()}`, 
@@ -238,9 +345,21 @@ export const generateThemeDeck = (theme) => {
       currentHp: cardDatabase[selectedTheme.ev1].hp 
     });
   }
+
+  // 2 張二階進化寶可夢 (如果有)
+  if (selectedTheme.ev2) {
+    for (let i = 0; i < 2; i++) {
+      deck.push({ 
+        ...cardDatabase[selectedTheme.ev2], 
+        instanceId: `deck-pev2-${i}-${Date.now()}`, 
+        attachedEnergy: [], 
+        currentHp: cardDatabase[selectedTheme.ev2].hp 
+      });
+    }
+  }
   
-  // 5 張屬性對應能量
-  for (let i = 0; i < 5; i++) {
+  // 6 張屬性對應能量
+  for (let i = 0; i < 6; i++) {
     deck.push({
       ...cardDatabase[selectedTheme.energy],
       instanceId: `deck-e-${i}-${Date.now()}`

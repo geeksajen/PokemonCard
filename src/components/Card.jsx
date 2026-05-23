@@ -2,11 +2,14 @@ import React from 'react';
 import { CardTypes, EnergyTypes } from '../models/cards';
 
 const getEnergyColor = (type) => {
-  switch(type) {
+  switch (type) {
     case EnergyTypes.FIRE: return 'linear-gradient(135deg, #f87171, #dc2626)';
     case EnergyTypes.WATER: return 'linear-gradient(135deg, #60a5fa, #2563eb)';
     case EnergyTypes.GRASS: return 'linear-gradient(135deg, #4ade80, #16a34a)';
     case EnergyTypes.ELECTRIC: return 'linear-gradient(135deg, #facc15, #ca8a04)';
+    case EnergyTypes.PSYCHIC: return 'linear-gradient(135deg, #c084fc, #9333ea)';
+    case EnergyTypes.FIGHTING: return 'linear-gradient(135deg, #fb923c, #c2410c)';
+    case EnergyTypes.NORMAL: return 'linear-gradient(135deg, #9ca3af, #4b5563)';
     default: return 'linear-gradient(135deg, #9ca3af, #4b5563)';
   }
 };
@@ -44,9 +47,11 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
       ? 'linear-gradient(135deg, #14b8a6, #0f766e)' // Supporter cards: Teal/Cyan
       : card.type === CardTypes.ITEM
         ? 'linear-gradient(135deg, #f59e0b, #b45309)' // Item cards: Amber/Orange
-        : card.stage === 1
-          ? 'linear-gradient(135deg, #4f46e5, #a855f7, #eab308)' // Evolution cards: Premium Foil (Indigo/Purple/Gold)
-          : 'linear-gradient(135deg, #334155, #0f172a)'; // Basic Pokemon
+        : card.stage === 2
+          ? 'linear-gradient(135deg, #e2e8f0, #38bdf8, #fbbf24)' // Stage 2: Platinum/Diamond Blue/Gold
+          : card.stage === 1
+            ? 'linear-gradient(135deg, #4f46e5, #a855f7, #eab308)' // Stage 1: Premium Foil (Indigo/Purple/Gold)
+            : 'linear-gradient(135deg, #334155, #0f172a)'; // Basic Pokemon
 
   return (
     <div 
@@ -64,10 +69,12 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
         cursor: isSelectable ? 'pointer' : 'default',
         transform: isSelectable ? 'translateY(0)' : 'none',
         transition: 'all 0.2s ease',
-        boxShadow: card.stage === 1 
-          ? (isSelectable ? '0 0 20px rgba(234, 179, 8, 0.6)' : 'inset 0 0 10px rgba(234, 179, 8, 0.4)') 
-          : (isSelectable ? 'var(--card-shadow-hover)' : 'var(--card-shadow)'),
-        border: card.stage === 1 ? '1px solid rgba(234, 179, 8, 0.5)' : 'none',
+        boxShadow: card.stage === 2
+          ? (isSelectable ? '0 0 25px rgba(56, 189, 248, 0.8), 0 0 10px rgba(251, 191, 36, 0.6)' : 'inset 0 0 15px rgba(56, 189, 248, 0.6)')
+          : card.stage === 1 
+            ? (isSelectable ? '0 0 20px rgba(234, 179, 8, 0.6)' : 'inset 0 0 10px rgba(234, 179, 8, 0.4)') 
+            : (isSelectable ? 'var(--card-shadow-hover)' : 'var(--card-shadow)'),
+        border: card.stage === 2 ? '2px solid rgba(251, 191, 36, 0.8)' : card.stage === 1 ? '1px solid rgba(234, 179, 8, 0.5)' : 'none',
       }}
       onMouseEnter={(e) => {
         if(isSelectable) e.currentTarget.style.transform = 'translateY(-5px)';
@@ -83,17 +90,22 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
         }}></div>
       )}
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <h4 style={{ fontSize: '0.8rem', margin: 0, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>{card.name}</h4>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 1, width: '100%', gap: '2px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: 1 }}>
+          <h4 style={{ fontSize: '0.8rem', margin: 0, textShadow: '0 1px 2px rgba(0,0,0,0.5)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{card.name}</h4>
           {card.stage === 1 && (
-            <span style={{ fontSize: '0.6rem', background: '#eab308', color: '#000', padding: '1px 4px', borderRadius: '4px', fontWeight: 'bold' }}>
+            <span style={{ fontSize: '0.6rem', background: '#eab308', color: '#000', padding: '1px 3px', borderRadius: '4px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>
               進化
+            </span>
+          )}
+          {card.stage === 2 && (
+            <span style={{ fontSize: '0.6rem', background: 'linear-gradient(90deg, #38bdf8, #fcd34d)', color: '#000', padding: '1px 3px', borderRadius: '4px', fontWeight: 'bold', textShadow: '0 0 2px rgba(255,255,255,0.8)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              二階
             </span>
           )}
         </div>
         {card.type === CardTypes.POKEMON && (
-          <span style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: 'bold' }}>HP {card.currentHp}</span>
+          <span style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>HP {card.currentHp}</span>
         )}
       </div>
 
