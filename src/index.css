@@ -479,7 +479,7 @@ button:disabled {
 
 /* --- Custom Drag & Drop System --- */
 
-/* Drop Zone 活躍脈動光芒 */
+/* Drop Zone 活躍脈動光芒 (拖曳懸停時) */
 @keyframes zone-pulse {
   0%   { box-shadow: 0 0 8px rgba(56, 189, 248, 0.4), inset 0 0 8px rgba(56, 189, 248, 0.15); }
   50%  { box-shadow: 0 0 20px rgba(56, 189, 248, 0.8), inset 0 0 15px rgba(56, 189, 248, 0.3); }
@@ -493,10 +493,47 @@ button:disabled {
   transition: border-color 0.2s, background 0.2s;
 }
 
-/* 拖曳中全場亮度微降，聚焦拖曳卡牌 */
-.arena-dimmed {
-  filter: brightness(0.85);
-  transition: filter 0.3s ease;
+/* 智慧目標高亮 (綠色：可放置能量/進化) */
+@keyframes target-valid-pulse {
+  0%   { box-shadow: 0 0 10px rgba(34, 197, 94, 0.5), inset 0 0 10px rgba(34, 197, 94, 0.2); }
+  50%  { box-shadow: 0 0 25px rgba(34, 197, 94, 0.9), inset 0 0 20px rgba(34, 197, 94, 0.4); }
+  100% { box-shadow: 0 0 10px rgba(34, 197, 94, 0.5), inset 0 0 10px rgba(34, 197, 94, 0.2); }
+}
+.highlight-valid-target {
+  border-color: rgba(34, 197, 94, 0.8) !important;
+  animation: target-valid-pulse 1.5s ease-in-out infinite;
+  z-index: 20;
+}
+
+/* 智慧目標高亮 (紅色：老大的指令/危險目標) */
+@keyframes target-danger-pulse {
+  0%   { box-shadow: 0 0 10px rgba(239, 68, 68, 0.5), inset 0 0 10px rgba(239, 68, 68, 0.2); }
+  50%  { box-shadow: 0 0 25px rgba(239, 68, 68, 0.9), inset 0 0 20px rgba(239, 68, 68, 0.4); }
+  100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.5), inset 0 0 10px rgba(239, 68, 68, 0.2); }
+}
+.highlight-danger-target {
+  border-color: rgba(239, 68, 68, 0.8) !important;
+  animation: target-danger-pulse 1.2s ease-in-out infinite;
+  z-index: 20;
+}
+
+/* 智慧目標高亮 (橘黃色：逃脫繩/我方目標) */
+@keyframes target-action-pulse {
+  0%   { box-shadow: 0 0 10px rgba(245, 158, 11, 0.5), inset 0 0 10px rgba(245, 158, 11, 0.2); }
+  50%  { box-shadow: 0 0 25px rgba(245, 158, 11, 0.9), inset 0 0 20px rgba(245, 158, 11, 0.4); }
+  100% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.5), inset 0 0 10px rgba(245, 158, 11, 0.2); }
+}
+.highlight-action-target {
+  border-color: rgba(245, 158, 11, 0.8) !important;
+  animation: target-action-pulse 1.2s ease-in-out infinite;
+  z-index: 20;
+}
+
+/* 非目標變暗 (視覺聚焦) */
+.dimmed-target {
+  opacity: 0.35;
+  filter: grayscale(0.6);
+  transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
 /* 卡牌放置彈簧回彈動畫 */

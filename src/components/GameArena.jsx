@@ -135,7 +135,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
       {/* 戰鬥區 */}
       <div
         ref={registerZone('board')}
-        className={dragState.isDragging ? 'arena-dimmed' : ''}
+        className=""
         style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', justifyContent: 'center', padding: '10px 0', gap: '20px', overflowY: 'auto', transition: 'filter 0.3s ease' }}
       >
         {faintAnim && (
@@ -184,6 +184,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           damageTaken={damageAnim ? damageAnim.damage : null}
           onBenchClick={humanCanAct ? handleOpponentBenchClick : undefined}
           onInspect={setInspectCard}
+          pendingAction={gameState.pendingAction}
         />
         <Board
           activePokemon={bottomPlayer.activePokemon}
@@ -195,6 +196,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           registerZone={registerZone}
           dragState={dragState}
           onInspect={setInspectCard}
+          pendingAction={gameState.pendingAction}
         />
       </div>
 
