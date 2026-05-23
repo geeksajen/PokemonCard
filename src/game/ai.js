@@ -9,6 +9,7 @@
 //   { kind: 'end' }                    // 結束回合
 import { CardTypes } from '../models/cards';
 import { canAttack } from './rules';
+import { BENCH_MAX } from './constants';
 
 export const decideAIAction = (state, playerId) => {
   const me = state.players[playerId];
@@ -35,7 +36,7 @@ export const decideAIAction = (state, playerId) => {
   }
 
   // 3. 補滿備戰區（被擊倒後才有寶可夢可遞補）
-  if (me.bench.length < 3 && basics.length > 0) {
+  if (me.bench.length < BENCH_MAX && basics.length > 0) {
     return { kind: 'play', card: basics[0], location: { zone: 'bench', index: me.bench.length } };
   }
 

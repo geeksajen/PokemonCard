@@ -6,6 +6,7 @@
 //  - 成功的「放置/動作」會直接寫入 state.logs，並回傳 { ok: true, state }
 //  - 失敗時回傳 { ok: false, error }（error 為 null 代表「靜默無效」，不顯示提示）
 import { CardTypes, EnergyTypes, cardDatabase } from '../models/cards';
+import { BENCH_MAX, PROFESSOR_DRAW, ENERGY_RETRIEVAL_MAX } from './constants';
 
 export const getOpponentId = (playerId) =>
   playerId === 'player1' ? 'player2' : 'player1';
@@ -29,8 +30,18 @@ const evolveCard = (oldCard, evoCard) => {
 const readSlot = (player, location) =>
   location.zone === 'active' ? player.activePokemon : player.bench[location.index];
 
+// 從手牌移除（卡片進場用，不進棄牌區）
 const removeFromHand = (player, instanceId) => {
   player.hand = player.hand.filter((c) => c.instanceId !== instanceId);
+};
+
+// 從手牌移除並放入棄牌區，回傳被棄掉的卡（找不到時回傳 null）
+const discardFromHand = (player, instanceId) => {
+  const idx = player.hand.findIndex((c) => c.instanceId === instanceId);
+  if (idx === -1) return null;
+  const [card] = player.hand.splice(idx, 1);
+  player.discardPile.push(card);
+  return card;
 };
 
 // ---- 放置 / 進化寶可夢 ----------------------------------------------------
@@ -42,7 +53,7 @@ const playPokemon = (state, playerId, card, location) => {
 
   // 放置基礎寶可夢
   const canPlaceBasic =
-    !existing && !card.stage && (location.zone === 'active' || p.bench.length < 3);
+    !existing && !card.stage && (location.zone === 'active' || p.bench.length < BENCH_MAX);
   if (canPlaceBasic) {
     if (location.zone === 'active') {
       p.activePokemon = card;
@@ -76,8 +87,7 @@ const playPokemon = (state, playerId, card, location) => {
     }
     removeFromHand(p, card.instanceId);
     if (canEvolveRareCandy) {
-      p.discardPile.push(p.hand[candyIndex]);
-      p.hand.splice(candyIndex, 1);
+      discardFromHand(p, p.hand[candyIndex].instanceId);
       pushLog(newState, playerId, `使用神奇糖果，將${zoneLabel}的 ${existing.name} 直接進化成 ${evolved.name}！`);
     } else {
       pushLog(newState, playerId, `將${zoneLabel}的 ${existing.name} 進化成 ${evolved.name}！`);
@@ -138,8 +148,7 @@ const applyPotion = (state, playerId, card, location) => {
   const heal = card.heal || 20;
   const zoneLabel = location.zone === 'active' ? '戰鬥區' : '備戰區';
   target.currentHp = Math.min(target.maxHp, target.currentHp + heal);
-  p.discardPile.push(card);
-  removeFromHand(p, card.instanceId);
+  discardFromHand(p, card.instanceId);
   pushLog(newState, playerId, `對${zoneLabel}的 ${target.name} 使用了${card.name}，回復 ${heal} 點 HP`);
   return { ok: true, state: newState };
 };
@@ -158,8 +167,7 @@ const applySwitch = (state, playerId, card, location) => {
   const active = p.activePokemon;
   p.activePokemon = benchPokemon;
   p.bench[location.index] = active;
-  p.discardPile.push(card);
-  removeFromHand(p, card.instanceId);
+  discardFromHand(p, card.instanceId);
   pushLog(newState, playerId, `使用了寶可夢交換器，將 ${active.name} 換下、${benchPokemon.name} 上場`);
   return { ok: true, state: newState };
 };
@@ -188,13 +196,7 @@ export const resolveBossOrders = (state, playerId, targetBenchIndex) => {
   opp.activePokemon = target;
   opp.bench[targetBenchIndex] = active;
   
-  const cardId = newState.pendingAction.cardId;
-  const cardIndex = me.hand.findIndex(c => c.instanceId === cardId);
-  if (cardIndex !== -1) {
-    me.discardPile.push(me.hand[cardIndex]);
-    me.hand.splice(cardIndex, 1);
-  }
-  
+  discardFromHand(me, newState.pendingAction.cardId);
   newState.pendingAction = null;
   pushLog(newState, playerId, `使用老大的指令，將對手戰鬥區的 ${active.name} 與備戰區的 ${target.name} 互換！`);
   return { ok: true, state: newState };
@@ -229,11 +231,7 @@ export const applyEscapeRope = (state, playerId, card) => {
       player: playerId
     };
   } else {
-    const cardIndex = me.hand.findIndex(c => c.instanceId === card.instanceId);
-    if (cardIndex !== -1) {
-      me.discardPile.push(me.hand[cardIndex]);
-      me.hand.splice(cardIndex, 1);
-    }
+    discardFromHand(me, card.instanceId);
     pushLog(newState, playerId, `使用了離洞繩，但備戰區沒有寶可夢可供替換。`);
   }
   return { ok: true, state: newState };
@@ -250,13 +248,7 @@ export const resolveEscapeRope = (state, playerId, targetBenchIndex) => {
   me.activePokemon = target;
   me.bench[targetBenchIndex] = active;
   
-  const cardId = newState.pendingAction.cardId;
-  const cardIndex = me.hand.findIndex(c => c.instanceId === cardId);
-  if (cardIndex !== -1) {
-    me.discardPile.push(me.hand[cardIndex]);
-    me.hand.splice(cardIndex, 1);
-  }
-  
+  discardFromHand(me, newState.pendingAction.cardId);
   newState.pendingAction = null;
   pushLog(newState, playerId, `離洞繩發動：將 ${active.name} 替換為 ${target.name}`);
   return { ok: true, state: newState };
@@ -294,7 +286,7 @@ export const playProfessor = (state, playerId, card) => {
   p.discardPile.push(...p.hand);
   p.hand = [];
   let drawn = 0;
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < PROFESSOR_DRAW; i++) {
     if (p.deck.length > 0) {
       p.hand.push(p.deck.pop());
       drawn++;
@@ -314,8 +306,7 @@ export const pullPokemonFromDeck = (state, playerId, pickedInstanceId, consumeCa
     p.hand.push(pulled);
     p.deck.sort(() => Math.random() - 0.5); // 洗牌
     if (consumeCard) {
-      p.discardPile.push(consumeCard);
-      removeFromHand(p, consumeCard.instanceId);
+      discardFromHand(p, consumeCard.instanceId);
     }
     pushLog(newState, playerId, `使用了${consumeCard?.name || '精靈球'}，從牌庫抽出了 ${pulled.name}`);
   }
@@ -327,8 +318,7 @@ export const cancelPokeball = (state, playerId, consumeCard) => {
   const newState = structuredClone(state);
   const p = newState.players[playerId];
   if (consumeCard) {
-    p.discardPile.push(consumeCard);
-    removeFromHand(p, consumeCard.instanceId);
+    discardFromHand(p, consumeCard.instanceId);
   }
   pushLog(newState, playerId, `使用了${consumeCard?.name || '精靈球'}，但沒有選擇任何寶可夢`);
   return { ok: true, state: newState };
@@ -339,7 +329,7 @@ export const retrieveEnergy = (state, playerId, card) => {
   const newState = structuredClone(state);
   const p = newState.players[playerId];
   const energyIndexes = [];
-  for (let i = p.discardPile.length - 1; i >= 0 && energyIndexes.length < 2; i--) {
+  for (let i = p.discardPile.length - 1; i >= 0 && energyIndexes.length < ENERGY_RETRIEVAL_MAX; i--) {
     if (p.discardPile[i].type === CardTypes.ENERGY) energyIndexes.push(i);
   }
   if (energyIndexes.length === 0) {
@@ -348,8 +338,7 @@ export const retrieveEnergy = (state, playerId, card) => {
   // 由大到小移除，避免索引位移
   const retrieved = energyIndexes.map((i) => p.discardPile.splice(i, 1)[0]);
   p.hand.push(...retrieved);
-  p.discardPile.push(card);
-  removeFromHand(p, card.instanceId);
+  discardFromHand(p, card.instanceId);
   pushLog(newState, playerId, `使用了能量回收，從棄牌區拿回了 ${retrieved.length} 張能量卡`);
   return { ok: true, state: newState };
 };

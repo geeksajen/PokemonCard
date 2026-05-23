@@ -1,4 +1,6 @@
 // 簡化的卡牌資料庫
+import { GREATBALL_TOPN } from '../game/constants';
+
 export const CardTypes = {
   POKEMON: 'pokemon',
   ENERGY: 'energy',
@@ -248,7 +250,7 @@ export const cardDatabase = {
     id: 'i-greatball',
     type: CardTypes.ITEM,
     name: '超級球',
-    effect: { kind: 'searchDeck', topN: 7 },
+    effect: { kind: 'searchDeck', topN: GREATBALL_TOPN },
     description: '查看牌庫頂的 7 張卡，從中挑選 1 張寶可夢加入手牌，然後洗牌。'
   },
   'i-rarecandy': {
@@ -286,55 +288,50 @@ export const cardDatabase = {
   }
 };
 
+// 將 cardId 實體化為可放入牌組的卡片物件
+const instantiate = (cardId) => {
+  const card = cardDatabase[cardId];
+  return {
+    ...card,
+    instanceId: newInstanceId(cardId),
+    ...(card.type === CardTypes.POKEMON && { attachedEnergy: [], currentHp: card.maxHp })
+  };
+};
+
+// 主題 → 進化線與能量的對應表
+const themeMap = {
+  fire:     { basic: 'p-001', ev1: 'p-001-ev1', ev2: 'p-001-ev2', energy: 'e-fire' },
+  water:    { basic: 'p-002', ev1: 'p-002-ev1', ev2: 'p-002-ev2', energy: 'e-water' },
+  grass:    { basic: 'p-003', ev1: 'p-003-ev1', ev2: 'p-003-ev2', energy: 'e-grass' },
+  electric: { basic: 'p-004', ev1: 'p-004-ev1',                   energy: 'e-electric' },
+  psychic:  { basic: 'p-150',                                       energy: 'e-psychic' },
+  fighting: { basic: 'p-066',                                       energy: 'e-fighting' },
+  normal:   { basic: 'p-143',                                       energy: 'e-normal' },
+};
+
+// 將主題轉成 [{ id, count }] 牌組組成表，調整牌數只需改這裡
+const buildComposition = (t) => [
+  { id: t.basic, count: t.ev1 ? 6 : 9 },
+  ...(t.ev1 ? [{ id: t.ev1, count: 3 }] : []),
+  ...(t.ev2 ? [{ id: t.ev2, count: 2 }] : []),
+  { id: t.energy,       count: 6 },
+  { id: 't-potion',     count: 1 },
+  { id: 'i-hyperpotion', count: 1 },
+  { id: 'i-switch',     count: 1 },
+  { id: 't-pokeball',   count: 1 },
+  { id: 'i-greatball',  count: 1 },
+  { id: 't-prof',       count: 2 },
+  { id: 'i-rarecandy',  count: 1 },
+  { id: 'i-escaperope', count: 1 },
+  { id: 't-boss',       count: 1 },
+];
+
 // 產生特定主題的純色牌組
 export const generateThemeDeck = (theme) => {
+  const t = themeMap[theme] || themeMap.fire;
   const deck = [];
-
-  const themeMap = {
-    'fire':     { basic: 'p-001', ev1: 'p-001-ev1', ev2: 'p-001-ev2', energy: 'e-fire' },
-    'water':    { basic: 'p-002', ev1: 'p-002-ev1', ev2: 'p-002-ev2', energy: 'e-water' },
-    'grass':    { basic: 'p-003', ev1: 'p-003-ev1', ev2: 'p-003-ev2', energy: 'e-grass' },
-    'electric': { basic: 'p-004', ev1: 'p-004-ev1',                   energy: 'e-electric' },
-    'psychic':  { basic: 'p-150',                                       energy: 'e-psychic' },
-    'fighting': { basic: 'p-066',                                       energy: 'e-fighting' },
-    'normal':   { basic: 'p-143',                                       energy: 'e-normal' },
-  };
-
-  const t = themeMap[theme] || themeMap['fire'];
-  const base = cardDatabase[t.basic];
-
-  // #2: 使用 newInstanceId 取代 Date.now()，確保跨玩家不碰撞
-  const inst = (cardId) => {
-    const card = cardDatabase[cardId];
-    const isPokemon = card.type === CardTypes.POKEMON;
-    return {
-      ...card,
-      instanceId: newInstanceId(cardId),
-      ...(isPokemon && { attachedEnergy: [], currentHp: card.maxHp })
-    };
-  };
-
-  // 基礎寶可夢：無進化線的主題多補 3 張
-  const basicCount = t.ev1 ? 6 : 9;
-  for (let i = 0; i < basicCount; i++) deck.push(inst(t.basic));
-
-  // 一階進化（如果有）
-  if (t.ev1) {
-    for (let i = 0; i < 3; i++) deck.push(inst(t.ev1));
+  for (const { id, count } of buildComposition(t)) {
+    for (let i = 0; i < count; i++) deck.push(instantiate(id));
   }
-
-  // 二階進化（如果有）
-  if (t.ev2) {
-    for (let i = 0; i < 2; i++) deck.push(inst(t.ev2));
-  }
-
-  // 屬性能量
-  for (let i = 0; i < 6; i++) deck.push(inst(t.energy));
-
-  // 物品 / 支援者卡
-  ['t-potion', 'i-hyperpotion', 'i-switch', 't-pokeball', 'i-greatball',
-   't-prof', 't-prof', 'i-rarecandy', 'i-escaperope', 't-boss'
-  ].forEach(id => deck.push(inst(id)));
-
   return deck.sort(() => Math.random() - 0.5);
 };

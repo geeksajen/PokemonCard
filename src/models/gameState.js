@@ -1,4 +1,5 @@
 import { generateThemeDeck } from './cards';
+import { INITIAL_PRIZES } from '../game/constants';
 
 export const createInitialGameState = (player1Theme = 'fire', player2Theme = 'water') => {
   return {
@@ -21,7 +22,7 @@ export const createInitialGameState = (player1Theme = 'fire', player2Theme = 'wa
         activePokemon: null,
         bench: [], // Max 3
         discardPile: [], // 棄牌區
-        prizes: 3, // 取代真實卡牌的獎賞卡，這裡簡化為數字(剩餘需要擊敗的數量)
+        prizes: INITIAL_PRIZES, // 取代真實卡牌的獎賞卡，這裡簡化為數字(剩餘需要擊敗的數量)
       },
       player2: {
         id: 'player2',
@@ -31,7 +32,7 @@ export const createInitialGameState = (player1Theme = 'fire', player2Theme = 'wa
         activePokemon: null,
         bench: [], // Max 3
         discardPile: [], // 棄牌區
-        prizes: 3,
+        prizes: INITIAL_PRIZES,
       }
     }
   };

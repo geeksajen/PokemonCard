@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { INITIAL_HAND_SIZE } from '../game/constants';
 import { createInitialGameState } from '../models/gameState';
 import { CardTypes } from '../models/cards';
 import { decideAIAction } from '../game/ai';
@@ -51,7 +52,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
 
   useEffect(() => {
     const initialState = createInitialGameState(p1Theme, p2Theme);
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < INITIAL_HAND_SIZE; i++) {
       initialState.players.player1.hand.push(initialState.players.player1.deck.pop());
       initialState.players.player2.hand.push(initialState.players.player2.deck.pop());
     }
