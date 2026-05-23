@@ -34,6 +34,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
     damageAnim,
     toast,
     showTurnTransition,
+    bigDamageShake,
     bgmMuted,
     sfxMuted,
     showDeckSearch,
@@ -87,7 +88,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+    <div className={bigDamageShake ? 'arena-shake' : ''} style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       {toast.message && (
         <div key={toast.id} className="custom-toast show">
           {toast.message}
@@ -122,7 +123,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
       <LogDrawer open={showLog} logs={gameState.logs} onClose={() => setShowLog(false)} />
 
       {showTurnTransition && !gameState.winner && (
-        <TurnTransition isPlayer1Turn={isPlayer1Turn} onContinue={handleTurnTransitionClick} />
+        <TurnTransition isPlayer1Turn={isPlayer1Turn} onContinue={handleTurnTransitionClick} vsAI={vsAI} />
       )}
 
       {/* 對手手牌實體佔位 */}
@@ -181,7 +182,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           activePokemon={topPlayer.activePokemon}
           bench={topPlayer.bench}
           isTopPlayer={true}
-          damageTaken={damageAnim ? damageAnim.damage : null}
+          damageTaken={damageAnim && damageAnim.isTopPlayer ? damageAnim.damage : null}
           onBenchClick={humanCanAct ? handleOpponentBenchClick : undefined}
           onInspect={setInspectCard}
           pendingAction={gameState.pendingAction}
@@ -190,6 +191,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           activePokemon={bottomPlayer.activePokemon}
           bench={bottomPlayer.bench}
           isTopPlayer={false}
+          damageTaken={damageAnim && !damageAnim.isTopPlayer ? damageAnim.damage : null}
           onActiveClick={humanCanAct ? handleMyActiveClick : undefined}
           onBenchClick={humanCanAct ? handleMyBenchClick : undefined}
           onBenchPointerDragStart={humanCanAct ? handleBenchPointerDragStart : undefined}

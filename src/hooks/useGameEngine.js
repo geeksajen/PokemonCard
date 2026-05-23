@@ -40,6 +40,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
   const [damageAnim, setDamageAnim] = useState(null);
   const [toast, setToast] = useState({ id: 0, message: '' });
   const [showTurnTransition, setShowTurnTransition] = useState(false);
+  const [bigDamageShake, setBigDamageShake] = useState(false);
 
   const [bgmMuted, setBgmMuted] = useState(true);
   const [sfxMuted, setSfxMuted] = useState(false);
@@ -318,7 +319,11 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
         attackerId
       );
       setGameState(afterDamage);
-      setDamageAnim({ damage });
+      setDamageAnim({ damage, isTopPlayer: defenderIsTop });
+      if (damage >= 80) {
+        setBigDamageShake(true);
+        setTimeout(() => setBigDamageShake(false), 500);
+      }
       setTimeout(() => setDamageAnim(null), 500);
 
       if (knockedOut) {
@@ -359,6 +364,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     damageAnim,
     toast,
     showTurnTransition,
+    bigDamageShake,
     bgmMuted,
     sfxMuted,
     showDeckSearch,
