@@ -1,6 +1,6 @@
 import React from 'react';
 import Card from './Card';
-import { sfxHover } from '../utils/sounds';
+import { sfxHover } from '../../utils/sounds';
 
 const Hand = ({ hand, onCardClick, isCurrentPlayer, onPointerDragStart, dragState, drawnCardAnim, onInspect }) => {
   return (

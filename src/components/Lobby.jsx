@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const themes = [
   { id: 'fire', name: '🔥 烈焰突擊', color: 'rgba(239, 68, 68, 0.8)' },
@@ -8,6 +9,7 @@ const themes = [
 ];
 
 const Lobby = ({ onStartGame }) => {
+  const navigate = useNavigate();
   const [p1Theme, setP1Theme] = useState('fire');
   const [p2Theme, setP2Theme] = useState('water');
   const [vsAI, setVsAI] = useState(true);
@@ -135,7 +137,10 @@ const Lobby = ({ onStartGame }) => {
         transform: 'translateX(-50%)',
       }}>
         <button
-          onClick={() => onStartGame(p1Theme, p2Theme, vsAI)}
+          onClick={() => {
+            onStartGame(p1Theme, p2Theme, vsAI);
+            navigate(`/battle?p1=${p1Theme}&p2=${p2Theme}&vsAI=${vsAI}`);
+          }}
           style={{
             padding: '20px 60px',
             fontSize: '2rem',

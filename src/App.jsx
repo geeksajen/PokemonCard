@@ -1,29 +1,23 @@
-import React, { useState } from 'react';
-import GameArena from './components/GameArena';
-import Lobby from './components/Lobby';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HomePage, BattlePage, LoginPage, StudioPage, ProfilePage } from './pages';
+import Navigation from './components/Navigation';
+import './api/CardRepository'; // Initialize CardRepository
 
 function App() {
-  const [appState, setAppState] = useState('lobby'); // 'lobby' | 'playing'
-  const [deckConfigs, setDeckConfigs] = useState({ p1: 'fire', p2: 'water', vsAI: true });
-
-  const handleStartGame = (p1Theme, p2Theme, vsAI) => {
-    setDeckConfigs({ p1: p1Theme, p2: p2Theme, vsAI });
-    setAppState('playing');
-  };
-
   return (
-    <div className="app-container">
-      {appState === 'lobby' ? (
-        <Lobby onStartGame={handleStartGame} />
-      ) : (
-        <GameArena
-          p1Theme={deckConfigs.p1}
-          p2Theme={deckConfigs.p2}
-          vsAI={deckConfigs.vsAI}
-          onReturnLobby={() => setAppState('lobby')}
-        />
-      )}
-    </div>
+    <Router>
+      <div className="app-container">
+        <Navigation />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/battle" element={<BattlePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/studio" element={<StudioPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

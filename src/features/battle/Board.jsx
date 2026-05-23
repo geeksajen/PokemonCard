@@ -1,6 +1,6 @@
 import React from 'react';
 import Card from './Card';
-import { CardTypes } from '../models/cards';
+import { CardTypes } from '../../models/cards';
 
 const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, damageTaken, onBenchPointerDragStart, registerZone, dragState, onInspect, pendingAction }) => {
   // 是否正在拖曳中

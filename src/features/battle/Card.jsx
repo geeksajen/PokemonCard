@@ -1,5 +1,5 @@
 import React from 'react';
-import { CardTypes, EnergyTypes } from '../models/cards';
+import { CardTypes, EnergyTypes } from '../../models/cards';
 
 const getEnergyColor = (type) => {
   switch (type) {

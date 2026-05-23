@@ -1,6 +1,6 @@
 import React from 'react';
 import Card from '../Card';
-import { CardTypes } from '../../models/cards';
+import { CardTypes } from '../../../models/cards';
 
 // 精靈球：從牌庫挑選一張寶可夢
 const DeckSearchModal = ({ deck, onPick, onCancel }) => {

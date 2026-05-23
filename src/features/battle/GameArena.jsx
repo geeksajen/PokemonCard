@@ -11,8 +11,8 @@ import LogDrawer from './arena/LogDrawer';
 import TurnTransition from './arena/TurnTransition';
 import DeckSearchModal from './arena/DeckSearchModal';
 import WinnerScreen from './arena/WinnerScreen';
-import { useGameEngine } from '../hooks/useGameEngine';
-import { useDragDrop } from '../hooks/useDragDrop';
+import { useGameEngine } from '../../hooks/useGameEngine';
+import { useDragDrop } from '../../hooks/useDragDrop';
 
 const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
   const engine = useGameEngine(p1Theme, p2Theme, vsAI);

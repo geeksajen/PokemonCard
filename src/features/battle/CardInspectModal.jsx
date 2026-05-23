@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { CardTypes, EnergyTypes } from '../models/cards';
+import { CardTypes, EnergyTypes } from '../../models/cards';
 
 /* ---- 能量屬性色票（複用 Card.jsx 的配色）---- */
 const energyGradient = (type) => {

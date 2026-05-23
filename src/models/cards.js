@@ -298,6 +298,14 @@ const instantiate = (cardId) => {
   };
 };
 
+let customInstantiator = null;
+
+export const setCardInstantiator = (instantiator) => {
+  customInstantiator = instantiator;
+};
+
+const getInstantiator = () => customInstantiator || instantiate;
+
 // 主題 → 進化線與能量的對應表
 const themeMap = {
   fire:     { basic: 'p-001', ev1: 'p-001-ev1', ev2: 'p-001-ev2', energy: 'e-fire' },
@@ -330,8 +338,9 @@ const buildComposition = (t) => [
 export const generateThemeDeck = (theme) => {
   const t = themeMap[theme] || themeMap.fire;
   const deck = [];
+  const instantiator = getInstantiator();
   for (const { id, count } of buildComposition(t)) {
-    for (let i = 0; i < count; i++) deck.push(instantiate(id));
+    for (let i = 0; i < count; i++) deck.push(instantiator(id));
   }
   return deck.sort(() => Math.random() - 0.5);
 };
