@@ -53,6 +53,8 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
     endTurn,
     handleTurnTransitionClick,
     handleAttackClick,
+    handleOpponentBenchClick,
+    handleCancelPending,
   } = engine;
 
   if (gameState.winner) {
@@ -170,6 +172,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           bench={topPlayer.bench}
           isTopPlayer={true}
           damageTaken={damageAnim ? damageAnim.damage : null}
+          onBenchClick={humanCanAct ? handleOpponentBenchClick : undefined}
         />
         <Board
           activePokemon={bottomPlayer.activePokemon}
@@ -182,6 +185,27 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           onDragStartBench={humanCanAct ? handleDragStartBench : undefined}
         />
       </div>
+
+      {gameState.pendingAction && (
+        <div style={{
+          position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%, -50%)',
+          background: 'rgba(0,0,0,0.85)', color: 'white', padding: '15px 30px',
+          borderRadius: '12px', zIndex: 100, border: '2px solid #fbbf24',
+          boxShadow: '0 0 20px rgba(251, 191, 36, 0.5)', textAlign: 'center'
+        }}>
+          <h2 style={{ margin: '0 0 10px 0', color: '#fcd34d' }}>請選擇目標</h2>
+          <p style={{ margin: 0 }}>
+            {gameState.pendingAction.type === 'select_opponent_bench' && '請點擊對手備戰區的一隻寶可夢'}
+            {gameState.pendingAction.type === 'select_my_bench' && '請點擊我方備戰區的一隻寶可夢'}
+          </p>
+          <button 
+            onClick={handleCancelPending}
+            style={{ marginTop: '15px', padding: '5px 15px', borderRadius: '5px', background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer' }}
+          >
+            取消
+          </button>
+        </div>
+      )}
 
       {/* 玩家手牌實體佔位 */}
       <div style={{ height: '50px', position: 'relative', zIndex: 40, flexShrink: 0 }}>

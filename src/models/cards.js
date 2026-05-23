@@ -16,7 +16,12 @@ export const EnergyTypes = {
   NORMAL: 'normal'
 };
 
+// #2: 全域單調遞增計數器，避免同一 tick 內 Date.now() 重複導致 instanceId 碰撞
+let _instanceSeq = 0;
+export const newInstanceId = (prefix) => `${prefix}-${++_instanceSeq}`;
+
 export const cardDatabase = {
+  // ---- 基礎寶可夢 --------------------------------------------------------
   'p-001': {
     id: 'p-001',
     type: CardTypes.POKEMON,
@@ -25,11 +30,7 @@ export const cardDatabase = {
     maxHp: 60,
     energyType: EnergyTypes.FIRE,
     image: './images/charmander.png',
-    attack: {
-      name: '火花',
-      cost: [EnergyTypes.FIRE],
-      damage: 20
-    }
+    attack: { name: '火花', cost: [EnergyTypes.FIRE], damage: 20 }
   },
   'p-002': {
     id: 'p-002',
@@ -39,11 +40,7 @@ export const cardDatabase = {
     maxHp: 60,
     energyType: EnergyTypes.WATER,
     image: './images/squirtle.png',
-    attack: {
-      name: '水槍',
-      cost: [EnergyTypes.WATER],
-      damage: 20
-    }
+    attack: { name: '水槍', cost: [EnergyTypes.WATER], damage: 20 }
   },
   'p-003': {
     id: 'p-003',
@@ -53,11 +50,7 @@ export const cardDatabase = {
     maxHp: 70,
     energyType: EnergyTypes.GRASS,
     image: './images/bulbasaur.png',
-    attack: {
-      name: '藤鞭',
-      cost: [EnergyTypes.GRASS],
-      damage: 20
-    }
+    attack: { name: '藤鞭', cost: [EnergyTypes.GRASS], damage: 20 }
   },
   'p-004': {
     id: 'p-004',
@@ -67,124 +60,7 @@ export const cardDatabase = {
     maxHp: 60,
     energyType: EnergyTypes.ELECTRIC,
     image: './images/pikachu.png',
-    attack: {
-      name: '電擊',
-      cost: [EnergyTypes.ELECTRIC],
-      damage: 20
-    }
-  },
-  // 一階進化寶可夢
-  'p-001-ev1': {
-    id: 'p-001-ev1',
-    type: CardTypes.POKEMON,
-    name: '火恐龍',
-    hp: 90,
-    maxHp: 90,
-    energyType: EnergyTypes.FIRE,
-    evolvesFrom: '小火龍',
-    stage: 1,
-    image: './images/charmeleon.png',
-    attack: {
-      name: '火焰放射',
-      cost: [EnergyTypes.FIRE, EnergyTypes.FIRE],
-      damage: 50
-    }
-  },
-  'p-001-ev2': {
-    id: 'p-001-ev2',
-    type: CardTypes.POKEMON,
-    name: '噴火龍',
-    hp: 150,
-    maxHp: 150,
-    energyType: EnergyTypes.FIRE,
-    evolvesFrom: '火恐龍',
-    stage: 2,
-    image: './images/charizard.png',
-    attack: {
-      name: '大字爆炎',
-      cost: [EnergyTypes.FIRE, EnergyTypes.FIRE, EnergyTypes.FIRE, EnergyTypes.FIRE],
-      damage: 100
-    }
-  },
-  'p-002-ev1': {
-    id: 'p-002-ev1',
-    type: CardTypes.POKEMON,
-    name: '卡咪龜',
-    hp: 90,
-    maxHp: 90,
-    energyType: EnergyTypes.WATER,
-    evolvesFrom: '傑尼龜',
-    stage: 1,
-    image: './images/wartortle.png',
-    attack: {
-      name: '水砲',
-      cost: [EnergyTypes.WATER, EnergyTypes.WATER],
-      damage: 50
-    }
-  },
-  'p-002-ev2': {
-    id: 'p-002-ev2',
-    type: CardTypes.POKEMON,
-    name: '水箭龜',
-    hp: 140,
-    maxHp: 140,
-    energyType: EnergyTypes.WATER,
-    evolvesFrom: '卡咪龜',
-    stage: 2,
-    image: './images/blastoise.png',
-    attack: {
-      name: '水砲連發',
-      cost: [EnergyTypes.WATER, EnergyTypes.WATER, EnergyTypes.WATER],
-      damage: 80
-    }
-  },
-  'p-003-ev1': {
-    id: 'p-003-ev1',
-    type: CardTypes.POKEMON,
-    name: '妙蛙草',
-    hp: 100,
-    maxHp: 100,
-    energyType: EnergyTypes.GRASS,
-    evolvesFrom: '妙蛙種子',
-    stage: 1,
-    image: './images/ivysaur.png',
-    attack: {
-      name: '飛葉快刀',
-      cost: [EnergyTypes.GRASS, EnergyTypes.GRASS],
-      damage: 50
-    }
-  },
-  'p-003-ev2': {
-    id: 'p-003-ev2',
-    type: CardTypes.POKEMON,
-    name: '妙蛙花',
-    hp: 140,
-    maxHp: 140,
-    energyType: EnergyTypes.GRASS,
-    evolvesFrom: '妙蛙草',
-    stage: 2,
-    image: './images/venusaur.png',
-    attack: {
-      name: '日光束',
-      cost: [EnergyTypes.GRASS, EnergyTypes.GRASS, EnergyTypes.GRASS, EnergyTypes.GRASS],
-      damage: 90
-    }
-  },
-  'p-004-ev1': {
-    id: 'p-004-ev1',
-    type: CardTypes.POKEMON,
-    name: '雷丘',
-    hp: 90,
-    maxHp: 90,
-    energyType: EnergyTypes.ELECTRIC,
-    evolvesFrom: '皮卡丘',
-    stage: 1,
-    image: './images/raichu.png',
-    attack: {
-      name: '十萬伏特',
-      cost: [EnergyTypes.ELECTRIC, EnergyTypes.ELECTRIC],
-      damage: 60
-    }
+    attack: { name: '電擊', cost: [EnergyTypes.ELECTRIC], damage: 20 }
   },
   'p-150': {
     id: 'p-150',
@@ -194,11 +70,7 @@ export const cardDatabase = {
     maxHp: 130,
     energyType: EnergyTypes.PSYCHIC,
     image: './images/mewtwo.png',
-    attack: {
-      name: '精神強念',
-      cost: [EnergyTypes.PSYCHIC, EnergyTypes.PSYCHIC],
-      damage: 60
-    }
+    attack: { name: '精神強念', cost: [EnergyTypes.PSYCHIC, EnergyTypes.PSYCHIC], damage: 60 }
   },
   'p-066': {
     id: 'p-066',
@@ -208,11 +80,7 @@ export const cardDatabase = {
     maxHp: 70,
     energyType: EnergyTypes.FIGHTING,
     image: './images/machop.png',
-    attack: {
-      name: '空手劈',
-      cost: [EnergyTypes.FIGHTING],
-      damage: 20
-    }
+    attack: { name: '空手劈', cost: [EnergyTypes.FIGHTING], damage: 20 }
   },
   'p-143': {
     id: 'p-143',
@@ -228,153 +96,245 @@ export const cardDatabase = {
       damage: 50
     }
   },
-  'e-fire': {
-    id: 'e-fire',
-    type: CardTypes.ENERGY,
-    name: '火能量',
-    energyType: EnergyTypes.FIRE
+
+  // ---- 一階進化寶可夢 (#3: evolvesFrom 改為卡片 id) ----------------------
+  'p-001-ev1': {
+    id: 'p-001-ev1',
+    type: CardTypes.POKEMON,
+    name: '火恐龍',
+    hp: 90,
+    maxHp: 90,
+    energyType: EnergyTypes.FIRE,
+    evolvesFrom: 'p-001',
+    stage: 1,
+    image: './images/charmeleon.png',
+    attack: { name: '火焰放射', cost: [EnergyTypes.FIRE, EnergyTypes.FIRE], damage: 50 }
   },
-  'e-water': {
-    id: 'e-water',
-    type: CardTypes.ENERGY,
-    name: '水能量',
-    energyType: EnergyTypes.WATER
+  'p-002-ev1': {
+    id: 'p-002-ev1',
+    type: CardTypes.POKEMON,
+    name: '卡咪龜',
+    hp: 90,
+    maxHp: 90,
+    energyType: EnergyTypes.WATER,
+    evolvesFrom: 'p-002',
+    stage: 1,
+    image: './images/wartortle.png',
+    attack: { name: '水砲', cost: [EnergyTypes.WATER, EnergyTypes.WATER], damage: 50 }
   },
-  'e-grass': {
-    id: 'e-grass',
-    type: CardTypes.ENERGY,
-    name: '草能量',
-    energyType: EnergyTypes.GRASS
+  'p-003-ev1': {
+    id: 'p-003-ev1',
+    type: CardTypes.POKEMON,
+    name: '妙蛙草',
+    hp: 100,
+    maxHp: 100,
+    energyType: EnergyTypes.GRASS,
+    evolvesFrom: 'p-003',
+    stage: 1,
+    image: './images/ivysaur.png',
+    attack: { name: '飛葉快刀', cost: [EnergyTypes.GRASS, EnergyTypes.GRASS], damage: 50 }
   },
-  'e-electric': {
-    id: 'e-electric',
-    type: CardTypes.ENERGY,
-    name: '雷能量',
-    energyType: EnergyTypes.ELECTRIC
+  'p-004-ev1': {
+    id: 'p-004-ev1',
+    type: CardTypes.POKEMON,
+    name: '雷丘',
+    hp: 90,
+    maxHp: 90,
+    energyType: EnergyTypes.ELECTRIC,
+    evolvesFrom: 'p-004',
+    stage: 1,
+    image: './images/raichu.png',
+    attack: { name: '十萬伏特', cost: [EnergyTypes.ELECTRIC, EnergyTypes.ELECTRIC], damage: 60 }
   },
-  'e-psychic': {
-    id: 'e-psychic',
-    type: CardTypes.ENERGY,
-    name: '超能能量',
-    energyType: EnergyTypes.PSYCHIC
+
+  // ---- 二階進化寶可夢 (#3: evolvesFrom 改為卡片 id) ----------------------
+  'p-001-ev2': {
+    id: 'p-001-ev2',
+    type: CardTypes.POKEMON,
+    name: '噴火龍',
+    hp: 150,
+    maxHp: 150,
+    energyType: EnergyTypes.FIRE,
+    evolvesFrom: 'p-001-ev1',
+    stage: 2,
+    image: './images/charizard.png',
+    attack: {
+      name: '大字爆炎',
+      cost: [EnergyTypes.FIRE, EnergyTypes.FIRE, EnergyTypes.FIRE, EnergyTypes.FIRE],
+      damage: 100
+    }
   },
-  'e-fighting': {
-    id: 'e-fighting',
-    type: CardTypes.ENERGY,
-    name: '格鬥能量',
-    energyType: EnergyTypes.FIGHTING
+  'p-002-ev2': {
+    id: 'p-002-ev2',
+    type: CardTypes.POKEMON,
+    name: '水箭龜',
+    hp: 140,
+    maxHp: 140,
+    energyType: EnergyTypes.WATER,
+    evolvesFrom: 'p-002-ev1',
+    stage: 2,
+    image: './images/blastoise.png',
+    attack: {
+      name: '水砲連發',
+      cost: [EnergyTypes.WATER, EnergyTypes.WATER, EnergyTypes.WATER],
+      damage: 80
+    }
   },
+  'p-003-ev2': {
+    id: 'p-003-ev2',
+    type: CardTypes.POKEMON,
+    name: '妙蛙花',
+    hp: 140,
+    maxHp: 140,
+    energyType: EnergyTypes.GRASS,
+    evolvesFrom: 'p-003-ev1',
+    stage: 2,
+    image: './images/venusaur.png',
+    attack: {
+      name: '日光束',
+      cost: [EnergyTypes.GRASS, EnergyTypes.GRASS, EnergyTypes.GRASS, EnergyTypes.GRASS],
+      damage: 90
+    }
+  },
+
+  // ---- 能量卡 ------------------------------------------------------------
+  'e-fire':     { id: 'e-fire',     type: CardTypes.ENERGY, name: '火能量',   energyType: EnergyTypes.FIRE },
+  'e-water':    { id: 'e-water',    type: CardTypes.ENERGY, name: '水能量',   energyType: EnergyTypes.WATER },
+  'e-grass':    { id: 'e-grass',    type: CardTypes.ENERGY, name: '草能量',   energyType: EnergyTypes.GRASS },
+  'e-electric': { id: 'e-electric', type: CardTypes.ENERGY, name: '雷能量',   energyType: EnergyTypes.ELECTRIC },
+  'e-psychic':  { id: 'e-psychic',  type: CardTypes.ENERGY, name: '超能能量', energyType: EnergyTypes.PSYCHIC },
+  'e-fighting': { id: 'e-fighting', type: CardTypes.ENERGY, name: '格鬥能量', energyType: EnergyTypes.FIGHTING },
+  'e-normal':   { id: 'e-normal',   type: CardTypes.ENERGY, name: '無色能量', energyType: EnergyTypes.NORMAL },
+
+  // ---- 物品卡 (#1: 新增 effect 欄位描述效果種類) --------------------------
   't-potion': {
     id: 't-potion',
     type: CardTypes.ITEM,
     name: '傷藥',
     heal: 20,
+    effect: { kind: 'heal' },
     description: '回復一隻寶可夢 20 點 HP。'
-  },
-  't-pokeball': {
-    id: 't-pokeball',
-    type: CardTypes.ITEM,
-    name: '精靈球',
-    description: '從牌庫尋找一張寶可夢卡加入手牌，然後洗牌。'
   },
   'i-hyperpotion': {
     id: 'i-hyperpotion',
     type: CardTypes.ITEM,
     name: '高級傷藥',
     heal: 50,
+    effect: { kind: 'heal' },
     description: '回復一隻寶可夢 50 點 HP。'
   },
   'i-switch': {
     id: 'i-switch',
     type: CardTypes.ITEM,
     name: '寶可夢交換器',
+    effect: { kind: 'switchActive' },
     description: '將戰鬥區的寶可夢與一隻備戰區的寶可夢互換。'
   },
   'i-energy-retrieval': {
     id: 'i-energy-retrieval',
     type: CardTypes.ITEM,
     name: '能量回收',
+    effect: { kind: 'energyRetrieval' },
     description: '從棄牌區拿回最多 2 張能量卡加入手牌。'
+  },
+  't-pokeball': {
+    id: 't-pokeball',
+    type: CardTypes.ITEM,
+    name: '精靈球',
+    effect: { kind: 'searchDeck', topN: null },
+    description: '從牌庫尋找一張寶可夢卡加入手牌，然後洗牌。'
   },
   'i-greatball': {
     id: 'i-greatball',
     type: CardTypes.ITEM,
     name: '超級球',
+    effect: { kind: 'searchDeck', topN: 7 },
     description: '查看牌庫頂的 7 張卡，從中挑選 1 張寶可夢加入手牌，然後洗牌。'
   },
+  'i-rarecandy': {
+    id: 'i-rarecandy',
+    type: CardTypes.ITEM,
+    name: '神奇糖果',
+    image: './images/rarecandy.png',
+    effect: { kind: 'rareCandy' },
+    description: '當你從手牌將二階進化寶可夢放到基礎寶可夢上時，將自動消耗此卡並跳過一階進化。'
+  },
+  'i-escaperope': {
+    id: 'i-escaperope',
+    type: CardTypes.ITEM,
+    name: '離洞繩',
+    image: './images/escaperope.png',
+    effect: { kind: 'escapeRope' },
+    description: '雙方玩家都必須將戰鬥區的寶可夢與備戰區的寶可夢互換（對手先替換）。'
+  },
+
+  // ---- 支援者卡 (#1: 新增 effect 欄位) -----------------------------------
   't-prof': {
     id: 't-prof',
     type: CardTypes.TRAINER,
     name: '大木博士',
+    effect: { kind: 'professor' },
     description: '捨棄你的所有手牌，然後從牌庫抽出 7 張卡。'
+  },
+  't-boss': {
+    id: 't-boss',
+    type: CardTypes.TRAINER,
+    name: '老大的指令',
+    image: './images/boss_orders.png',
+    effect: { kind: 'bossOrders' },
+    description: '選擇對手備戰區的一隻寶可夢，並將其與對手戰鬥區的寶可夢互換。'
   }
 };
 
-// 產生特定主題的純色牌組 (20張)
+// 產生特定主題的純色牌組
 export const generateThemeDeck = (theme) => {
   const deck = [];
-  
+
   const themeMap = {
-    'fire': { basic: 'p-001', ev1: 'p-001-ev1', ev2: 'p-001-ev2', energy: 'e-fire' },
-    'water': { basic: 'p-002', ev1: 'p-002-ev1', ev2: 'p-002-ev2', energy: 'e-water' },
-    'grass': { basic: 'p-003', ev1: 'p-003-ev1', ev2: 'p-003-ev2', energy: 'e-grass' },
-    'electric': { basic: 'p-004', ev1: 'p-004-ev1', energy: 'e-electric' },
-    'psychic': { basic: 'p-150', energy: 'e-psychic' },
-    'fighting': { basic: 'p-066', energy: 'e-fighting' },
-    'normal': { basic: 'p-143', energy: 'e-psychic' } // 卡比獸可以用任意能量，先預設混超能
+    'fire':     { basic: 'p-001', ev1: 'p-001-ev1', ev2: 'p-001-ev2', energy: 'e-fire' },
+    'water':    { basic: 'p-002', ev1: 'p-002-ev1', ev2: 'p-002-ev2', energy: 'e-water' },
+    'grass':    { basic: 'p-003', ev1: 'p-003-ev1', ev2: 'p-003-ev2', energy: 'e-grass' },
+    'electric': { basic: 'p-004', ev1: 'p-004-ev1',                   energy: 'e-electric' },
+    'psychic':  { basic: 'p-150',                                       energy: 'e-psychic' },
+    'fighting': { basic: 'p-066',                                       energy: 'e-fighting' },
+    'normal':   { basic: 'p-143',                                       energy: 'e-normal' },
   };
 
-  const selectedTheme = themeMap[theme] || themeMap['fire']; // 預設火
+  const t = themeMap[theme] || themeMap['fire'];
+  const base = cardDatabase[t.basic];
 
-  // 6 張基礎寶可夢
-  for (let i = 0; i < 6; i++) {
-    deck.push({ 
-      ...cardDatabase[selectedTheme.basic], 
-      instanceId: `deck-p-${i}-${Date.now()}`, 
-      attachedEnergy: [], 
-      currentHp: cardDatabase[selectedTheme.basic].hp 
-    });
-  }
-  
-  // 3 張一階進化寶可夢
-  for (let i = 0; i < 3; i++) {
-    deck.push({ 
-      ...cardDatabase[selectedTheme.ev1], 
-      instanceId: `deck-pev-${i}-${Date.now()}`, 
-      attachedEnergy: [], 
-      currentHp: cardDatabase[selectedTheme.ev1].hp 
-    });
-  }
+  // #2: 使用 newInstanceId 取代 Date.now()，確保跨玩家不碰撞
+  const inst = (cardId) => {
+    const card = cardDatabase[cardId];
+    const isPokemon = card.type === CardTypes.POKEMON;
+    return {
+      ...card,
+      instanceId: newInstanceId(cardId),
+      ...(isPokemon && { attachedEnergy: [], currentHp: card.maxHp })
+    };
+  };
 
-  // 2 張二階進化寶可夢 (如果有)
-  if (selectedTheme.ev2) {
-    for (let i = 0; i < 2; i++) {
-      deck.push({ 
-        ...cardDatabase[selectedTheme.ev2], 
-        instanceId: `deck-pev2-${i}-${Date.now()}`, 
-        attachedEnergy: [], 
-        currentHp: cardDatabase[selectedTheme.ev2].hp 
-      });
-    }
-  }
-  
-  // 6 張屬性對應能量
-  for (let i = 0; i < 6; i++) {
-    deck.push({
-      ...cardDatabase[selectedTheme.energy],
-      instanceId: `deck-e-${i}-${Date.now()}`
-    });
+  // 基礎寶可夢：無進化線的主題多補 3 張
+  const basicCount = t.ev1 ? 6 : 9;
+  for (let i = 0; i < basicCount; i++) deck.push(inst(t.basic));
+
+  // 一階進化（如果有）
+  if (t.ev1) {
+    for (let i = 0; i < 3; i++) deck.push(inst(t.ev1));
   }
 
-  // 7 張物品 / 支援者卡
-  deck.push({ ...cardDatabase['t-potion'], instanceId: `deck-t-pot-${Date.now()}` });
-  deck.push({ ...cardDatabase['i-hyperpotion'], instanceId: `deck-i-hpot-${Date.now()}` });
-  deck.push({ ...cardDatabase['t-pokeball'], instanceId: `deck-t-ball-${Date.now()}` });
-  deck.push({ ...cardDatabase['i-greatball'], instanceId: `deck-i-gball-${Date.now()}` });
-  deck.push({ ...cardDatabase['i-switch'], instanceId: `deck-i-switch-${Date.now()}` });
-  deck.push({ ...cardDatabase['i-energy-retrieval'], instanceId: `deck-i-eret-${Date.now()}` });
-  deck.push({ ...cardDatabase['t-prof'], instanceId: `deck-t-prof-${Date.now()}` });
+  // 二階進化（如果有）
+  if (t.ev2) {
+    for (let i = 0; i < 2; i++) deck.push(inst(t.ev2));
+  }
 
-  // 洗牌
+  // 屬性能量
+  for (let i = 0; i < 6; i++) deck.push(inst(t.energy));
+
+  // 物品 / 支援者卡
+  ['t-potion', 'i-hyperpotion', 'i-switch', 't-pokeball', 'i-greatball',
+   't-prof', 't-prof', 'i-rarecandy', 'i-escaperope', 't-boss'
+  ].forEach(id => deck.push(inst(id)));
+
   return deck.sort(() => Math.random() - 0.5);
 };

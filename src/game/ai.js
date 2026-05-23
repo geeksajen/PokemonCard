@@ -23,12 +23,12 @@ export const decideAIAction = (state, playerId) => {
     return { kind: 'end' };
   }
 
-  // 2. 進化（優先戰鬥區，其次備戰區）
+  // 2. 進化（優先戰鬥區，其次備戰區；#3: 改用 id 比對）
   for (const evo of evolutions) {
-    if (me.activePokemon.name === evo.evolvesFrom) {
+    if (me.activePokemon.id === evo.evolvesFrom) {
       return { kind: 'play', card: evo, location: { zone: 'active' } };
     }
-    const benchIdx = me.bench.findIndex((b) => b.name === evo.evolvesFrom);
+    const benchIdx = me.bench.findIndex((b) => b.id === evo.evolvesFrom);
     if (benchIdx !== -1) {
       return { kind: 'play', card: evo, location: { zone: 'bench', index: benchIdx } };
     }

@@ -6,15 +6,17 @@ import {
   getOpponentId,
   playCardOnPokemon,
   promoteFromBench,
-  playProfessor,
   pullPokemonFromDeck,
   cancelPokeball,
-  retrieveEnergy,
   canAttack,
   applyAttackDamage,
   resolveKnockout,
   endTurnState,
   drawForTurn,
+  resolveBossOrders,
+  resolveEscapeRope,
+  cancelPendingAction,
+  resolveBoardCardEffect,
 } from '../game/rules';
 import {
   sfxPlace,
@@ -186,6 +188,12 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
   };
 
   const handleMyBenchClick = (existingPokemon, index) => {
+    // 優先處理 Escape Rope 這類的換位選擇
+    if (gameState?.pendingAction?.type === 'select_my_bench') {
+      applyResult(resolveEscapeRope(gameState, currentPlayerId, index));
+      return;
+    }
+    
     // 戰鬥區空缺時，點擊備戰區寶可夢直接推派上場
     if (!currentPlayer.activePokemon && existingPokemon) {
       const result = promoteFromBench(gameState, currentPlayerId, index);
@@ -211,6 +219,16 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     if (card) playToLocation(card, { zone: 'active' });
   };
 
+  const handleOpponentBenchClick = (existingPokemon, index) => {
+    if (gameState?.pendingAction?.type === 'select_opponent_bench') {
+      applyResult(resolveBossOrders(gameState, currentPlayerId, index));
+    }
+  };
+
+  const handleCancelPending = () => {
+    applyResult(cancelPendingAction(gameState, currentPlayerId));
+  };
+
   const handleDropBench = (e, existingPokemon, index) => {
     e.preventDefault();
     setIsDragging(false);
@@ -219,7 +237,8 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     if (card) playToLocation(card, { zone: 'bench', index });
   };
 
-  // 拖到棋盤空白處：訓練家卡（大木博士 / 精靈球）
+  // 拖到棋盤空白處：訓練家卡 / 無目標物品卡
+  // #1: 改由 card.effect.kind 分派，新增卡只需在 cardDatabase 設 effect 欄位
   const handleDropBoard = (e) => {
     e.preventDefault();
     setIsDragging(false);
@@ -227,18 +246,15 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     const card = currentPlayer.hand.find((c) => c.instanceId === cardId);
     if (!card || (card.type !== CardTypes.TRAINER && card.type !== CardTypes.ITEM)) return;
 
-    if (card.id === 't-prof') {
-      applyResult(playProfessor(gameState, currentPlayerId, card));
-    } else if (card.id === 't-pokeball') {
-      setDeckSearchTopN(null);
+    const kind = card.effect?.kind;
+    if (!kind) return;
+
+    if (kind === 'searchDeck') {
+      setDeckSearchTopN(card.effect.topN ?? null);
       setCardToConsume(card);
       setShowDeckSearch(true);
-    } else if (card.id === 'i-greatball') {
-      setDeckSearchTopN(7);
-      setCardToConsume(card);
-      setShowDeckSearch(true);
-    } else if (card.id === 'i-energy-retrieval') {
-      applyResult(retrieveEnergy(gameState, currentPlayerId, card));
+    } else {
+      applyResult(resolveBoardCardEffect(gameState, currentPlayerId, card));
     }
   };
 
@@ -383,5 +399,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     endTurn,
     handleTurnTransitionClick,
     handleAttackClick,
+    handleOpponentBenchClick,
+    handleCancelPending,
   };
 };

@@ -5,7 +5,7 @@
 // 慣例：
 //  - 成功的「放置/動作」會直接寫入 state.logs，並回傳 { ok: true, state }
 //  - 失敗時回傳 { ok: false, error }（error 為 null 代表「靜默無效」，不顯示提示）
-import { CardTypes, EnergyTypes } from '../models/cards';
+import { CardTypes, EnergyTypes, cardDatabase } from '../models/cards';
 
 export const getOpponentId = (playerId) =>
   playerId === 'player1' ? 'player2' : 'player1';
@@ -54,8 +54,19 @@ const playPokemon = (state, playerId, card, location) => {
     return { ok: true, state: newState };
   }
 
-  // 進化
-  if (existing && card.stage && existing.name === card.evolvesFrom) {
+  // 檢查是否使用神奇糖果跳級進化（#3: 改用 id 比對，並直接用 cardDatabase[id] 取代 O(n) 掃描）
+  const candyIndex = p.hand.findIndex(c => c.id === 'i-rarecandy');
+  const isRareCandyCandidate = existing && !existing.stage && card.stage === 2 && candyIndex !== -1;
+  let canEvolveRareCandy = false;
+  if (isRareCandyCandidate) {
+    const stage1 = cardDatabase[card.evolvesFrom];
+    if (stage1 && stage1.evolvesFrom === existing.id) {
+      canEvolveRareCandy = true;
+    }
+  }
+
+  // 進化（#3: existing.id === card.evolvesFrom 取代名稱字串比對）
+  if ((existing && card.stage && existing.id === card.evolvesFrom) || canEvolveRareCandy) {
     const evolved = evolveCard(existing, card);
     if (location.zone === 'active') {
       p.activePokemon = evolved;
@@ -64,7 +75,13 @@ const playPokemon = (state, playerId, card, location) => {
       if (idx !== -1) p.bench[idx] = evolved;
     }
     removeFromHand(p, card.instanceId);
-    pushLog(newState, playerId, `將${zoneLabel}的 ${existing.name} 進化成 ${evolved.name}！`);
+    if (canEvolveRareCandy) {
+      p.discardPile.push(p.hand[candyIndex]);
+      p.hand.splice(candyIndex, 1);
+      pushLog(newState, playerId, `使用神奇糖果，將${zoneLabel}的 ${existing.name} 直接進化成 ${evolved.name}！`);
+    } else {
+      pushLog(newState, playerId, `將${zoneLabel}的 ${existing.name} 進化成 ${evolved.name}！`);
+    }
     return { ok: true, state: newState };
   }
 
@@ -147,13 +164,113 @@ const applySwitch = (state, playerId, card, location) => {
   return { ok: true, state: newState };
 };
 
+// ---- 戰術卡：老大的指令 ----------------------------------------------------
+export const applyBossOrders = (state, playerId, card) => {
+  const newState = structuredClone(state);
+  newState.pendingAction = {
+    type: 'select_opponent_bench',
+    cardId: card.instanceId,
+    player: playerId
+  };
+  return { ok: true, state: newState };
+};
+
+export const resolveBossOrders = (state, playerId, targetBenchIndex) => {
+  const newState = structuredClone(state);
+  const me = newState.players[playerId];
+  const oppId = getOpponentId(playerId);
+  const opp = newState.players[oppId];
+  
+  const target = opp.bench[targetBenchIndex];
+  if (!target) return { ok: false, error: '無效的目標' };
+  
+  const active = opp.activePokemon;
+  opp.activePokemon = target;
+  opp.bench[targetBenchIndex] = active;
+  
+  const cardId = newState.pendingAction.cardId;
+  const cardIndex = me.hand.findIndex(c => c.instanceId === cardId);
+  if (cardIndex !== -1) {
+    me.discardPile.push(me.hand[cardIndex]);
+    me.hand.splice(cardIndex, 1);
+  }
+  
+  newState.pendingAction = null;
+  pushLog(newState, playerId, `使用老大的指令，將對手戰鬥區的 ${active.name} 與備戰區的 ${target.name} 互換！`);
+  return { ok: true, state: newState };
+};
+
+export const cancelPendingAction = (state, playerId) => {
+  const newState = structuredClone(state);
+  newState.pendingAction = null;
+  return { ok: true, state: newState };
+};
+
+// ---- 戰術卡：離洞繩 ----------------------------------------------------
+export const applyEscapeRope = (state, playerId, card) => {
+  const newState = structuredClone(state);
+  const me = newState.players[playerId];
+  const oppId = getOpponentId(playerId);
+  const opp = newState.players[oppId];
+  
+  if (opp.bench.length > 0) {
+    const randIdx = Math.floor(Math.random() * opp.bench.length);
+    const target = opp.bench[randIdx];
+    const active = opp.activePokemon;
+    opp.activePokemon = target;
+    opp.bench[randIdx] = active;
+    pushLog(newState, 'system', `對手受到離洞繩影響，將 ${active.name} 替換為 ${target.name}`);
+  }
+  
+  if (me.bench.length > 0) {
+    newState.pendingAction = {
+      type: 'select_my_bench',
+      cardId: card.instanceId,
+      player: playerId
+    };
+  } else {
+    const cardIndex = me.hand.findIndex(c => c.instanceId === card.instanceId);
+    if (cardIndex !== -1) {
+      me.discardPile.push(me.hand[cardIndex]);
+      me.hand.splice(cardIndex, 1);
+    }
+    pushLog(newState, playerId, `使用了離洞繩，但備戰區沒有寶可夢可供替換。`);
+  }
+  return { ok: true, state: newState };
+};
+
+export const resolveEscapeRope = (state, playerId, targetBenchIndex) => {
+  const newState = structuredClone(state);
+  const me = newState.players[playerId];
+  
+  const target = me.bench[targetBenchIndex];
+  if (!target) return { ok: false, error: '無效的目標' };
+  
+  const active = me.activePokemon;
+  me.activePokemon = target;
+  me.bench[targetBenchIndex] = active;
+  
+  const cardId = newState.pendingAction.cardId;
+  const cardIndex = me.hand.findIndex(c => c.instanceId === cardId);
+  if (cardIndex !== -1) {
+    me.discardPile.push(me.hand[cardIndex]);
+    me.hand.splice(cardIndex, 1);
+  }
+  
+  newState.pendingAction = null;
+  pushLog(newState, playerId, `離洞繩發動：將 ${active.name} 替換為 ${target.name}`);
+  return { ok: true, state: newState };
+};
+
 // 對某個位置打出一張手牌（寶可夢 / 能量 / 需指定目標的物品）
+// #1: 物品效果改由 card.effect.kind 分派，取代硬編碼的 card.id / card.heal 判斷
 export const playCardOnPokemon = (state, playerId, card, location) => {
   if (card.type === CardTypes.POKEMON) return playPokemon(state, playerId, card, location);
   if (card.type === CardTypes.ENERGY) return attachEnergy(state, playerId, card, location);
   if (card.type === CardTypes.ITEM) {
-    if (card.heal) return applyPotion(state, playerId, card, location);
-    if (card.id === 'i-switch') return applySwitch(state, playerId, card, location);
+    const kind = card.effect?.kind;
+    if (kind === 'heal') return applyPotion(state, playerId, card, location);
+    if (kind === 'switchActive') return applySwitch(state, playerId, card, location);
   }
   return { ok: false, error: null };
 };
@@ -332,6 +449,21 @@ export const endTurnState = (state) => {
   newState.hasAttachedEnergyThisTurn = false;
   newState.hasAttackedThisTurn = false;
   return { ok: true, state: newState };
+};
+
+// ---- 效果註冊表：不需指定目標的訓練家 / 物品卡 (#1) --------------------
+// 新增一張無目標卡時，只需在 cardDatabase 設 effect.kind，並在此加一行對應。
+const boardCardHandlers = {
+  professor:       playProfessor,
+  energyRetrieval: retrieveEnergy,
+  bossOrders:      applyBossOrders,
+  escapeRope:      applyEscapeRope,
+};
+
+export const resolveBoardCardEffect = (state, playerId, card) => {
+  const handler = boardCardHandlers[card.effect?.kind];
+  if (handler) return handler(state, playerId, card);
+  return { ok: false, error: null };
 };
 
 // 回合開始抽牌。回傳 { state, drawnCardId, deckOut }
