@@ -1,7 +1,7 @@
 import React from 'react';
 import Card from './Card';
 
-const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, damageTaken, onBenchPointerDragStart, registerZone, dragState }) => {
+const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, damageTaken, onBenchPointerDragStart, registerZone, dragState, onInspect }) => {
   // 是否正在拖曳中
   const isDragging = dragState?.isDragging;
   const hoverZone = dragState?.hoverZone;
@@ -38,7 +38,11 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
         }}
       >
         {activePokemon ? (
-          <div className={damageTaken ? 'shake-anim' : ''} style={{ position: 'relative' }}>
+          <div
+            className={damageTaken ? 'shake-anim' : ''}
+            style={{ position: 'relative' }}
+            onContextMenu={(e) => { e.preventDefault(); onInspect && onInspect(activePokemon); }}
+          >
             {damageTaken && <div className="damage-text">-{damageTaken}</div>}
             <Card 
               card={activePokemon} 
@@ -87,7 +91,7 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
               }}
             >
               {benchPokemon ? (
-                <div 
+                  <div 
                   className={onBenchPointerDragStart ? 'bench-card-draggable' : ''}
                   style={{ pointerEvents: onBenchClick ? 'auto' : 'none' }}
                   onPointerDown={(e) => {
@@ -95,6 +99,7 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
                       onBenchPointerDragStart(idx, e);
                     }
                   }}
+                  onContextMenu={(e) => { e.preventDefault(); onInspect && onInspect(benchPokemon); }}
                 >
                   <Card 
                     card={benchPokemon} 

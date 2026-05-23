@@ -3,6 +3,7 @@ import Board from './Board';
 import Hand from './Hand';
 import Card from './Card';
 import DragOverlay from './DragOverlay';
+import CardInspectModal from './CardInspectModal';
 import PilePair from './arena/PilePair';
 import HudOverlay from './arena/HudOverlay';
 import SettingsModal from './arena/SettingsModal';
@@ -20,6 +21,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
   // 純 UI 開關，與遊戲邏輯無關，留在此處管理
   const [showSettings, setShowSettings] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [inspectCard, setInspectCard] = useState(null);
 
   if (engine.loading) {
     return <div style={{ color: 'white', padding: '2rem' }}>載入遊戲中...</div>;
@@ -126,7 +128,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
       {/* 對手手牌實體佔位 */}
       <div style={{ height: '40px', position: 'relative', zIndex: 30, flexShrink: 0 }}>
         <div className="hand-wrapper-top">
-          <Hand hand={topPlayer.hand} isCurrentPlayer={false} drawnCardAnim={drawnCardAnim} />
+          <Hand hand={topPlayer.hand} isCurrentPlayer={false} drawnCardAnim={drawnCardAnim} onInspect={setInspectCard} />
         </div>
       </div>
 
@@ -181,6 +183,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           isTopPlayer={true}
           damageTaken={damageAnim ? damageAnim.damage : null}
           onBenchClick={humanCanAct ? handleOpponentBenchClick : undefined}
+          onInspect={setInspectCard}
         />
         <Board
           activePokemon={bottomPlayer.activePokemon}
@@ -191,6 +194,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           onBenchPointerDragStart={humanCanAct ? handleBenchPointerDragStart : undefined}
           registerZone={registerZone}
           dragState={dragState}
+          onInspect={setInspectCard}
         />
       </div>
 
@@ -233,6 +237,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
             onPointerDragStart={humanCanAct ? handlePointerDragStart : undefined}
             dragState={dragState}
             drawnCardAnim={drawnCardAnim}
+            onInspect={setInspectCard}
           />
         </div>
       </div>
@@ -247,6 +252,9 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
 
       {/* 拖曳浮層 - 最上層 */}
       <DragOverlay dragState={dragState} />
+
+      {/* 卡牌檢視器 */}
+      <CardInspectModal card={inspectCard} onClose={() => setInspectCard(null)} />
     </div>
   );
 };

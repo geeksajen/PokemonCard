@@ -2,7 +2,7 @@ import React from 'react';
 import Card from './Card';
 import { sfxHover } from '../utils/sounds';
 
-const Hand = ({ hand, onCardClick, isCurrentPlayer, onPointerDragStart, dragState, drawnCardAnim }) => {
+const Hand = ({ hand, onCardClick, isCurrentPlayer, onPointerDragStart, dragState, drawnCardAnim, onInspect }) => {
   return (
     <div style={{
       display: 'flex',
@@ -30,6 +30,10 @@ const Hand = ({ hand, onCardClick, isCurrentPlayer, onPointerDragStart, dragStat
               }
             }}
             onMouseEnter={() => isCurrentPlayer && !(dragState?.isDragging) && sfxHover()}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              if (!isBeingDragged && onInspect) onInspect(card);
+            }}
           >
             <Card 
               card={card} 
