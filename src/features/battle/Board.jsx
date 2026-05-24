@@ -1,74 +1,47 @@
 import React from 'react';
 import Card from './Card';
-import { CardTypes } from '../../models/cards';
 
-const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, damageTaken, onBenchPointerDragStart, registerZone, dragState, onInspect, pendingAction }) => {
-  // 是否正在拖曳中
+const EMPTY_VALID_ZONES = new Set();
+
+const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, damageTaken, onBenchPointerDragStart, registerZone, dragState, onInspect, pendingAction, validZones = EMPTY_VALID_ZONES }) => {
+  // 拖曳 / pending 狀態
   const isDragging = dragState?.isDragging;
   const hoverZone = dragState?.hoverZone;
-  const draggedCard = dragState?.card;
+  const dragSource = dragState?.source;
 
-  // 判斷特定卡牌是否為合法的智慧目標 (被拖曳的卡)
-  const isSmartTarget = (pokemon) => {
-    if (!isDragging || isTopPlayer || !pokemon || !draggedCard) return false;
-    // 能量卡：所有我方寶可夢
-    if (draggedCard.type === CardTypes.ENERGY) return true;
-    // 進化卡：符合 evolvesFrom 的我方寶可夢
-    if (draggedCard.type === CardTypes.POKEMON && draggedCard.evolvesFrom === pokemon.name) return true;
-    return false;
-  };
+  // 合法落點：由 GameArena 透過 rules.getValidTargets 算好後傳入（僅下方玩家有值）
+  const isValidZone = (zoneId) => validZones.has(zoneId);
 
-  // 判斷特定空位是否為合法的放置目標
-  const isEmptyTarget = () => {
-    if (!isDragging || isTopPlayer || !draggedCard) return false;
-    // 基礎寶可夢可放空位
-    if (draggedCard.type === CardTypes.POKEMON && !draggedCard.evolvesFrom) return true;
-    return false;
-  };
+  // pending action（老大指令 / 離洞繩）目標判定
+  const isDangerTarget = (pokemon, isBench) =>
+    pendingAction?.type === 'select_opponent_bench' && isTopPlayer && isBench && pokemon;
+  const isActionTarget = (pokemon, isBench) =>
+    pendingAction?.type === 'select_my_bench' && !isTopPlayer && isBench && pokemon;
 
   // 判斷是否應該因為焦點模式而變暗
-  const shouldDim = (pokemon, isBench) => {
-    // 優先權 1：有 Pending Action
+  const shouldDim = (pokemon, isBench, zoneId) => {
+    // 優先權 1：有 Pending Action 聚焦
     if (pendingAction) {
-      if (pendingAction.type === 'select_opponent_bench') {
-        // 老大：對手備戰區是目標，其他變暗
-        if (isTopPlayer && isBench && pokemon) return false;
-        return true;
-      }
-      if (pendingAction.type === 'select_my_bench') {
-        // 逃脫繩：我方備戰區是目標，其他變暗
-        if (!isTopPlayer && isBench && pokemon) return false;
-        return true;
-      }
+      if (pendingAction.type === 'select_opponent_bench') return !(isTopPlayer && isBench && pokemon);
+      if (pendingAction.type === 'select_my_bench') return !(!isTopPlayer && isBench && pokemon);
     }
-    // 優先權 2：正在拖曳
+    // 優先權 2：正在拖曳聚焦
     if (isDragging) {
-      if (isTopPlayer) return true; // 拖曳時，對手的全域變暗
-      // 手牌拖曳：如果是可放置的目標，不要變暗
-      if (draggedCard && pokemon && isSmartTarget(pokemon)) return false;
-      if (draggedCard && !pokemon && isEmptyTarget()) return false;
-      // 場上拖曳推派：
-      if (!draggedCard && dragState?.source?.type === 'bench' && !isBench && !pokemon) return false; // 推派到戰鬥區空位
-      return true; // 其餘變暗
+      if (isTopPlayer) return true;                                     // 對手側一律變暗
+      if (dragSource?.type === 'hand') return !isValidZone(zoneId);     // 手牌：非合法落點才變暗
+      if (dragSource?.type === 'bench') return !(!isBench && !pokemon); // 推派：只亮戰鬥區空位
+      return true;
     }
     return false;
-  };
-
-  // 判斷 pending action 目標
-  const isDangerTarget = (pokemon, isBench) => {
-    return pendingAction?.type === 'select_opponent_bench' && isTopPlayer && isBench && pokemon;
-  };
-  const isActionTarget = (pokemon, isBench) => {
-    return pendingAction?.type === 'select_my_bench' && !isTopPlayer && isBench && pokemon;
   };
 
   const getZoneClass = (pokemon, isBench, zoneId) => {
     const classes = [];
     if (isDragging && !isTopPlayer && hoverZone === zoneId) classes.push('drop-zone-highlight');
-    if (pokemon && isSmartTarget(pokemon)) classes.push('highlight-valid-target');
+    if (!isTopPlayer && pokemon && isValidZone(zoneId)) classes.push('highlight-valid-target');
     if (isDangerTarget(pokemon, isBench)) classes.push('highlight-danger-target');
     if (isActionTarget(pokemon, isBench)) classes.push('highlight-action-target');
-    if (shouldDim(pokemon, isBench)) classes.push('dimmed-target');
+    if (shouldDim(pokemon, isBench, zoneId)) classes.push('dimmed-target');
     return classes.join(' ');
   };
 

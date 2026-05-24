@@ -13,6 +13,9 @@ import DeckSearchModal from './arena/DeckSearchModal';
 import WinnerScreen from './arena/WinnerScreen';
 import { useGameEngine } from '../../hooks/useGameEngine';
 import { useDragDrop } from '../../hooks/useDragDrop';
+import { getValidTargets } from '../../game/rules';
+
+const EMPTY_ZONES = new Set();
 
 const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
   const engine = useGameEngine(p1Theme, p2Theme, vsAI);
@@ -86,6 +89,13 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
     if (!benchPokemon) return;
     startDrag(benchPokemon, { type: 'bench', index: benchIndex }, event, handleCustomDrop);
   };
+
+  // 拖曳手牌時，預先算出合法落點（唯一真相：rules.getValidTargets），交給下方 Board 高亮
+  const toZoneId = (t) => (t.zone === 'active' ? 'my-active' : `my-bench-${t.index}`);
+  const validDropZones =
+    dragState.isDragging && dragState.source?.type === 'hand'
+      ? new Set(getValidTargets(gameState, currentPlayerId, dragState.card).map(toZoneId))
+      : EMPTY_ZONES;
 
   return (
     <div className={bigDamageShake ? 'arena-shake' : ''} style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
@@ -191,6 +201,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           activePokemon={bottomPlayer.activePokemon}
           bench={bottomPlayer.bench}
           isTopPlayer={false}
+          validZones={validDropZones}
           damageTaken={damageAnim && !damageAnim.isTopPlayer ? damageAnim.damage : null}
           onActiveClick={humanCanAct ? handleMyActiveClick : undefined}
           onBenchClick={humanCanAct ? handleMyBenchClick : undefined}

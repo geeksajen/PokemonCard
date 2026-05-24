@@ -455,6 +455,67 @@ export const resolveBoardCardEffect = (state, playerId, card) => {
   return { ok: false, error: null };
 };
 
+// ---- 純查詢述詞層（read-only：不 clone、不寫 log、不觸發副作用）-----------
+// 供 UI 高亮與出牌提示共用，與上方「實際執行」的 play 函式維持同一套判定。
+// 新增可放置的卡種時，play 函式與這裡要一起更新。
+
+// 進化判定：target 必須是 card.evolvesFrom 指向的寶可夢（以 id 比對，與 playPokemon 一致）。
+export const canEvolve = (target, card) =>
+  !!target && !!card.stage && target.id === card.evolvesFrom;
+
+// 列出某張手牌目前所有「合法的棋盤落點」。
+// 回傳：[{ zone: 'active' } | { zone: 'bench', index }]
+// 僅涵蓋需指定棋盤目標的卡（寶可夢 / 能量 / 傷藥 / 交換器）；
+// 無目標型訓練家 / 物品（大木、精靈球等）請改用 canPlayCard。
+export const getValidTargets = (state, playerId, card) => {
+  if (!card) return [];
+  const p = state.players[playerId];
+  const slots = [
+    { zone: 'active', pokemon: p.activePokemon },
+    ...[0, 1, 2].map((index) => ({ zone: 'bench', index, pokemon: p.bench[index] })),
+  ];
+  const pick = (predicate) =>
+    slots
+      .filter(predicate)
+      .map(({ zone, index }) => (zone === 'active' ? { zone } : { zone, index }));
+
+  // 基礎寶可夢 → 空位（備戰區受 BENCH_MAX 限制）
+  if (card.type === CardTypes.POKEMON && !card.stage) {
+    return pick((s) => !s.pokemon && (s.zone === 'active' || p.bench.length < BENCH_MAX));
+  }
+  // 進化寶可夢 → 符合進化來源的寶可夢
+  if (card.type === CardTypes.POKEMON && card.stage) {
+    return pick((s) => canEvolve(s.pokemon, card));
+  }
+  // 能量 → 本回合尚未填附時，可給場上任一寶可夢
+  if (card.type === CardTypes.ENERGY) {
+    if (state.hasAttachedEnergyThisTurn) return [];
+    return pick((s) => !!s.pokemon);
+  }
+  // 物品（依 effect.kind）
+  if (card.type === CardTypes.ITEM) {
+    const kind = card.effect?.kind;
+    if (kind === 'heal') return pick((s) => s.pokemon && s.pokemon.currentHp < s.pokemon.maxHp);
+    if (kind === 'switchActive') {
+      if (!p.activePokemon) return [];
+      return pick((s) => s.zone === 'bench' && s.pokemon);
+    }
+  }
+  return [];
+};
+
+// 這張牌「現在能不能打出」（供 P2 手牌發光提示）。
+// 需棋盤目標的卡 → 有合法落點即可；無目標型 → 大致可打，
+// 細部前置條件（如棄牌區有無能量）仍由執行層在實際打出時回報。
+export const canPlayCard = (state, playerId, card) => {
+  if (!card) return false;
+  if (getValidTargets(state, playerId, card).length > 0) return true;
+  const kind = card.effect?.kind;
+  if (kind === 'searchDeck') return true;
+  if (boardCardHandlers[kind]) return true;
+  return false;
+};
+
 // 回合開始抽牌。回傳 { state, drawnCardId, deckOut }
 export const drawForTurn = (state) => {
   const newState = structuredClone(state);
