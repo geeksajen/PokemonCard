@@ -12,6 +12,8 @@ const HudOverlay = ({
   onOpenLog,
   onOpenSettings,
   onAttack,
+  onRetreat,
+  retreatDisabled,
   onEndTurn,
 }) => (
   <>
@@ -70,6 +72,16 @@ const HudOverlay = ({
         }}
       >
         發動攻擊
+      </button>
+      <button
+        onClick={onRetreat}
+        disabled={retreatDisabled}
+        style={{
+          background: retreatDisabled ? 'var(--color-bg-panel)' : 'var(--color-energy)',
+          padding: '10px 20px', fontSize: '1.1rem',
+        }}
+      >
+        撤退
       </button>
       <button onClick={onEndTurn} disabled={!actionsEnabled} style={{ padding: '10px 20px', fontSize: '1.1rem' }}>結束回合</button>
     </div>

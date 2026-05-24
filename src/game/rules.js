@@ -516,6 +516,42 @@ export const canPlayCard = (state, playerId, card) => {
   return false;
 };
 
+// ---- 撤退 ----------------------------------------------------------------
+// 前置檢查（read-only）：回傳 { ok, error }
+export const canRetreat = (state, playerId) => {
+  const p = state.players[playerId];
+  if (!p.activePokemon) return { ok: false, error: null };
+  if (p.bench.length === 0) return { ok: false, error: '備戰區沒有寶可夢可以替換！' };
+  const cost = p.activePokemon.retreatCost ?? 1;
+  if ((p.activePokemon.attachedEnergy || []).length < cost)
+    return { ok: false, error: `撤退費用不足！需要 ${cost} 個能量。` };
+  return { ok: true };
+};
+
+// 進入撤退選擇狀態（寫入 pendingAction，等待 UI 選擇備戰區目標）
+export const initiateRetreat = (state, playerId) => {
+  const newState = structuredClone(state);
+  newState.pendingAction = { type: 'select_retreat_bench', player: playerId };
+  return { ok: true, state: newState };
+};
+
+// 結算撤退：棄掉 retreatCost 張能量、互換戰鬥區與備戰區寶可夢
+export const resolveRetreat = (state, playerId, targetBenchIndex) => {
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+  const target = p.bench[targetBenchIndex];
+  if (!target) return { ok: false, error: '無效的目標' };
+  const active = p.activePokemon;
+  const cost = active.retreatCost ?? 1;
+  const energyToDiscard = active.attachedEnergy.splice(-cost, cost);
+  p.discardPile.push(...energyToDiscard);
+  p.activePokemon = target;
+  p.bench[targetBenchIndex] = active;
+  newState.pendingAction = null;
+  pushLog(newState, playerId, `${active.name} 撤退（丟棄 ${energyToDiscard.length} 個能量），${target.name} 上場！`);
+  return { ok: true, state: newState };
+};
+
 // 回合開始抽牌。回傳 { state, drawnCardId, deckOut }
 export const drawForTurn = (state) => {
   const newState = structuredClone(state);

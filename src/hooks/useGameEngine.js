@@ -18,6 +18,9 @@ import {
   resolveEscapeRope,
   cancelPendingAction,
   resolveBoardCardEffect,
+  canRetreat,
+  initiateRetreat,
+  resolveRetreat,
 } from '../game/rules';
 import {
   sfxPlace,
@@ -186,7 +189,21 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     playToLocation(selectedCard, { zone: 'active' });
   };
 
+  const handleRetreatClick = () => {
+    const check = canRetreat(gameState, currentPlayerId);
+    if (!check.ok) {
+      if (check.error) { showToast(check.error); sfxError(); }
+      return;
+    }
+    applyResult(initiateRetreat(gameState, currentPlayerId));
+  };
+
   const handleMyBenchClick = (existingPokemon, index) => {
+    // 撤退目標選擇
+    if (gameState?.pendingAction?.type === 'select_retreat_bench') {
+      applyResult(resolveRetreat(gameState, currentPlayerId, index));
+      return;
+    }
     // 優先處理 Escape Rope 這類的換位選擇
     if (gameState?.pendingAction?.type === 'select_my_bench') {
       applyResult(resolveEscapeRope(gameState, currentPlayerId, index));
@@ -394,6 +411,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     endTurn,
     handleTurnTransitionClick,
     handleAttackClick,
+    handleRetreatClick,
     handleOpponentBenchClick,
     handleCancelPending,
   };

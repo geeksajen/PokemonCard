@@ -13,7 +13,7 @@ import DeckSearchModal from './arena/DeckSearchModal';
 import WinnerScreen from './arena/WinnerScreen';
 import { useGameEngine } from '../../hooks/useGameEngine';
 import { useDragDrop } from '../../hooks/useDragDrop';
-import { getValidTargets } from '../../game/rules';
+import { getValidTargets, canRetreat } from '../../game/rules';
 
 const EMPTY_ZONES = new Set();
 
@@ -56,6 +56,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
     endTurn,
     handleTurnTransitionClick,
     handleAttackClick,
+    handleRetreatClick,
     handleOpponentBenchClick,
     handleCancelPending,
   } = engine;
@@ -75,6 +76,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
 
   // 是否允許下方玩家操作（雙人模式恆為真；單人模式僅限人類回合）
   const humanCanAct = !vsAI || isPlayer1Turn;
+  const retreatDisabled = !humanCanAct || !canRetreat(gameState, currentPlayerId).ok;
   const topLabel = vsAI ? '🤖 電腦' : (isPlayer1Turn ? '玩家 2' : '玩家 1');
   const bottomLabel = vsAI ? '玩家 1' : (isPlayer1Turn ? '玩家 1' : '玩家 2');
   const turnText = humanCanAct ? '你的回合' : '對手回合中…';
@@ -116,6 +118,8 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
         onOpenLog={() => setShowLog(true)}
         onOpenSettings={() => setShowSettings(true)}
         onAttack={handleAttackClick}
+        onRetreat={handleRetreatClick}
+        retreatDisabled={retreatDisabled}
         onEndTurn={endTurn}
       />
 
@@ -224,6 +228,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           <p style={{ margin: 0 }}>
             {gameState.pendingAction.type === 'select_opponent_bench' && '請點擊對手備戰區的一隻寶可夢'}
             {gameState.pendingAction.type === 'select_my_bench' && '請點擊我方備戰區的一隻寶可夢'}
+            {gameState.pendingAction.type === 'select_retreat_bench' && '請選擇要替換上場的備戰寶可夢'}
           </p>
           <button
             onClick={handleCancelPending}
