@@ -357,17 +357,24 @@ const applyDamageModifier = (damage, value) => {
   return damage + Number(value); // '+N' / '-N' 皆可由 Number() 解析
 };
 
+// 純查詢：某屬性攻擊 defender 時的相剋結果。
+// 回傳 'weakness' | 'resistance' | null。供傷害結算與 AI 決策共用。
+export const getMatchupEffectiveness = (attackerType, defender) => {
+  if (defender?.weakness?.type === attackerType) return 'weakness';
+  if (defender?.resistance?.type === attackerType) return 'resistance';
+  return null;
+};
+
 // 依攻擊方屬性對防禦方套用弱點 / 抵抗力，回傳 { damage, effectiveness }。
 // effectiveness: 'weakness' | 'resistance' | null。僅在 baseDamage > 0 時生效。
 const applyTypeEffectiveness = (baseDamage, attacker, defender) => {
   if (baseDamage <= 0) return { damage: baseDamage, effectiveness: null };
-  const atkType = attacker.energyType;
-  if (defender.weakness?.type === atkType) {
-    return { damage: applyDamageModifier(baseDamage, defender.weakness.value), effectiveness: 'weakness' };
+  const effectiveness = getMatchupEffectiveness(attacker.energyType, defender);
+  if (effectiveness === 'weakness') {
+    return { damage: applyDamageModifier(baseDamage, defender.weakness.value), effectiveness };
   }
-  if (defender.resistance?.type === atkType) {
-    const reduced = Math.max(0, applyDamageModifier(baseDamage, defender.resistance.value));
-    return { damage: reduced, effectiveness: 'resistance' };
+  if (effectiveness === 'resistance') {
+    return { damage: Math.max(0, applyDamageModifier(baseDamage, defender.resistance.value)), effectiveness };
   }
   return { damage: baseDamage, effectiveness: null };
 };
