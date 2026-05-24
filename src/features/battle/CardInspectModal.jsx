@@ -256,6 +256,26 @@ const CardInspectModal = ({ card, onClose }) => {
               </div>
             )}
 
+            {/* ---- 弱點 / 抵抗力（欄位不存在則不顯示）---- */}
+            {isPokemon && (card.weakness || card.resistance) && (
+              <div style={{ display: 'flex', gap: '20px', marginTop: '12px', position: 'relative', zIndex: 1 }}>
+                {card.weakness && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
+                    <span style={{ color: 'var(--color-text-muted)' }}>弱點</span>
+                    <EnergyOrb type={card.weakness.type} size={20} />
+                    <span style={{ color: 'var(--color-danger)', fontWeight: 700 }}>{card.weakness.value}</span>
+                  </div>
+                )}
+                {card.resistance && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
+                    <span style={{ color: 'var(--color-text-muted)' }}>抵抗力</span>
+                    <EnergyOrb type={card.resistance.type} size={20} />
+                    <span style={{ color: 'var(--color-success)', fontWeight: 700 }}>{card.resistance.value}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ---- 訓練家 / 物品 效果描述 ---- */}
             {isTrainerOrItem && card.description && (
               <div style={{

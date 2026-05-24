@@ -16,6 +16,7 @@ export const cardDatabase = {
     maxHp: 60,
     energyType: EnergyTypes.FIRE,
     retreatCost: 1,
+    weakness: { type: EnergyTypes.WATER, value: 'x2' },
     image: '/images/pokemon/charmander.png',
     attack: { name: '火花', cost: [EnergyTypes.FIRE], damage: 20 }
   },
@@ -27,6 +28,7 @@ export const cardDatabase = {
     maxHp: 60,
     energyType: EnergyTypes.WATER,
     retreatCost: 1,
+    weakness: { type: EnergyTypes.ELECTRIC, value: 'x2' },
     image: '/images/pokemon/squirtle.png',
     attack: { name: '水槍', cost: [EnergyTypes.WATER], damage: 20 }
   },
@@ -38,6 +40,7 @@ export const cardDatabase = {
     maxHp: 70,
     energyType: EnergyTypes.GRASS,
     retreatCost: 1,
+    weakness: { type: EnergyTypes.FIRE, value: 'x2' },
     image: '/images/pokemon/bulbasaur.png',
     attack: { name: '藤鞭', cost: [EnergyTypes.GRASS], damage: 20 }
   },
@@ -49,6 +52,7 @@ export const cardDatabase = {
     maxHp: 60,
     energyType: EnergyTypes.ELECTRIC,
     retreatCost: 1,
+    weakness: { type: EnergyTypes.FIGHTING, value: 'x2' },
     image: '/images/pokemon/pikachu.png',
     attack: { name: '電擊', cost: [EnergyTypes.ELECTRIC], damage: 20 }
   },
@@ -60,6 +64,7 @@ export const cardDatabase = {
     maxHp: 130,
     energyType: EnergyTypes.PSYCHIC,
     retreatCost: 3,
+    weakness: { type: EnergyTypes.PSYCHIC, value: 'x2' },
     image: '/images/pokemon/mewtwo.png',
     attack: { name: '精神強念', cost: [EnergyTypes.PSYCHIC, EnergyTypes.PSYCHIC], damage: 60 }
   },
@@ -71,6 +76,7 @@ export const cardDatabase = {
     maxHp: 70,
     energyType: EnergyTypes.FIGHTING,
     retreatCost: 1,
+    weakness: { type: EnergyTypes.PSYCHIC, value: 'x2' },
     image: '/images/pokemon/machop.png',
     attack: { name: '空手劈', cost: [EnergyTypes.FIGHTING], damage: 20 }
   },
@@ -82,6 +88,8 @@ export const cardDatabase = {
     maxHp: 130,
     energyType: EnergyTypes.NORMAL,
     retreatCost: 3,
+    weakness: { type: EnergyTypes.FIGHTING, value: 'x2' },
+    resistance: { type: EnergyTypes.PSYCHIC, value: '-20' },
     image: '/images/pokemon/snorlax.png',
     attack: {
       name: '泰山壓頂',
@@ -101,6 +109,7 @@ export const cardDatabase = {
     evolvesFrom: 'p-001',
     stage: 1,
     retreatCost: 2,
+    weakness: { type: EnergyTypes.WATER, value: 'x2' },
     image: '/images/pokemon/charmeleon.png',
     attack: { name: '火焰放射', cost: [EnergyTypes.FIRE, EnergyTypes.FIRE], damage: 50 }
   },
@@ -114,6 +123,7 @@ export const cardDatabase = {
     evolvesFrom: 'p-002',
     stage: 1,
     retreatCost: 1,
+    weakness: { type: EnergyTypes.ELECTRIC, value: 'x2' },
     image: '/images/pokemon/wartortle.png',
     attack: { name: '水砲', cost: [EnergyTypes.WATER, EnergyTypes.WATER], damage: 50 }
   },
@@ -127,6 +137,7 @@ export const cardDatabase = {
     evolvesFrom: 'p-003',
     stage: 1,
     retreatCost: 2,
+    weakness: { type: EnergyTypes.FIRE, value: 'x2' },
     image: '/images/pokemon/ivysaur.png',
     attack: { name: '飛葉快刀', cost: [EnergyTypes.GRASS, EnergyTypes.GRASS], damage: 50 }
   },
@@ -140,6 +151,7 @@ export const cardDatabase = {
     evolvesFrom: 'p-004',
     stage: 1,
     retreatCost: 1,
+    weakness: { type: EnergyTypes.FIGHTING, value: 'x2' },
     image: '/images/pokemon/raichu.png',
     attack: { name: '十萬伏特', cost: [EnergyTypes.ELECTRIC, EnergyTypes.ELECTRIC], damage: 60 }
   },
@@ -155,6 +167,7 @@ export const cardDatabase = {
     evolvesFrom: 'p-001-ev1',
     stage: 2,
     retreatCost: 3,
+    weakness: { type: EnergyTypes.WATER, value: 'x2' },
     image: '/images/pokemon/charizard.png',
     attack: {
       name: '大字爆炎',
@@ -172,6 +185,7 @@ export const cardDatabase = {
     evolvesFrom: 'p-002-ev1',
     stage: 2,
     retreatCost: 2,
+    weakness: { type: EnergyTypes.ELECTRIC, value: 'x2' },
     image: '/images/pokemon/blastoise.png',
     attack: {
       name: '水砲連發',
@@ -189,6 +203,7 @@ export const cardDatabase = {
     evolvesFrom: 'p-003-ev1',
     stage: 2,
     retreatCost: 2,
+    weakness: { type: EnergyTypes.FIRE, value: 'x2' },
     image: '/images/pokemon/venusaur.png',
     attack: {
       name: '日光束',

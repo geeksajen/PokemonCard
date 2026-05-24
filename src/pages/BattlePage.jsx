@@ -12,6 +12,7 @@ function BattlePage() {
   const p1Theme = state.p1Theme || fallbackThemes[0]?.id;
   const p2Theme = state.p2Theme || fallbackThemes[1]?.id || fallbackThemes[0]?.id;
   const vsAI = state.vsAI !== false;
+  const weaknessEnabled = state.weaknessEnabled !== false; // 預設啟用
 
   const handleReturnLobby = () => {
     navigate('/');
@@ -23,6 +24,7 @@ function BattlePage() {
         p1Theme={p1Theme}
         p2Theme={p2Theme}
         vsAI={vsAI}
+        weaknessEnabled={weaknessEnabled}
         onReturnLobby={handleReturnLobby}
       />
     </div>

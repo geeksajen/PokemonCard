@@ -349,6 +349,29 @@ export const retrieveEnergy = (state, playerId, card) => {
   return { ok: true, state: newState };
 };
 
+// ---- 弱點 / 抵抗力傷害修正 -----------------------------------------------
+// value 字串格式：'xN'（乘算）、'+N'（加算）、'-N'（減算）。無法解析時回傳原值。
+const applyDamageModifier = (damage, value) => {
+  if (typeof value !== 'string') return damage;
+  if (value[0] === 'x') return damage * Number(value.slice(1));
+  return damage + Number(value); // '+N' / '-N' 皆可由 Number() 解析
+};
+
+// 依攻擊方屬性對防禦方套用弱點 / 抵抗力，回傳 { damage, effectiveness }。
+// effectiveness: 'weakness' | 'resistance' | null。僅在 baseDamage > 0 時生效。
+const applyTypeEffectiveness = (baseDamage, attacker, defender) => {
+  if (baseDamage <= 0) return { damage: baseDamage, effectiveness: null };
+  const atkType = attacker.energyType;
+  if (defender.weakness?.type === atkType) {
+    return { damage: applyDamageModifier(baseDamage, defender.weakness.value), effectiveness: 'weakness' };
+  }
+  if (defender.resistance?.type === atkType) {
+    const reduced = Math.max(0, applyDamageModifier(baseDamage, defender.resistance.value));
+    return { damage: reduced, effectiveness: 'resistance' };
+  }
+  return { damage: baseDamage, effectiveness: null };
+};
+
 // ---- 攻擊 ----------------------------------------------------------------
 // 攻擊前置檢查，回傳 { ok, error }
 export const canAttack = (state, attackerId) => {
@@ -391,7 +414,13 @@ export const applyAttackDamage = (state, attackerId) => {
   const opponentId = getOpponentId(attackerId);
   const attacker = newState.players[attackerId].activePokemon;
   const opp = newState.players[opponentId];
-  const damage = attacker.attack.damage;
+
+  // 弱點 / 抵抗力修正（僅在對戰選項啟用時生效）
+  let damage = attacker.attack.damage;
+  let effectiveness = null;
+  if (newState.options?.weaknessResistance) {
+    ({ damage, effectiveness } = applyTypeEffectiveness(damage, attacker, opp.activePokemon));
+  }
 
   opp.activePokemon.currentHp -= damage;
   pushLog(newState, attackerId, `使用 ${attacker.name} 發動攻擊，造成 ${damage} 點傷害`);
@@ -406,7 +435,7 @@ export const applyAttackDamage = (state, attackerId) => {
   }
 
   newState.hasAttackedThisTurn = true;
-  return { ok: true, state: newState, damage, knockedOut, faintedPokemon };
+  return { ok: true, state: newState, damage, knockedOut, faintedPokemon, effectiveness };
 };
 
 // 擊倒後結算：放入棄牌區、扣除獎賞卡、判定勝負

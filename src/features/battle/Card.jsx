@@ -117,6 +117,26 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
             </div>
           </div>
 
+          {/* 弱點 / 抵抗力（欄位不存在則整列不顯示） */}
+          {(card.weakness || card.resistance) && (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px', fontSize: '0.55rem', zIndex: 1, alignItems: 'center' }}>
+              {card.weakness && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  弱
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: getEnergyColor(card.weakness.type), border: '1px solid white' }} />
+                  {card.weakness.value}
+                </span>
+              )}
+              {card.resistance && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  抵
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: getEnergyColor(card.resistance.type), border: '1px solid white' }} />
+                  {card.resistance.value}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* 附加的能量 */}
           {card.attachedEnergy && card.attachedEnergy.length > 0 && (
              <div style={{ position: 'absolute', bottom: '-5px', right: '-5px', display: 'flex', zIndex: 2 }}>

@@ -42,7 +42,7 @@ import {
 
 // 集中管理遊戲狀態、UI 狀態與所有副作用（state 更新 / 音效 / 動畫 / 提示）。
 // 規則判定一律委派給 src/game/rules.js 的純函式。
-export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
+export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance = true) => {
   const [gameState, setGameState] = useState(null);
   const aiActiveRef = useRef(false);
   const aiSetupRef = useRef(false);
@@ -63,7 +63,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
   const [faintAnim, setFaintAnim] = useState(null);
 
   useEffect(() => {
-    const initialState = createInitialGameState(p1Theme, p2Theme);
+    const initialState = createInitialGameState(p1Theme, p2Theme, { weaknessResistance });
     // 起手重抽（mulligan）：手牌沒有基礎寶可夢就洗回重抽，否則無法放置戰鬥區寶可夢而卡死。
     // 牌組已於工坊存檔時驗證至少含一隻基礎寶可夢，迴圈必定收斂；上限 20 次為安全防護。
     const drawOpeningHand = (player) => {
@@ -78,7 +78,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     drawOpeningHand(initialState.players.player1);
     drawOpeningHand(initialState.players.player2);
     setGameState(initialState);
-  }, [p1Theme, p2Theme]);
+  }, [p1Theme, p2Theme, weaknessResistance]);
 
   // ---- AI 準備階段自動佈置 ------------------------------------------------
   // 單人模式下，AI (player2) 在準備階段自動把基礎寶可夢佈置上場並標記就緒。
@@ -427,11 +427,13 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
       setAttackAnim(null);
       sfxDamage();
 
-      const { state: afterDamage, damage, knockedOut, faintedPokemon } = applyAttackDamage(
+      const { state: afterDamage, damage, knockedOut, faintedPokemon, effectiveness } = applyAttackDamage(
         state,
         attackerId
       );
       setGameState(afterDamage);
+      if (effectiveness === 'weakness') showToast('效果絕佳！');
+      else if (effectiveness === 'resistance') showToast('效果不好…');
       setDamageAnim({ damage, isTopPlayer: defenderIsTop });
       if (damage >= 80) {
         setBigDamageShake(true);

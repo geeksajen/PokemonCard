@@ -37,6 +37,7 @@ function SetupPage() {
   const { decks } = useCardStore();
   const [p1Theme, setP1Theme] = useState(themes[0]?.id ?? '');
   const [p2Theme, setP2Theme] = useState(themes[1]?.id ?? themes[0]?.id ?? '');
+  const [weaknessEnabled, setWeaknessEnabled] = useState(true); // 屬性相剋，預設啟用
   const vsAI = true; // 雙人熱座模式暫時關閉（未來改為連線對戰）
 
   const customThemes = decks.map(d => ({
@@ -58,7 +59,7 @@ function SetupPage() {
     const finalP2 = p2Theme.startsWith('custom_')
       ? customThemes.find(t => t.id === p2Theme).deck
       : p2Theme;
-    navigate('/battle', { state: { p1Theme: finalP1, p2Theme: finalP2, vsAI } });
+    navigate('/battle', { state: { p1Theme: finalP1, p2Theme: finalP2, vsAI, weaknessEnabled } });
   };
 
   return (
@@ -157,10 +158,39 @@ function SetupPage() {
       {/* Confirm footer */}
       <div style={{
         position: 'relative', zIndex: 10,
-        display: 'flex', justifyContent: 'center', padding: '20px 24px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
+        padding: '20px 24px',
         borderTop: '1px solid var(--page-setup-divider)',
         background: 'var(--page-setup-overlay)', backdropFilter: 'var(--theme-blur)',
       }}>
+        {/* 對戰選項：屬性相剋開關 */}
+        <button
+          onClick={() => setWeaknessEnabled(v => !v)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            padding: '8px 18px', borderRadius: '24px', cursor: 'pointer',
+            fontSize: '0.95rem', fontWeight: 600,
+            color: 'var(--theme-text-main)',
+            background: 'var(--theme-panel-light)',
+            border: `2px solid ${weaknessEnabled ? 'var(--palette-player1)' : 'var(--theme-glass-border)'}`,
+            boxShadow: weaknessEnabled ? '0 0 12px var(--palette-player1-glow)' : 'none',
+            transition: 'all 0.2s',
+          }}
+        >
+          <span style={{
+            width: '36px', height: '20px', borderRadius: '10px', flexShrink: 0,
+            background: weaknessEnabled ? 'var(--palette-player1)' : 'var(--theme-panel-dark)',
+            position: 'relative', transition: 'background 0.2s',
+          }}>
+            <span style={{
+              position: 'absolute', top: '2px', left: weaknessEnabled ? '18px' : '2px',
+              width: '16px', height: '16px', borderRadius: '50%', background: 'white',
+              transition: 'left 0.2s',
+            }} />
+          </span>
+          ⚔️ 啟用弱點與抵抗力 {weaknessEnabled ? '（開）' : '（關）'}
+        </button>
+
         <button
           onClick={handleStart}
           style={{
