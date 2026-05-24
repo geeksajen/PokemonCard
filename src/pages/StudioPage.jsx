@@ -28,9 +28,9 @@ function StudioPage() {
   const [coverCardId, setCoverCardId] = useState(editingDeck?.coverCardId ?? null);
   const [inspectCard, setInspectCard] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const [saveName, setSaveName] = useState('');
   const [currentDeckId, setCurrentDeckId] = useState(editingDeck?.deckId ?? null);
+  const [deckName, setDeckName] = useState(editingDeck?.deckName ?? '我的新牌組');
+  const [isEditingName, setIsEditingName] = useState(false);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -129,29 +129,18 @@ function StudioPage() {
       showToast('牌組至少需要一隻基礎寶可夢！');
       return;
     }
-    // 編輯既有牌組：直接覆蓋，不再要求重新命名（spec 3.2）
+    const name = deckName.trim() || '我的新牌組';
     if (currentDeckId) {
-      const deckName = decks.find(d => d.deckId === currentDeckId)?.deckName || '我的新牌組';
-      updateDeck(currentDeckId, deckName, deckCards.map(c => c.id), coverCardId);
-      showToast('牌組儲存成功！');
-      return;
+      // 編輯既有牌組：直接覆蓋
+      updateDeck(currentDeckId, name, deckCards.map(c => c.id), coverCardId);
+    } else {
+      // 新增牌組：直接以 deckName 建立，不再彈 modal
+      const newDeckId = Date.now();
+      createDeck(name, deckCards.map(c => c.id), newDeckId, coverCardId);
+      setCurrentDeckId(newDeckId);
+      navigate(`/studio/edit/${newDeckId}`, { replace: true });
     }
-    // 新增牌組：彈出命名對話框
-    setSaveName('我的新牌組');
-    setShowSaveModal(true);
-  };
-
-  const confirmSave = () => {
-    const deckName = saveName.trim();
-    if (!deckName) return;
-
-    const newDeckId = Date.now();
-    createDeck(deckName, deckCards.map(c => c.id), newDeckId, coverCardId);
-    setCurrentDeckId(newDeckId);
-    setShowSaveModal(false);
     showToast('牌組儲存成功！');
-    // 新檔存檔後導向編輯路由，後續儲存即走「覆蓋」分支
-    navigate(`/studio/edit/${newDeckId}`, { replace: true });
   };
 
   const coverCard = coverCardId ? allCards.find(c => c.id === coverCardId) : null;
@@ -165,26 +154,6 @@ function StudioPage() {
         </div>
       )}
 
-      {showSaveModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#1f2937', padding: '20px', borderRadius: '12px', width: '400px', maxWidth: '90%', color: 'white' }}>
-            <h2 style={{ marginTop: 0 }}>儲存牌組</h2>
-            <input
-              autoFocus
-              value={saveName}
-              onChange={(e) => setSaveName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') confirmSave(); }}
-              placeholder="請為您的牌組命名"
-              style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.1)', color: 'white', fontSize: '1rem' }}
-            />
-            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-              <button onClick={() => setShowSaveModal(false)} style={{ flex: 1, padding: '10px', background: 'transparent', color: 'white', border: '1px solid gray', borderRadius: '8px', cursor: 'pointer' }}>取消</button>
-              <button onClick={confirmSave} disabled={!saveName.trim()} style={{ flex: 1, padding: '10px', background: saveName.trim() ? '#22c55e' : 'gray', color: 'white', border: 'none', borderRadius: '8px', cursor: saveName.trim() ? 'pointer' : 'not-allowed', fontWeight: 'bold' }}>確定儲存</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <CardLibrary
         allCards={allCards}
         onAddCard={handleAddCard} 
@@ -193,13 +162,28 @@ function StudioPage() {
       />
       
       <div style={{ flex: 4, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '10px', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button onClick={() => navigate('/studio')} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', padding: '8px 16px', borderRadius: '20px', cursor: 'pointer' }}>
+        <div className="studio-editor-toolbar">
+          <button onClick={() => navigate('/studio')} className="studio-back-btn">
             ⬅ 返回列表
           </button>
-          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
-            {currentDeckId ? '編輯牌組' : '建立新牌組'}
-          </span>
+          <div className="studio-deck-name-editor">
+            {isEditingName ? (
+              <input
+                autoFocus
+                className="studio-deck-name-input"
+                value={deckName}
+                onChange={(e) => setDeckName(e.target.value)}
+                onBlur={() => setIsEditingName(false)}
+                onKeyDown={(e) => { if (e.key === 'Enter') setIsEditingName(false); }}
+                maxLength={30}
+              />
+            ) : (
+              <span className="studio-deck-name-display" onClick={() => setIsEditingName(true)}>
+                {deckName} ✏️
+              </span>
+            )}
+          </div>
+          <div style={{ width: '90px' }} />
         </div>
         <DeckList 
           deckCards={deckCards} 

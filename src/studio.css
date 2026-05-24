@@ -3,7 +3,6 @@
   display: flex;
   height: calc(100vh - 65px); /* Subtract navigation height */
   overflow: hidden;
-  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
   color: white;
 }
 
@@ -37,7 +36,8 @@
 .filter-btn:hover, .filter-btn.active {
   background: rgba(59, 130, 246, 0.8);
   border-color: #93c5fd;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
 }
 
 .library-grid {
@@ -179,7 +179,8 @@
 
 .deck-action-btn.save:hover {
   background: #2563eb;
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+  transform: translateY(-2px);
 }
 
 .deck-action-btn.save:disabled {
@@ -196,7 +197,9 @@
 }
 
 .deck-action-btn.clear:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
 }
 
 /* Background Cover Image */
@@ -225,11 +228,77 @@
   animation: card-add-flash 0.3s ease-out;
 }
 
+/* ---- Studio Editor Toolbar ---- */
+.studio-editor-toolbar {
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.studio-back-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.studio-back-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.studio-deck-name-editor {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+}
+
+.studio-deck-name-display {
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: border-color 0.2s, background 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.studio-deck-name-display:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.studio-deck-name-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.8);
+  border-radius: 6px;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 4px 10px;
+  text-align: center;
+  width: 220px;
+  outline: none;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+
 /* ---- Deck List Page ---- */
 .deck-list-page {
   height: calc(100vh - 65px);
   overflow-y: auto;
-  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
   color: white;
   padding: 30px 40px;
   box-sizing: border-box;
