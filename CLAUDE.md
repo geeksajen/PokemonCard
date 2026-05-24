@@ -44,6 +44,15 @@ This is a local-multiplayer TCG engine built with React + Vite, packaged as an E
 - 4-layer token architecture in `src/index.css`: `--theme-*` (UI chrome, dark/light), `--palette-*` (player/element/card-class colors), `--page-*` (HomePage/SetupPage atmospheres).
 - `src/store/useThemeStore.js` — Zustand store + persist for dark/light toggle.
 
+## ⚠️ Visual Theme Rules — MUST follow in ALL edits
+
+These rules keep the CSS theme system intact. **Violating them silently breaks light/dark switching and future re-skins.**
+
+1. **No raw hex/rgba in JSX `style={{}}`** — always use `var(--theme-*)`, `var(--palette-*)`, or `var(--page-*)` tokens.
+2. **No color strings at JS module top-level** — e.g. `const COLOR = '#ff0000'` is forbidden. Use token strings like `'var(--palette-element-1)'`.
+3. **New theme packs must not require editing any `.jsx`/`.js` files** — all pack-specific data belongs in `src/themes/<pack>/`.
+4. **Need a new color? Add the CSS token first (`src/index.css` + light override), then reference it.** Never inline a one-off color.
+
 **Turn-per-action limits:** `hasAttachedEnergyThisTurn` and `hasAttackedThisTurn` are boolean flags on `gameState`, reset by `endTurnState()` in rules.js.
 
 **Win conditions (in `resolveKnockout`):** attacker's prizes reach 0, or opponent has no bench to promote after KO.
