@@ -37,6 +37,22 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.025em;
 }
 
+@keyframes floatPokemon {
+  0%   { transform: translateY(0px); }
+  100% { transform: translateY(-20px); }
+}
+
+@keyframes twinkle {
+  0%   { opacity: 0.2; transform: scale(0.8); }
+  100% { opacity: 0.9; transform: scale(1.2); }
+}
+
+@keyframes playPulse {
+  0%   { box-shadow: 0 0 40px rgba(59,130,246,0.6), 0 0 80px rgba(59,130,246,0.2); }
+  50%  { box-shadow: 0 0 70px rgba(59,130,246,1), 0 0 130px rgba(139,92,246,0.5); }
+  100% { box-shadow: 0 0 40px rgba(59,130,246,0.6), 0 0 80px rgba(59,130,246,0.2); }
+}
+
 /* Hover-to-reveal Hands */
 .hand-wrapper-bottom {
   position: absolute;
