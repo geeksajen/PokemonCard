@@ -3,7 +3,7 @@ import Card from './Card';
 
 const EMPTY_VALID_ZONES = new Set();
 
-const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, damageTaken, onBenchPointerDragStart, registerZone, dragState, onInspect, pendingAction, validZones = EMPTY_VALID_ZONES }) => {
+const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, damageTaken, onBenchPointerDragStart, registerZone, dragState, onInspect, pendingAction, validZones = EMPTY_VALID_ZONES, faceDown = false }) => {
   // 拖曳 / pending 狀態
   const isDragging = dragState?.isDragging;
   const hoverZone = dragState?.hoverZone;
@@ -80,13 +80,14 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
           <div
             className={damageTaken ? 'shake-anim' : ''}
             style={{ position: 'relative' }}
-            onContextMenu={(e) => { e.preventDefault(); onInspect && onInspect(activePokemon); }}
+            onContextMenu={(e) => { e.preventDefault(); if (!faceDown) onInspect && onInspect(activePokemon); }}
           >
             {damageTaken && <div className="damage-text">-{damageTaken}</div>}
-            <Card 
-              card={activePokemon} 
-              isSelectable={!!onActiveClick} 
-              onClick={() => onActiveClick && onActiveClick(activePokemon)} 
+            <Card
+              card={activePokemon}
+              isFaceDown={faceDown}
+              isSelectable={!faceDown && !!onActiveClick}
+              onClick={() => onActiveClick && onActiveClick(activePokemon)}
             />
           </div>
         ) : (
@@ -138,11 +139,12 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
                       onBenchPointerDragStart(idx, e);
                     }
                   }}
-                  onContextMenu={(e) => { e.preventDefault(); onInspect && onInspect(benchPokemon); }}
+                  onContextMenu={(e) => { e.preventDefault(); if (!faceDown) onInspect && onInspect(benchPokemon); }}
                 >
-                  <Card 
-                    card={benchPokemon} 
-                    isSelectable={!!onBenchClick}
+                  <Card
+                    card={benchPokemon}
+                    isFaceDown={faceDown}
+                    isSelectable={!faceDown && !!onBenchClick}
                     onClick={(e) => { e.stopPropagation(); onBenchClick && onBenchClick(benchPokemon, idx); }}
                   />
                 </div>

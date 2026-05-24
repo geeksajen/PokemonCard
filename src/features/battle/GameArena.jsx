@@ -11,6 +11,7 @@ import LogDrawer from './arena/LogDrawer';
 import TurnTransition from './arena/TurnTransition';
 import DeckSearchModal from './arena/DeckSearchModal';
 import WinnerScreen from './arena/WinnerScreen';
+import CoinFlipScreen from './arena/CoinFlipScreen';
 import { useGameEngine } from '../../hooks/useGameEngine';
 import { useDragDrop } from '../../hooks/useDragDrop';
 import { getValidTargets, canRetreat } from '../../game/rules';
@@ -45,8 +46,11 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
     attackAnim,
     drawnCardAnim,
     faintAnim,
+    coinFlip,
     toggleBGM,
     toggleSFX,
+    handleReadyClick,
+    handleCoinFlipDone,
     handleHandCardClick,
     handleCustomDrop,
     handleMyActiveClick,
@@ -75,11 +79,15 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
     : (isPlayer1Turn ? gameState.players.player1 : gameState.players.player2);
 
   // 是否允許下方玩家操作（雙人模式恆為真；單人模式僅限人類回合）
+  const isSetup = gameState.phase === 'setup';
   const humanCanAct = !vsAI || isPlayer1Turn;
   const retreatDisabled = !humanCanAct || !canRetreat(gameState, currentPlayerId).ok;
+  const readyDisabled = !bottomPlayer.activePokemon || bottomPlayer.isReady;
   const topLabel = vsAI ? '🤖 電腦' : (isPlayer1Turn ? '玩家 2' : '玩家 1');
   const bottomLabel = vsAI ? '玩家 1' : (isPlayer1Turn ? '玩家 1' : '玩家 2');
-  const turnText = humanCanAct ? '你的回合' : '對手回合中…';
+  const turnText = isSetup
+    ? (bottomPlayer.isReady ? '等待對手準備…' : '請佈置你的寶可夢')
+    : (humanCanAct ? '你的回合' : '對手回合中…');
 
   // ---- 拖曳開始 ----
   const handlePointerDragStart = (card, event) => {
@@ -121,6 +129,9 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
         onRetreat={handleRetreatClick}
         retreatDisabled={retreatDisabled}
         onEndTurn={endTurn}
+        setupMode={isSetup}
+        onReady={handleReadyClick}
+        readyDisabled={readyDisabled}
       />
 
       {showSettings && (
@@ -196,8 +207,9 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           activePokemon={topPlayer.activePokemon}
           bench={topPlayer.bench}
           isTopPlayer={true}
+          faceDown={isSetup}
           damageTaken={damageAnim && damageAnim.isTopPlayer ? damageAnim.damage : null}
-          onBenchClick={humanCanAct ? handleOpponentBenchClick : undefined}
+          onBenchClick={!isSetup && humanCanAct ? handleOpponentBenchClick : undefined}
           onInspect={setInspectCard}
           pendingAction={gameState.pendingAction}
         />
@@ -268,6 +280,14 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
           deck={deckSearchCards}
           onPick={handlePickFromDeck}
           onCancel={handleCancelDeckSearch}
+        />
+      )}
+
+      {coinFlip && (
+        <CoinFlipScreen
+          firstPlayer={coinFlip.firstPlayer}
+          firstPlayerLabel={coinFlip.firstPlayerLabel}
+          onDone={handleCoinFlipDone}
         />
       )}
 

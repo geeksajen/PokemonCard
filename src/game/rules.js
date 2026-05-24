@@ -257,6 +257,12 @@ export const resolveEscapeRope = (state, playerId, targetBenchIndex) => {
 // 對某個位置打出一張手牌（寶可夢 / 能量 / 需指定目標的物品）
 // #1: 物品效果改由 card.effect.kind 分派，取代硬編碼的 card.id / card.heal 判斷
 export const playCardOnPokemon = (state, playerId, card, location) => {
+  // 準備階段只能放置基礎寶可夢（不可填能量、進化、用道具/支援者）
+  if (state.phase === 'setup') {
+    if (card.type !== CardTypes.POKEMON || card.stage)
+      return { ok: false, error: '準備階段只能放置基礎寶可夢！' };
+    return playPokemon(state, playerId, card, location);
+  }
   if (card.type === CardTypes.POKEMON) return playPokemon(state, playerId, card, location);
   if (card.type === CardTypes.ENERGY) return attachEnergy(state, playerId, card, location);
   if (card.type === CardTypes.ITEM) {
@@ -437,6 +443,7 @@ export const endTurnState = (state) => {
   newState.currentPlayer = getOpponentId(state.currentPlayer);
   newState.hasAttachedEnergyThisTurn = false;
   newState.hasAttackedThisTurn = false;
+  newState.hasRetreatedThisTurn = false;
   return { ok: true, state: newState };
 };
 
@@ -470,6 +477,11 @@ export const canEvolve = (target, card) =>
 export const getValidTargets = (state, playerId, card) => {
   if (!card) return [];
   const p = state.players[playerId];
+
+  // 準備階段：只有基礎寶可夢有合法落點（空的戰鬥區/備戰區）
+  if (state.phase === 'setup' && (card.type !== CardTypes.POKEMON || card.stage)) {
+    return [];
+  }
   const slots = [
     { zone: 'active', pokemon: p.activePokemon },
     ...[0, 1, 2].map((index) => ({ zone: 'bench', index, pokemon: p.bench[index] })),
@@ -516,11 +528,58 @@ export const canPlayCard = (state, playerId, card) => {
   return false;
 };
 
+// ---- 準備階段 ------------------------------------------------------------
+// 將佈置中的寶可夢收回手牌（僅準備階段，供「重新選擇」用）
+export const returnToHand = (state, playerId, location) => {
+  if (state.phase !== 'setup') return { ok: false, error: null };
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+  let card;
+  if (location.zone === 'active') {
+    if (!p.activePokemon) return { ok: false, error: null };
+    card = p.activePokemon;
+    p.activePokemon = null;
+  } else {
+    card = p.bench[location.index];
+    if (!card) return { ok: false, error: null };
+    p.bench.splice(location.index, 1);
+  }
+  p.hand.push(card);
+  pushLog(newState, playerId, `將 ${card.name} 收回手牌`);
+  return { ok: true, state: newState };
+};
+
+// 標記某位玩家準備就緒（戰鬥區必須已有寶可夢）
+export const confirmReady = (state, playerId) => {
+  const p = state.players[playerId];
+  if (!p.activePokemon) return { ok: false, error: '請先在戰鬥區放置一隻基礎寶可夢！' };
+  const newState = structuredClone(state);
+  newState.players[playerId].isReady = true;
+  pushLog(newState, playerId, `${p.name} 準備就緒`);
+  return { ok: true, state: newState };
+};
+
+// 雙方是否都已準備
+export const bothReady = (state) =>
+  state.players.player1.isReady && state.players.player2.isReady;
+
+// 結算準備階段：擲硬幣決定先攻，進入 main 階段。回傳含 firstPlayer 供 UI 播放動畫。
+export const resolveSetup = (state) => {
+  const newState = structuredClone(state);
+  const firstPlayer = Math.random() < 0.5 ? 'player1' : 'player2';
+  newState.currentPlayer = firstPlayer;
+  newState.phase = 'main';
+  newState.turn = 1;
+  pushLog(newState, 'system', `擲硬幣決定先攻：${newState.players[firstPlayer].name} 先攻！`);
+  return { ok: true, state: newState, firstPlayer };
+};
+
 // ---- 撤退 ----------------------------------------------------------------
 // 前置檢查（read-only）：回傳 { ok, error }
 export const canRetreat = (state, playerId) => {
   const p = state.players[playerId];
   if (!p.activePokemon) return { ok: false, error: null };
+  if (state.hasRetreatedThisTurn) return { ok: false, error: '這回合已經撤退過了！' };
   if (p.bench.length === 0) return { ok: false, error: '備戰區沒有寶可夢可以替換！' };
   const cost = p.activePokemon.retreatCost ?? 1;
   if ((p.activePokemon.attachedEnergy || []).length < cost)
@@ -548,6 +607,7 @@ export const resolveRetreat = (state, playerId, targetBenchIndex) => {
   p.activePokemon = target;
   p.bench[targetBenchIndex] = active;
   newState.pendingAction = null;
+  newState.hasRetreatedThisTurn = true;
   pushLog(newState, playerId, `${active.name} 撤退（丟棄 ${energyToDiscard.length} 個能量），${target.name} 上場！`);
   return { ok: true, state: newState };
 };

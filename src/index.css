@@ -829,3 +829,22 @@ button:disabled {
 .card-inspect-card-frame {
   animation: inspect-float 3s ease-in-out infinite;
 }
+
+/* 準備階段擲硬幣 */
+@keyframes coin-flip-spin {
+  0%   { transform: rotateY(0deg) scale(1); }
+  100% { transform: rotateY(1800deg) scale(1.1); }
+}
+
+@keyframes coin-result-in {
+  0%   { opacity: 0; transform: scale(0.6); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.coin-flip-spin {
+  animation: coin-flip-spin 1.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.coin-result-in {
+  animation: coin-result-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}

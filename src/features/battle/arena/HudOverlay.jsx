@@ -15,6 +15,9 @@ const HudOverlay = ({
   onRetreat,
   retreatDisabled,
   onEndTurn,
+  setupMode = false,
+  onReady,
+  readyDisabled,
 }) => (
   <>
     {/* 左上：對手資訊 */}
@@ -61,29 +64,44 @@ const HudOverlay = ({
       </div>
     </div>
 
-    {/* 右下：動作區 */}
+    {/* 右下：動作區（準備階段只顯示「準備好了」） */}
     <div className="hud-panel hud-bottom-right">
-      <button
-        onClick={onAttack}
-        disabled={hasAttackedThisTurn || !actionsEnabled}
-        style={{
-          background: (hasAttackedThisTurn || !actionsEnabled) ? 'var(--color-bg-panel)' : 'var(--color-danger)',
-          padding: '10px 20px', fontSize: '1.1rem',
-        }}
-      >
-        發動攻擊
-      </button>
-      <button
-        onClick={onRetreat}
-        disabled={retreatDisabled}
-        style={{
-          background: retreatDisabled ? 'var(--color-bg-panel)' : 'var(--color-energy)',
-          padding: '10px 20px', fontSize: '1.1rem',
-        }}
-      >
-        撤退
-      </button>
-      <button onClick={onEndTurn} disabled={!actionsEnabled} style={{ padding: '10px 20px', fontSize: '1.1rem' }}>結束回合</button>
+      {setupMode ? (
+        <button
+          onClick={onReady}
+          disabled={readyDisabled}
+          style={{
+            background: readyDisabled ? 'var(--color-bg-panel)' : 'var(--color-primary)',
+            padding: '12px 28px', fontSize: '1.2rem', fontWeight: 'bold',
+          }}
+        >
+          ✅ 準備好了
+        </button>
+      ) : (
+        <>
+          <button
+            onClick={onAttack}
+            disabled={hasAttackedThisTurn || !actionsEnabled}
+            style={{
+              background: (hasAttackedThisTurn || !actionsEnabled) ? 'var(--color-bg-panel)' : 'var(--color-danger)',
+              padding: '10px 20px', fontSize: '1.1rem',
+            }}
+          >
+            發動攻擊
+          </button>
+          <button
+            onClick={onRetreat}
+            disabled={retreatDisabled}
+            style={{
+              background: retreatDisabled ? 'var(--color-bg-panel)' : 'var(--color-energy)',
+              padding: '10px 20px', fontSize: '1.1rem',
+            }}
+          >
+            撤退
+          </button>
+          <button onClick={onEndTurn} disabled={!actionsEnabled} style={{ padding: '10px 20px', fontSize: '1.1rem' }}>結束回合</button>
+        </>
+      )}
     </div>
   </>
 );

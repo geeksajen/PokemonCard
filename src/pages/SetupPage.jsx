@@ -37,7 +37,7 @@ function SetupPage() {
   const { decks } = useCardStore();
   const [p1Theme, setP1Theme] = useState(themes[0]?.id ?? '');
   const [p2Theme, setP2Theme] = useState(themes[1]?.id ?? themes[0]?.id ?? '');
-  const [vsAI, setVsAI]       = useState(true);
+  const vsAI = true; // 雙人熱座模式暫時關閉（未來改為連線對戰）
 
   const customThemes = decks.map(d => ({
     id: `custom_${d.deckId}`,
@@ -102,26 +102,6 @@ function SetupPage() {
           }}>
             對戰設定
           </span>
-        </div>
-
-        {/* Mode toggle */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {[{ id: true, label: '🤖 電腦' }, { id: false, label: '👥 雙人' }].map(m => (
-            <button
-              key={String(m.id)}
-              onClick={() => setVsAI(m.id)}
-              style={{
-                padding: '8px 20px', fontSize: '0.9rem',
-                border: `2px solid ${vsAI === m.id ? 'var(--color-primary)' : 'var(--theme-glass-border)'}`,
-                background: vsAI === m.id ? 'color-mix(in srgb, var(--color-primary) 20%, transparent)' : 'transparent',
-                color: 'var(--theme-text-main)', borderRadius: '30px', cursor: 'pointer',
-                boxShadow: vsAI === m.id ? '0 0 12px var(--palette-player1-glow)' : 'none',
-                transition: 'all 0.2s',
-              }}
-            >
-              {m.label}
-            </button>
-          ))}
         </div>
       </div>
 

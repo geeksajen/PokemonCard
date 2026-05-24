@@ -17,13 +17,15 @@ export const createInitialGameState = (player1Theme = _defaultP1, player2Theme =
 
   return {
     turn: 1,
+    phase: 'setup', // 'setup'（佈置基礎寶可夢）| 'main'（正式對戰）
     currentPlayer: 'player1', // 'player1' or 'player2'
     winner: null,
-    
+
     // 限制每回合的行動
     hasAttachedEnergyThisTurn: false,
     hasAttackedThisTurn: false,
-    
+    hasRetreatedThisTurn: false,
+
     logs: [], // 對戰紀錄
 
     players: {
@@ -36,6 +38,7 @@ export const createInitialGameState = (player1Theme = _defaultP1, player2Theme =
         bench: [], // Max 3
         discardPile: [], // 棄牌區
         prizes: INITIAL_PRIZES, // 取代真實卡牌的獎賞卡，這裡簡化為數字(剩餘需要擊敗的數量)
+        isReady: false, // 準備階段是否已佈置完成
       },
       player2: {
         id: 'player2',
@@ -46,6 +49,7 @@ export const createInitialGameState = (player1Theme = _defaultP1, player2Theme =
         bench: [], // Max 3
         discardPile: [], // 棄牌區
         prizes: INITIAL_PRIZES,
+        isReady: false,
       }
     }
   };

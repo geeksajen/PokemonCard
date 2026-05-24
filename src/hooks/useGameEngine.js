@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { INITIAL_HAND_SIZE } from '../game/constants';
+import { INITIAL_HAND_SIZE, BENCH_MAX } from '../game/constants';
 import { createInitialGameState } from '../models/gameState';
 import { CardTypes } from '../models/cards';
 import { decideAIAction } from '../game/ai';
@@ -21,7 +21,13 @@ import {
   canRetreat,
   initiateRetreat,
   resolveRetreat,
+  returnToHand,
+  confirmReady,
+  resolveSetup,
+  bothReady,
 } from '../game/rules';
+
+const isBasicPokemon = (c) => c.type === CardTypes.POKEMON && !c.stage;
 import {
   sfxPlace,
   sfxAttack,
@@ -39,6 +45,8 @@ import {
 export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
   const [gameState, setGameState] = useState(null);
   const aiActiveRef = useRef(false);
+  const aiSetupRef = useRef(false);
+  const [coinFlip, setCoinFlip] = useState(null); // { firstPlayer, firstPlayerLabel, state }
   const [selectedCard, setSelectedCard] = useState(null);
   const [damageAnim, setDamageAnim] = useState(null);
   const [toast, setToast] = useState({ id: 0, message: '' });
@@ -56,7 +64,6 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
 
   useEffect(() => {
     const initialState = createInitialGameState(p1Theme, p2Theme);
-    const isBasicPokemon = (c) => c.type === CardTypes.POKEMON && !c.stage;
     // 起手重抽（mulligan）：手牌沒有基礎寶可夢就洗回重抽，否則無法放置戰鬥區寶可夢而卡死。
     // 牌組已於工坊存檔時驗證至少含一隻基礎寶可夢，迴圈必定收斂；上限 20 次為安全防護。
     const drawOpeningHand = (player) => {
@@ -72,6 +79,32 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     drawOpeningHand(initialState.players.player2);
     setGameState(initialState);
   }, [p1Theme, p2Theme]);
+
+  // ---- AI 準備階段自動佈置 ------------------------------------------------
+  // 單人模式下，AI (player2) 在準備階段自動把基礎寶可夢佈置上場並標記就緒。
+  // 卡牌對人類為背面（由 UI 處理），所以無需逐步動畫，一次到位即可。
+  useEffect(() => {
+    if (!vsAI || !gameState || gameState.phase !== 'setup') return;
+    if (gameState.players.player2.isReady || aiSetupRef.current) return;
+    aiSetupRef.current = true;
+
+    let working = gameState;
+    const basics = working.players.player2.hand.filter(isBasicPokemon);
+    if (basics.length === 0) return; // mulligan 已保證至少一隻，理論上不會發生
+
+    const place = (card, location) => {
+      const r = playCardOnPokemon(working, 'player2', card, location);
+      if (r.ok) working = r.state;
+    };
+    place(basics[0], { zone: 'active' });
+    for (let i = 1; i < basics.length && i <= BENCH_MAX; i++) {
+      place(basics[i], { zone: 'bench', index: working.players.player2.bench.length });
+    }
+    const ready = confirmReady(working, 'player2');
+    if (ready.ok) working = ready.state;
+    commitReadyState(working);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vsAI, gameState?.phase, gameState?.players.player2.isReady]);
 
   const showToast = (message) => setToast({ id: Date.now(), message });
 
@@ -185,6 +218,11 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     applyResult(playCardOnPokemon(gameState, currentPlayerId, card, location));
 
   const handleMyActiveClick = () => {
+    // 準備階段：點擊已佈置的戰鬥寶可夢將其收回手牌（供重新選擇）
+    if (gameState.phase === 'setup' && currentPlayer.activePokemon) {
+      applyResult(returnToHand(gameState, currentPlayerId, { zone: 'active' }));
+      return;
+    }
     if (!selectedCard) return;
     playToLocation(selectedCard, { zone: 'active' });
   };
@@ -199,6 +237,15 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
   };
 
   const handleMyBenchClick = (existingPokemon, index) => {
+    // 準備階段：點擊備戰寶可夢收回手牌；空位 + 已選卡 → 放置
+    if (gameState.phase === 'setup') {
+      if (existingPokemon) {
+        applyResult(returnToHand(gameState, currentPlayerId, { zone: 'bench', index }));
+      } else if (selectedCard) {
+        playToLocation(selectedCard, { zone: 'bench', index });
+      }
+      return;
+    }
     // 撤退目標選擇
     if (gameState?.pendingAction?.type === 'select_retreat_bench') {
       applyResult(resolveRetreat(gameState, currentPlayerId, index));
@@ -228,6 +275,40 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
 
   const handleCancelPending = () => {
     applyResult(cancelPendingAction(gameState, currentPlayerId));
+  };
+
+  // ---- 準備階段 ----------------------------------------------------------
+  // 套用一次 confirmReady 的結果；若雙方皆就緒則開始擲硬幣過場（resolveSetup 已決定先攻）
+  const commitReadyState = (next) => {
+    if (bothReady(next)) {
+      const resolved = resolveSetup(next);
+      const label =
+        resolved.firstPlayer === 'player1'
+          ? (vsAI ? '你' : '玩家 1')
+          : (vsAI ? '🤖 電腦' : '玩家 2');
+      setGameState(next); // 先讓雙方 isReady 落地，過場結束後再切到 main
+      setCoinFlip({ firstPlayer: resolved.firstPlayer, firstPlayerLabel: label, state: resolved.state });
+    } else {
+      setGameState(next);
+    }
+  };
+
+  const handleReadyClick = () => {
+    const result = confirmReady(gameState, currentPlayerId);
+    if (!result.ok) {
+      showToast(result.error);
+      sfxError();
+      return;
+    }
+    sfxEndTurn();
+    commitReadyState(result.state);
+  };
+
+  // 擲硬幣過場結束：正式進入 main 階段
+  const handleCoinFlipDone = () => {
+    if (!coinFlip) return;
+    setGameState(coinFlip.state);
+    setCoinFlip(null);
   };
 
   // ---- 自訂拖曳放置 (Custom Drag & Drop) ----------------------------------
@@ -399,7 +480,10 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     attackAnim,
     drawnCardAnim,
     faintAnim,
+    coinFlip,
     // 動作
+    handleReadyClick,
+    handleCoinFlipDone,
     toggleBGM,
     toggleSFX,
     handleHandCardClick,

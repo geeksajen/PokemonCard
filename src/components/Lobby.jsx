@@ -14,7 +14,7 @@ const Lobby = ({ onStartGame }) => {
   const { decks } = useCardStore();
   const [p1Theme, setP1Theme] = useState('fire');
   const [p2Theme, setP2Theme] = useState('water');
-  const [vsAI, setVsAI] = useState(true);
+  const vsAI = true; // 雙人熱座模式暫時關閉（未來改為連線對戰）
 
   // Combine official themes and custom decks
   const customThemes = decks.map(d => ({
@@ -59,30 +59,6 @@ const Lobby = ({ onStartGame }) => {
       }}>
         <h1 style={{ fontSize: '4rem', margin: 0, textShadow: 'var(--theme-shadow)' }}>PKCard TCG</h1>
         <p style={{ fontSize: '1.5rem', opacity: 0.8, marginTop: '10px' }}>選擇您的主題牌組</p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
-          {[
-            { id: true, label: '🤖 對戰電腦' },
-            { id: false, label: '👥 雙人對戰' },
-          ].map((m) => (
-            <button
-              key={String(m.id)}
-              onClick={() => setVsAI(m.id)}
-              style={{
-                padding: '10px 24px',
-                fontSize: '1.1rem',
-                border: `2px solid ${vsAI === m.id ? 'var(--color-primary)' : 'var(--theme-glass-border)'}`,
-                background: vsAI === m.id ? 'var(--theme-panel-light)' : 'transparent',
-                color: 'var(--theme-text-main)',
-                borderRadius: '30px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: vsAI === m.id ? '0 0 15px var(--color-primary)' : 'none',
-              }}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Player 1 Selection */}
