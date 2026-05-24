@@ -29,7 +29,7 @@ This is a local-multiplayer TCG engine built with React + Vite, packaged as an E
 **Data models (engine layer — theme-agnostic):**
 
 - `src/models/cardTypes.js` — Engine enums (`CardTypes`, `EnergyTypes`). Standalone to avoid circular deps with theme packs.
-- `src/models/cards.js` — Engine core: `newInstanceId`, `defaultInstantiate`, `setCardInstantiator`, `generateThemeDeck` algorithm, `RARITY_CONFIG`, `getCardRarity`. Re-exports `cardDatabase` and pack-specific data from the active theme pack.
+- `src/models/cards.js` — Engine core: `newInstanceId`, `defaultInstantiate`, `setCardInstantiator`, `generateThemeDeck` algorithm, `RARITY_CONFIG`, `getCardRarity`. Re-exports `cardDatabase` and pack-specific data from the active theme pack. **Do not confuse with `src/themes/*/cards.js`** — the engine file defines *how cards work*; the theme file defines *what cards exist* in that pack. All game code imports card symbols from `models/cards`, never directly from `themes/`.
 - `src/models/gameState.js` — `createInitialGameState(p1Theme, p2Theme)` builds the initial state tree. Default themes are derived from `activePack.themeMap` so the engine works with any pack.
 
 **Theme packs (content layer):**
