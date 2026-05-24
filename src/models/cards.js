@@ -356,32 +356,49 @@ export const generateThemeDeck = (theme) => {
 //   cardShadow    — Card.jsx 的 box-shadow（normal / selected 兩態）
 //   inspectShadow — CardInspectModal 外框光暈
 //   foil          — 是否啟用閃卡反光（Pretask 3 / Feature ① 預留旗標）
+// 色彩全部走 --palette-class-* tokens；rgba 變體用 color-mix() 合成。
+// 主題包只需覆寫 :root 的 --palette-class-* token，這份設定就會跟著換皮。
 const RARITY_CONFIG = {
   basic: {
-    background:    'linear-gradient(135deg, #334155, #0f172a)',
+    background:    'var(--palette-class-basic)',
     border:        'none',
     badge:         null,
     stageBadge:    { label: '基礎',     gradient: 'linear-gradient(90deg, #64748b, #94a3b8)', textShadow: 'none' },
     cardShadow:    { normal: 'var(--card-shadow)', selected: 'var(--card-shadow-hover)' },
-    inspectShadow: '0 20px 60px rgba(0,0,0,0.6)',
+    inspectShadow: 'var(--theme-shadow)',
     foil:          false,
   },
   stage1: {
-    background:    'linear-gradient(135deg, #4f46e5, #a855f7, #eab308)',
-    border:        '1px solid rgba(234,179,8,0.5)',
-    badge:         { label: '進化', background: '#eab308',                              color: '#000', textShadow: 'none' },
-    stageBadge:    { label: '一階進化', gradient: 'linear-gradient(90deg, #a855f7, #eab308)', textShadow: 'none' },
-    cardShadow:    { normal: 'inset 0 0 10px rgba(234,179,8,0.4)', selected: '0 0 20px rgba(234,179,8,0.6)' },
-    inspectShadow: '0 0 30px rgba(234,179,8,0.5), 0 20px 60px rgba(0,0,0,0.5)',
+    background:    'var(--palette-class-stage1)',
+    border:        '1px solid color-mix(in srgb, var(--palette-class-stage1-accent) 50%, transparent)',
+    badge:         { label: '進化', background: 'var(--palette-class-stage1-accent)', color: '#000', textShadow: 'none' },
+    stageBadge:    { label: '一階進化', gradient: 'linear-gradient(90deg, var(--palette-class-stage1-mid), var(--palette-class-stage1-accent))', textShadow: 'none' },
+    cardShadow:    {
+      normal:   'inset 0 0 10px color-mix(in srgb, var(--palette-class-stage1-accent) 40%, transparent)',
+      selected: '0 0 20px color-mix(in srgb, var(--palette-class-stage1-accent) 60%, transparent)',
+    },
+    inspectShadow: '0 0 30px color-mix(in srgb, var(--palette-class-stage1-accent) 50%, transparent), var(--theme-shadow)',
     foil:          true,
   },
   stage2: {
-    background:    'linear-gradient(135deg, #e2e8f0, #38bdf8, #fbbf24)',
-    border:        '2px solid rgba(251,191,36,0.8)',
-    badge:         { label: '二階', background: 'linear-gradient(90deg, #38bdf8, #fcd34d)', color: '#000', textShadow: '0 0 2px rgba(255,255,255,0.8)' },
-    stageBadge:    { label: '二階進化', gradient: 'linear-gradient(90deg, #38bdf8, #fcd34d)', textShadow: '0 0 3px rgba(255,255,255,0.6)' },
-    cardShadow:    { normal: 'inset 0 0 15px rgba(56,189,248,0.6)', selected: '0 0 25px rgba(56,189,248,0.8), 0 0 10px rgba(251,191,36,0.6)' },
-    inspectShadow: '0 0 40px rgba(56,189,248,0.6), 0 0 80px rgba(251,191,36,0.3), 0 20px 60px rgba(0,0,0,0.5)',
+    background:    'var(--palette-class-stage2)',
+    border:        '2px solid color-mix(in srgb, var(--palette-class-stage2-accent) 80%, transparent)',
+    badge:         {
+      label: '二階',
+      background: 'linear-gradient(90deg, var(--palette-class-stage2-accent2), var(--palette-class-stage2-accent))',
+      color: '#000',
+      textShadow: '0 0 2px rgba(255,255,255,0.8)',
+    },
+    stageBadge:    {
+      label: '二階進化',
+      gradient: 'linear-gradient(90deg, var(--palette-class-stage2-accent2), var(--palette-class-stage2-accent))',
+      textShadow: '0 0 3px rgba(255,255,255,0.6)',
+    },
+    cardShadow:    {
+      normal:   'inset 0 0 15px color-mix(in srgb, var(--palette-class-stage2-accent2) 60%, transparent)',
+      selected: '0 0 25px color-mix(in srgb, var(--palette-class-stage2-accent2) 80%, transparent), 0 0 10px color-mix(in srgb, var(--palette-class-stage2-accent) 60%, transparent)',
+    },
+    inspectShadow: '0 0 40px color-mix(in srgb, var(--palette-class-stage2-accent2) 60%, transparent), 0 0 80px color-mix(in srgb, var(--palette-class-stage2-accent) 30%, transparent), var(--theme-shadow)',
     foil:          true,
   },
   energy: {
@@ -390,25 +407,25 @@ const RARITY_CONFIG = {
     badge:         null,
     stageBadge:    null,
     cardShadow:    { normal: 'var(--card-shadow)', selected: 'var(--card-shadow-hover)' },
-    inspectShadow: '0 20px 60px rgba(0,0,0,0.6)',
+    inspectShadow: 'var(--theme-shadow)',
     foil:          false,
   },
   trainer: {
-    background:    'linear-gradient(135deg, #14b8a6, #0f766e)',
+    background:    'var(--palette-class-trainer)',
     border:        'none',
     badge:         null,
     stageBadge:    null,
     cardShadow:    { normal: 'var(--card-shadow)', selected: 'var(--card-shadow-hover)' },
-    inspectShadow: '0 20px 60px rgba(0,0,0,0.6)',
+    inspectShadow: 'var(--theme-shadow)',
     foil:          false,
   },
   item: {
-    background:    'linear-gradient(135deg, #f59e0b, #b45309)',
+    background:    'var(--palette-class-item)',
     border:        'none',
     badge:         null,
     stageBadge:    null,
     cardShadow:    { normal: 'var(--card-shadow)', selected: 'var(--card-shadow-hover)' },
-    inspectShadow: '0 20px 60px rgba(0,0,0,0.6)',
+    inspectShadow: 'var(--theme-shadow)',
     foil:          false,
   },
 };

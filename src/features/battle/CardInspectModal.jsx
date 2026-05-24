@@ -1,16 +1,16 @@
 import React, { useEffect, useCallback } from 'react';
 import { CardTypes, EnergyTypes, getCardRarity } from '../../models/cards';
 
-/* ---- 能量屬性色票（複用 Card.jsx 的配色）---- */
+/* ---- 能量屬性色票（綁定 --palette-element-* tokens）---- */
 const energyGradient = (type) => {
   const map = {
-    [EnergyTypes.FIRE]:     'linear-gradient(135deg, #f87171, #dc2626)',
-    [EnergyTypes.WATER]:    'linear-gradient(135deg, #60a5fa, #2563eb)',
-    [EnergyTypes.GRASS]:    'linear-gradient(135deg, #4ade80, #16a34a)',
-    [EnergyTypes.ELECTRIC]: 'linear-gradient(135deg, #facc15, #ca8a04)',
-    [EnergyTypes.PSYCHIC]:  'linear-gradient(135deg, #c084fc, #9333ea)',
-    [EnergyTypes.FIGHTING]: 'linear-gradient(135deg, #fb923c, #c2410c)',
-    [EnergyTypes.NORMAL]:   'linear-gradient(135deg, #9ca3af, #4b5563)',
+    [EnergyTypes.FIRE]:     'var(--palette-element-1)',
+    [EnergyTypes.WATER]:    'var(--palette-element-2)',
+    [EnergyTypes.GRASS]:    'var(--palette-element-3)',
+    [EnergyTypes.ELECTRIC]: 'var(--palette-element-4)',
+    [EnergyTypes.PSYCHIC]:  'var(--palette-element-5)',
+    [EnergyTypes.FIGHTING]: 'var(--palette-element-6)',
+    [EnergyTypes.NORMAL]:   'var(--palette-element-neutral)',
   };
   return map[type] || map[EnergyTypes.NORMAL];
 };
@@ -40,8 +40,8 @@ const EnergyOrb = ({ type, size = 22 }) => (
   <div style={{
     width: `${size}px`, height: `${size}px`, borderRadius: '50%',
     background: energyGradient(type),
-    border: '2px solid rgba(255,255,255,0.6)',
-    boxShadow: `0 2px 8px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.3)`,
+    border: '2px solid var(--theme-glass-border)',
+    boxShadow: `var(--theme-shadow), inset 0 1px 2px rgba(255,255,255,0.3)`,
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     fontSize: `${size * 0.5}px`, flexShrink: 0,
   }} />
@@ -50,15 +50,19 @@ const EnergyOrb = ({ type, size = 22 }) => (
 /* ---- HP 條 ---- */
 const HpBar = ({ current, max }) => {
   const pct = Math.max(0, Math.min(100, (current / max) * 100));
-  const color = pct > 50 ? '#22c55e' : pct > 25 ? '#f59e0b' : '#ef4444';
+  const color = pct > 50
+    ? 'var(--color-success)'
+    : pct > 25
+      ? 'var(--color-energy)'
+      : 'var(--color-danger)';
   return (
-    <div style={{ width: '100%', height: '10px', background: 'rgba(0,0,0,0.4)', borderRadius: '5px', overflow: 'hidden' }}>
+    <div style={{ width: '100%', height: '10px', background: 'var(--theme-panel-dark)', borderRadius: '5px', overflow: 'hidden' }}>
       <div style={{
         width: `${pct}%`, height: '100%',
-        background: `linear-gradient(90deg, ${color}, ${color}cc)`,
+        background: color,
         borderRadius: '5px',
         transition: 'width 0.4s ease',
-        boxShadow: `0 0 8px ${color}88`,
+        boxShadow: `0 0 8px ${color}`,
       }} />
     </div>
   );
@@ -90,8 +94,8 @@ const CardInspectModal = ({ card, onClose }) => {
     : isEnergy
       ? energyGradient(card.energyType)
       : card.type === CardTypes.TRAINER
-        ? 'linear-gradient(135deg, #14b8a6, #0f766e)'
-        : 'linear-gradient(135deg, #f59e0b, #b45309)';
+        ? 'var(--palette-class-trainer)'
+        : 'var(--palette-class-item)';
 
   const rarity = getCardRarity(card);
 
@@ -101,8 +105,8 @@ const CardInspectModal = ({ card, onClose }) => {
       onClick={onClose}
       style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        background: 'rgba(2, 6, 23, 0.75)',
-        backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+        background: 'var(--theme-panel-dark)',
+        backdropFilter: 'var(--theme-blur)', WebkitBackdropFilter: 'var(--theme-blur)',
         zIndex: 2000,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         cursor: 'pointer',
@@ -125,7 +129,7 @@ const CardInspectModal = ({ card, onClose }) => {
           boxShadow: rarity.inspectShadow,
         }}>
           <div style={{
-            background: 'linear-gradient(180deg, rgba(15,23,42,0.85), rgba(30,41,59,0.95))',
+            background: 'var(--theme-panel-dark)',
             borderRadius: '13px',
             padding: '20px',
             width: '320px',
@@ -157,7 +161,7 @@ const CardInspectModal = ({ card, onClose }) => {
                 )}
               </div>
               {isPokemon && (
-                <span style={{ fontSize: '1.1rem', color: '#ef4444', fontWeight: 800, textShadow: '0 0 10px rgba(239,68,68,0.5)' }}>
+                <span style={{ fontSize: '1.1rem', color: 'var(--color-danger)', fontWeight: 800, textShadow: '0 0 10px var(--palette-player2-glow)' }}>
                   HP {card.currentHp}/{card.maxHp || card.hp}
                 </span>
               )}
@@ -171,7 +175,7 @@ const CardInspectModal = ({ card, onClose }) => {
               {isPokemon && (
                 <span style={{
                   fontSize: '0.75rem', padding: '3px 10px', borderRadius: '12px',
-                  background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'var(--theme-panel-light)', border: '1px solid var(--theme-glass-border)',
                 }}>
                   {energyLabel(card.energyType)}
                 </span>
@@ -179,7 +183,7 @@ const CardInspectModal = ({ card, onClose }) => {
               {isTrainerOrItem && (
                 <span style={{
                   fontSize: '0.75rem', padding: '3px 10px', borderRadius: '12px',
-                  background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'var(--theme-panel-light)', border: '1px solid var(--theme-glass-border)',
                 }}>
                   {card.type === CardTypes.TRAINER ? '👤 支援者' : '🎒 物品'}
                 </span>
@@ -187,7 +191,7 @@ const CardInspectModal = ({ card, onClose }) => {
               {isEnergy && (
                 <span style={{
                   fontSize: '0.75rem', padding: '3px 10px', borderRadius: '12px',
-                  background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'var(--theme-panel-light)', border: '1px solid var(--theme-glass-border)',
                 }}>
                   {energyLabel(card.energyType)} 能量
                 </span>
@@ -220,19 +224,19 @@ const CardInspectModal = ({ card, onClose }) => {
                   {card.type === CardTypes.ITEM ? '🎒' : '👤'}
                 </div>
               ) : (
-                <div style={{ width: '80%', height: '120px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }} />
+                <div style={{ width: '80%', height: '120px', background: 'var(--theme-panel-light)', borderRadius: '12px' }} />
               )}
             </div>
 
             {/* ---- 寶可夢技能區 ---- */}
             {isPokemon && card.attack && (
               <div style={{
-                background: 'rgba(0,0,0,0.35)', borderRadius: '12px', padding: '14px',
-                border: '1px solid rgba(255,255,255,0.08)', position: 'relative', zIndex: 1,
+                background: 'var(--theme-panel-base)', borderRadius: '12px', padding: '14px',
+                border: '1px solid var(--theme-glass-border)', position: 'relative', zIndex: 1,
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <span style={{ fontSize: '1.1rem', fontWeight: 700 }}>{card.attack.name}</span>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#ef4444', textShadow: '0 0 8px rgba(239,68,68,0.4)' }}>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--color-danger)', textShadow: '0 0 8px var(--palette-player2-glow)' }}>
                     {card.attack.damage}
                   </span>
                 </div>
@@ -255,10 +259,10 @@ const CardInspectModal = ({ card, onClose }) => {
             {/* ---- 訓練家 / 物品 效果描述 ---- */}
             {isTrainerOrItem && card.description && (
               <div style={{
-                background: 'rgba(0,0,0,0.35)', borderRadius: '12px', padding: '14px',
-                border: '1px solid rgba(255,255,255,0.08)', position: 'relative', zIndex: 1,
+                background: 'var(--theme-panel-base)', borderRadius: '12px', padding: '14px',
+                border: '1px solid var(--theme-glass-border)', position: 'relative', zIndex: 1,
               }}>
-                <p style={{ fontSize: '0.9rem', margin: 0, lineHeight: 1.5, color: 'rgba(255,255,255,0.9)' }}>
+                <p style={{ fontSize: '0.9rem', margin: 0, lineHeight: 1.5, color: 'var(--theme-text-main)' }}>
                   {card.description}
                 </p>
               </div>
@@ -268,7 +272,7 @@ const CardInspectModal = ({ card, onClose }) => {
             {isPokemon && card.attachedEnergy && card.attachedEnergy.length > 0 && (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px',
-                padding: '8px 12px', background: 'rgba(0,0,0,0.25)', borderRadius: '8px',
+                padding: '8px 12px', background: 'var(--theme-panel-base)', borderRadius: '8px',
                 position: 'relative', zIndex: 1,
               }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>已附加能量：</span>
@@ -284,7 +288,7 @@ const CardInspectModal = ({ card, onClose }) => {
                 marginTop: '10px', fontSize: '0.75rem', color: 'var(--color-text-muted)',
                 position: 'relative', zIndex: 1,
               }}>
-                進化自：<span style={{ color: 'var(--color-text)' }}>{card.evolvesFrom}</span>
+                進化自：<span style={{ color: 'var(--theme-text-main)' }}>{card.evolvesFrom}</span>
               </div>
             )}
           </div>
@@ -292,12 +296,12 @@ const CardInspectModal = ({ card, onClose }) => {
 
         {/* ---- 關閉提示 ---- */}
         <div style={{
-          fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)',
+          fontSize: '0.8rem', color: 'var(--theme-text-muted)',
           display: 'flex', alignItems: 'center', gap: '8px',
         }}>
           <kbd style={{
             padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem',
-            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+            background: 'var(--theme-panel-light)', border: '1px solid var(--theme-glass-border)',
           }}>ESC</kbd>
           或點擊空白處關閉
         </div>

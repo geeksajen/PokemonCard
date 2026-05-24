@@ -3,14 +3,14 @@ import { CardTypes, EnergyTypes, getCardRarity } from '../../models/cards';
 
 const getEnergyColor = (type) => {
   switch (type) {
-    case EnergyTypes.FIRE: return 'linear-gradient(135deg, #f87171, #dc2626)';
-    case EnergyTypes.WATER: return 'linear-gradient(135deg, #60a5fa, #2563eb)';
-    case EnergyTypes.GRASS: return 'linear-gradient(135deg, #4ade80, #16a34a)';
-    case EnergyTypes.ELECTRIC: return 'linear-gradient(135deg, #facc15, #ca8a04)';
-    case EnergyTypes.PSYCHIC: return 'linear-gradient(135deg, #c084fc, #9333ea)';
-    case EnergyTypes.FIGHTING: return 'linear-gradient(135deg, #fb923c, #c2410c)';
-    case EnergyTypes.NORMAL: return 'linear-gradient(135deg, #9ca3af, #4b5563)';
-    default: return 'linear-gradient(135deg, #9ca3af, #4b5563)';
+    case EnergyTypes.FIRE:     return 'var(--palette-element-1)';
+    case EnergyTypes.WATER:    return 'var(--palette-element-2)';
+    case EnergyTypes.GRASS:    return 'var(--palette-element-3)';
+    case EnergyTypes.ELECTRIC: return 'var(--palette-element-4)';
+    case EnergyTypes.PSYCHIC:  return 'var(--palette-element-5)';
+    case EnergyTypes.FIGHTING: return 'var(--palette-element-6)';
+    case EnergyTypes.NORMAL:   return 'var(--palette-element-neutral)';
+    default:                   return 'var(--palette-element-neutral)';
   }
 };
 
@@ -22,13 +22,13 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
           width: 'var(--card-width)',
           height: 'var(--card-height)',
           borderRadius: 'var(--card-border-radius)',
-          background: 'linear-gradient(135deg, #1e40af, #1e3a8a)',
-          border: '4px solid #facc15',
+          background: 'var(--palette-card-back)',
+          border: '4px solid var(--palette-card-back-accent)',
           boxShadow: 'var(--card-shadow)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#facc15',
+          color: 'var(--palette-card-back-accent)',
           fontWeight: 'bold',
           fontSize: '1.0rem',
           userSelect: 'none'
@@ -93,7 +93,7 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
           )}
         </div>
         {card.type === CardTypes.POKEMON && (
-          <span style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>HP {card.currentHp}</span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-danger)', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>HP {card.currentHp}</span>
         )}
       </div>
 
@@ -103,7 +103,7 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
             {card.image ? (
               <img src={card.image} alt={card.name} style={{ width: '100%', height: '80px', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
             ) : (
-              <div style={{ width: '80%', height: '60px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}></div>
+              <div style={{ width: '80%', height: '60px', background: 'var(--theme-panel-light)', borderRadius: '8px' }}></div>
             )}
           </div>
           

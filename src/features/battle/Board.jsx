@@ -67,13 +67,13 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
           justifyContent: 'center',
           width: 'var(--card-width)',
           height: 'var(--card-height)',
-          border: '2px dashed rgba(255,255,255,0.2)',
+          border: '2px dashed var(--theme-glass-border)',
           borderRadius: 'var(--card-border-radius)',
           position: 'relative',
           transform: 'scale(1.1)', // 戰鬥寶可夢是主角，放大 1.1 倍
           zIndex: 10,
           cursor: (!activePokemon && onActiveClick) ? 'pointer' : 'default',
-          background: (!activePokemon && onActiveClick) ? 'rgba(255,255,255,0.05)' : 'transparent'
+          background: (!activePokemon && onActiveClick) ? 'var(--theme-panel-light)' : 'transparent'
         }}
       >
         {activePokemon ? (
@@ -99,8 +99,8 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
         display: 'flex',
         gap: '0px',
         justifyContent: 'center',
-        background: 'rgba(255,255,255,0.05)',
-        padding: '15px', 
+        background: 'var(--theme-panel-light)',
+        padding: '15px',
         borderRadius: '12px'
       }}>
         {/* 固定 3 個備戰位置 */}
@@ -118,7 +118,7 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
               style={{
                 width: 'var(--card-width)',
                 height: 'var(--card-height)',
-                border: '2px dashed rgba(255,255,255,0.1)',
+                border: '2px dashed var(--theme-glass-border)',
                 borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
@@ -126,7 +126,7 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
                 transform: 'scale(0.8)', // 備戰區為輔助，縮小至 80%
                 transformOrigin: isTopPlayer ? 'bottom center' : 'top center',
                 cursor: (!benchPokemon && onBenchClick) ? 'pointer' : 'default',
-                background: (!benchPokemon && onBenchClick) ? 'rgba(255,255,255,0.05)' : 'transparent'
+                background: (!benchPokemon && onBenchClick) ? 'var(--theme-panel-light)' : 'transparent'
               }}
             >
               {benchPokemon ? (
@@ -147,7 +147,7 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
                   />
                 </div>
               ) : (
-                <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.8rem', pointerEvents: 'none' }}>備戰區</span>
+                <span style={{ color: 'var(--theme-text-muted)', fontSize: '0.8rem', opacity: 0.5, pointerEvents: 'none' }}>備戰區</span>
               )}
             </div>
           );

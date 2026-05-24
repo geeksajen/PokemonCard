@@ -22,11 +22,11 @@ const HudOverlay = ({
           <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>對手</div>
           <div style={{ fontWeight: 'bold' }}>{topLabel}</div>
         </div>
-        <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '15px' }}>
+        <div style={{ borderLeft: '1px solid var(--theme-glass-border)', paddingLeft: '15px' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>剩餘獎賞卡</div>
           <div style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.2rem' }}>{topPlayer.prizes}</div>
         </div>
-        <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '15px' }}>
+        <div style={{ borderLeft: '1px solid var(--theme-glass-border)', paddingLeft: '15px' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>牌庫</div>
           <div style={{ color: 'var(--color-primary)', fontWeight: 'bold', fontSize: '1.2rem' }}>{topPlayer.deck.length}</div>
         </div>
@@ -44,16 +44,16 @@ const HudOverlay = ({
     </div>
 
     {/* 左下：玩家資訊 */}
-    <div className="hud-panel hud-bottom-left" style={{ boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' }}>
+    <div className="hud-panel hud-bottom-left" style={{ boxShadow: '0 0 20px var(--palette-player1-glow)' }}>
       <div>
         <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>{turnText}</div>
         <div style={{ fontWeight: 'bold', color: 'var(--color-primary)' }}>{bottomLabel}</div>
       </div>
-      <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '15px' }}>
+      <div style={{ borderLeft: '1px solid var(--theme-glass-border)', paddingLeft: '15px' }}>
         <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>剩餘獎賞卡</div>
         <div style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.2rem' }}>{bottomPlayer.prizes}</div>
       </div>
-      <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '15px' }}>
+      <div style={{ borderLeft: '1px solid var(--theme-glass-border)', paddingLeft: '15px' }}>
         <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>牌庫</div>
         <div style={{ color: 'var(--color-primary)', fontWeight: 'bold', fontSize: '1.2rem' }}>{bottomPlayer.deck.length}</div>
       </div>

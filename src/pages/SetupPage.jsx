@@ -21,9 +21,9 @@ function DeckList({ themes, selected, onSelect }) {
           onClick={() => onSelect(t.id)}
           style={{
             padding: '14px 18px', fontSize: '1.05rem',
-            border: `2px solid ${selected === t.id ? t.color : 'rgba(255,255,255,0.15)'}`,
-            background: selected === t.id ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
-            color: 'white', borderRadius: '12px', cursor: 'pointer',
+            border: `2px solid ${selected === t.id ? t.color : 'var(--theme-glass-border)'}`,
+            background: selected === t.id ? 'var(--theme-panel-base)' : 'var(--theme-panel-light)',
+            color: 'var(--theme-text-main)', borderRadius: '12px', cursor: 'pointer',
             transition: 'all 0.2s',
             boxShadow: selected === t.id ? `0 0 15px ${t.color}` : 'none',
             textAlign: 'left',
@@ -68,14 +68,14 @@ function SetupPage() {
   return (
     <div style={{
       width: '100vw', height: '100vh', overflow: 'hidden',
-      position: 'relative', background: '#060918',
+      position: 'relative', background: 'var(--page-setup-bg)',
       display: 'flex', flexDirection: 'column',
-      color: 'white', fontFamily: "'Inter', system-ui, sans-serif",
+      color: 'var(--theme-text-main)', fontFamily: "'Inter', system-ui, sans-serif",
     }}>
-      {/* Split colour background */}
+      {/* Split colour background — driven by selected deck colours */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        background: `linear-gradient(90deg, ${p1Color} 0%, rgba(6,9,24,0.95) 50%, ${p2Color} 100%)`,
+        background: `linear-gradient(90deg, ${p1Color} 0%, transparent 50%, ${p2Color} 100%)`,
         opacity: 0.25, transition: 'background 0.5s ease', pointerEvents: 'none',
       }} />
 
@@ -84,14 +84,14 @@ function SetupPage() {
         position: 'relative', zIndex: 10,
         display: 'flex', alignItems: 'center', gap: '16px',
         padding: '14px 24px',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        background: 'rgba(6,9,24,0.7)', backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid var(--page-setup-divider)',
+        background: 'var(--page-setup-overlay)', backdropFilter: 'var(--theme-blur)',
       }}>
         <button
           onClick={() => navigate('/')}
           style={{
-            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)',
-            color: 'white', borderRadius: '8px', padding: '8px 16px',
+            background: 'var(--theme-panel-light)', border: '1px solid var(--theme-glass-border)',
+            color: 'var(--theme-text-main)', borderRadius: '8px', padding: '8px 16px',
             cursor: 'pointer', fontSize: '0.9rem',
           }}
         >
@@ -101,7 +101,7 @@ function SetupPage() {
         <div style={{ flex: 1, textAlign: 'center' }}>
           <span style={{
             fontSize: '1.3rem', fontWeight: 800, letterSpacing: '0.1em',
-            background: 'linear-gradient(90deg, #60a5fa, #a78bfa)',
+            background: 'linear-gradient(90deg, var(--color-primary-hover), var(--palette-class-stage1-mid))',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           }}>
             對戰設定
@@ -116,10 +116,10 @@ function SetupPage() {
               onClick={() => setVsAI(m.id)}
               style={{
                 padding: '8px 20px', fontSize: '0.9rem',
-                border: `2px solid ${vsAI === m.id ? 'var(--color-primary)' : 'rgba(255,255,255,0.2)'}`,
-                background: vsAI === m.id ? 'rgba(59,130,246,0.2)' : 'transparent',
-                color: 'white', borderRadius: '30px', cursor: 'pointer',
-                boxShadow: vsAI === m.id ? '0 0 12px rgba(59,130,246,0.5)' : 'none',
+                border: `2px solid ${vsAI === m.id ? 'var(--color-primary)' : 'var(--theme-glass-border)'}`,
+                background: vsAI === m.id ? 'color-mix(in srgb, var(--color-primary) 20%, transparent)' : 'transparent',
+                color: 'var(--theme-text-main)', borderRadius: '30px', cursor: 'pointer',
+                boxShadow: vsAI === m.id ? '0 0 12px var(--palette-player1-glow)' : 'none',
                 transition: 'all 0.2s',
               }}
             >
@@ -150,19 +150,19 @@ function SetupPage() {
         }}>
           <div style={{
             width: '2px', height: '80px',
-            background: 'linear-gradient(180deg, transparent, rgba(255,255,255,0.25))',
+            background: 'linear-gradient(180deg, transparent, var(--theme-glass-border))',
           }} />
           <div style={{
             fontSize: '3.5rem', fontWeight: 900, fontStyle: 'italic',
-            background: 'linear-gradient(180deg, #f8fafc 0%, #94a3b8 100%)',
+            background: 'linear-gradient(180deg, var(--theme-text-main) 0%, var(--theme-text-muted) 100%)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.3))',
+            filter: 'drop-shadow(0 0 20px var(--theme-glass-border))',
           }}>
             VS
           </div>
           <div style={{
             width: '2px', height: '80px',
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.25), transparent)',
+            background: 'linear-gradient(180deg, var(--theme-glass-border), transparent)',
           }} />
         </div>
 
@@ -182,27 +182,27 @@ function SetupPage() {
       <div style={{
         position: 'relative', zIndex: 10,
         display: 'flex', justifyContent: 'center', padding: '20px 24px',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
-        background: 'rgba(6,9,24,0.7)', backdropFilter: 'blur(12px)',
+        borderTop: '1px solid var(--page-setup-divider)',
+        background: 'var(--page-setup-overlay)', backdropFilter: 'var(--theme-blur)',
       }}>
         <button
           onClick={handleStart}
           style={{
             padding: '18px 80px', fontSize: '1.5rem', fontWeight: 800,
             letterSpacing: '0.08em',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+            background: 'linear-gradient(135deg, var(--palette-player1) 0%, var(--palette-class-stage1-mid) 100%)',
             color: 'white', border: 'none', borderRadius: '50px',
             cursor: 'pointer',
-            boxShadow: '0 0 30px rgba(59,130,246,0.5)',
+            boxShadow: '0 0 30px var(--palette-player1-glow)',
             transition: 'transform 0.15s, box-shadow 0.15s',
           }}
           onMouseEnter={e => {
             e.currentTarget.style.transform = 'scale(1.05)';
-            e.currentTarget.style.boxShadow = '0 0 50px rgba(59,130,246,0.8)';
+            e.currentTarget.style.boxShadow = '0 0 50px var(--palette-player1)';
           }}
           onMouseLeave={e => {
             e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 0 30px rgba(59,130,246,0.5)';
+            e.currentTarget.style.boxShadow = '0 0 30px var(--palette-player1-glow)';
           }}
         >
           確認出戰 ⚔️

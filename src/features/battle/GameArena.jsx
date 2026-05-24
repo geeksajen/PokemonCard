@@ -216,18 +216,18 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
       {gameState.pendingAction && (
         <div style={{
           position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%, -50%)',
-          background: 'rgba(0,0,0,0.85)', color: 'white', padding: '15px 30px',
-          borderRadius: '12px', zIndex: 100, border: '2px solid #fbbf24',
-          boxShadow: '0 0 20px rgba(251, 191, 36, 0.5)', textAlign: 'center'
+          background: 'var(--theme-panel-dark)', color: 'var(--theme-text-main)', padding: '15px 30px',
+          borderRadius: '12px', zIndex: 100, border: '2px solid var(--color-energy)',
+          boxShadow: 'var(--theme-shadow)', textAlign: 'center'
         }}>
-          <h2 style={{ margin: '0 0 10px 0', color: '#fcd34d' }}>請選擇目標</h2>
+          <h2 style={{ margin: '0 0 10px 0', color: 'var(--color-energy)' }}>請選擇目標</h2>
           <p style={{ margin: 0 }}>
             {gameState.pendingAction.type === 'select_opponent_bench' && '請點擊對手備戰區的一隻寶可夢'}
             {gameState.pendingAction.type === 'select_my_bench' && '請點擊我方備戰區的一隻寶可夢'}
           </p>
-          <button 
+          <button
             onClick={handleCancelPending}
-            style={{ marginTop: '15px', padding: '5px 15px', borderRadius: '5px', background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer' }}
+            style={{ marginTop: '15px', padding: '5px 15px', borderRadius: '5px', background: 'var(--color-danger)', color: 'white', border: 'none', cursor: 'pointer' }}
           >
             取消
           </button>
@@ -239,9 +239,10 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, onReturnLobby }) => {
         <div className={`hand-wrapper-bottom ${selectedCard && !dragState.isDragging ? 'hand-active' : ''} ${dragState.isDragging ? 'is-dragging' : ''}`}>
           {selectedCard && (
             <div style={{ position: 'absolute', top: '-50px', left: '50%', transform: 'translateX(-50%)',
-                          background: 'rgba(59, 130, 246, 0.9)', padding: '8px 20px', borderRadius: '20px',
+                          background: 'var(--palette-player1)', padding: '8px 20px', borderRadius: '20px',
                           fontSize: '1rem', fontWeight: 'bold', pointerEvents: 'none', zIndex: 40,
-                          boxShadow: '0 4px 10px rgba(0,0,0,0.5)', whiteSpace: 'nowrap' }}>
+                          color: 'white',
+                          boxShadow: 'var(--theme-shadow)', whiteSpace: 'nowrap' }}>
               選中了：{selectedCard.name} (請點擊戰鬥區或備戰區放置)
             </div>
           )}

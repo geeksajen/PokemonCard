@@ -25,7 +25,7 @@ function StarField({ stars }) {
         position: 'absolute',
         left: `${s.x}%`, top: `${s.y}%`,
         width: `${s.size}px`, height: `${s.size}px`,
-        borderRadius: '50%', background: 'white',
+        borderRadius: '50%', background: 'var(--page-lobby-starfield-color)',
         opacity: s.opacity,
         animation: `twinkle ${s.dur}s ease-in-out infinite alternate`,
         animationDelay: `${s.delay}s`,
@@ -56,8 +56,8 @@ function HomePage() {
   return (
     <div style={{
       width: '100vw', height: '100vh', overflow: 'hidden',
-      position: 'relative', background: '#060918',
-      fontFamily: "'Inter', system-ui, sans-serif", color: 'white',
+      position: 'relative', background: 'var(--page-lobby-bg)',
+      fontFamily: "'Inter', system-ui, sans-serif", color: 'var(--theme-text-main)',
     }}>
       {/* ── Starfield ── */}
       <StarField stars={stars} />
@@ -65,7 +65,7 @@ function HomePage() {
       {/* Nebula ambient glow */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        background: 'radial-gradient(ellipse at 72% 48%, rgba(59,82,200,0.14) 0%, transparent 58%)',
+        background: 'radial-gradient(ellipse at 72% 48%, var(--page-lobby-nebula) 0%, transparent 58%)',
         pointerEvents: 'none',
       }} />
 
@@ -74,17 +74,17 @@ function HomePage() {
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20,
         display: 'flex', alignItems: 'center',
         padding: '14px 28px',
-        background: 'linear-gradient(180deg, rgba(6,9,24,0.92) 0%, transparent 100%)',
+        background: 'linear-gradient(180deg, var(--page-lobby-bg) 0%, transparent 100%)',
       }}>
         {/* Player card */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
             width: '46px', height: '46px', borderRadius: '50%',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+            background: 'linear-gradient(135deg, var(--palette-player1) 0%, var(--palette-class-stage1-mid) 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '1.4rem',
-            border: '2px solid rgba(59,130,246,0.55)',
-            boxShadow: '0 0 14px rgba(59,130,246,0.4)',
+            border: '2px solid var(--palette-player1-glow)',
+            boxShadow: '0 0 14px var(--palette-player1-glow)',
           }}>
             🎴
           </div>
@@ -95,12 +95,13 @@ function HomePage() {
             <div style={{ display: 'flex', gap: '8px', marginTop: '3px' }}>
               <span style={{
                 fontSize: '0.72rem', padding: '2px 7px', borderRadius: '4px',
-                background: 'rgba(59,130,246,0.18)', border: '1px solid rgba(59,130,246,0.4)',
-                color: '#60a5fa', fontWeight: 600,
+                background: 'color-mix(in srgb, var(--palette-player1) 18%, transparent)',
+                border: '1px solid var(--palette-player1-glow)',
+                color: 'var(--color-primary-hover)', fontWeight: 600,
               }}>
                 Lv. 1
               </span>
-              <span style={{ fontSize: '0.78rem', color: '#fbbf24', alignSelf: 'center' }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--color-energy)', alignSelf: 'center' }}>
                 💰 1,000
               </span>
             </div>
@@ -111,7 +112,7 @@ function HomePage() {
         <div style={{ flex: 1, textAlign: 'center' }}>
           <span style={{
             fontSize: '1.5rem', fontWeight: 900, letterSpacing: '0.12em',
-            background: 'linear-gradient(90deg, #60a5fa 0%, #a78bfa 100%)',
+            background: 'linear-gradient(90deg, var(--color-primary-hover) 0%, var(--palette-class-stage1-mid) 100%)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           }}>
             PKCard TCG
@@ -135,33 +136,31 @@ function HomePage() {
               style={{
                 display: 'flex', alignItems: 'center', gap: '14px',
                 padding: '14px 22px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.09)',
+                background: 'var(--theme-panel-light)',
+                border: '1px solid var(--theme-glass-border)',
                 borderRadius: '14px',
                 cursor: item.active ? 'pointer' : 'default',
                 opacity: item.active ? 1 : 0.42,
                 transition: 'background 0.2s, border-color 0.2s',
-                backdropFilter: 'blur(10px)',
-                color: 'white', textDecoration: 'none',
+                backdropFilter: 'var(--theme-blur)',
+                color: 'var(--theme-text-main)', textDecoration: 'none',
                 minWidth: '170px',
               }}
               onMouseEnter={e => {
                 if (item.active) {
-                  e.currentTarget.style.background     = 'rgba(255,255,255,0.1)';
-                  e.currentTarget.style.borderColor    = 'rgba(255,255,255,0.2)';
+                  e.currentTarget.style.background  = 'var(--theme-panel-base)';
                 }
               }}
               onMouseLeave={e => {
                 if (item.active) {
-                  e.currentTarget.style.background     = 'rgba(255,255,255,0.04)';
-                  e.currentTarget.style.borderColor    = 'rgba(255,255,255,0.09)';
+                  e.currentTarget.style.background  = 'var(--theme-panel-light)';
                 }
               }}
             >
               <span style={{ fontSize: '1.5rem', lineHeight: 1 }}>{item.icon}</span>
               <div>
                 <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{item.label}</div>
-                <div style={{ fontSize: '0.7rem', color: item.active ? '#64748b' : '#475569', marginTop: '1px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--theme-text-muted)', opacity: item.active ? 1 : 0.7, marginTop: '1px' }}>
                   {item.sub}
                 </div>
               </div>
@@ -205,9 +204,9 @@ function HomePage() {
         {/* Frosted name badge */}
         <div style={{
           marginTop: '14px', padding: '8px 28px',
-          background: 'rgba(255,255,255,0.07)',
-          backdropFilter: 'blur(14px)',
-          border: '1px solid rgba(255,255,255,0.14)',
+          background: 'var(--theme-panel-light)',
+          backdropFilter: 'var(--theme-blur)',
+          border: '1px solid var(--theme-glass-border)',
           borderRadius: '30px',
           fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.06em',
           textShadow: '0 0 14px rgba(255,255,255,0.35)',
@@ -227,7 +226,7 @@ function HomePage() {
           style={{
             padding: '22px 68px', fontSize: '2rem', fontWeight: 900,
             letterSpacing: '0.18em',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+            background: 'linear-gradient(135deg, var(--palette-player1) 0%, var(--palette-class-stage1-mid) 100%)',
             color: 'white', border: 'none', borderRadius: '60px',
             cursor: 'pointer',
             animation: 'playPulse 2s ease-in-out infinite',
@@ -239,7 +238,7 @@ function HomePage() {
         >
           PLAY ▶
         </button>
-        <div style={{ fontSize: '0.78rem', color: '#475569', letterSpacing: '0.05em' }}>
+        <div style={{ fontSize: '0.78rem', color: 'var(--theme-text-muted)', letterSpacing: '0.05em' }}>
           點擊開始對戰
         </div>
       </div>

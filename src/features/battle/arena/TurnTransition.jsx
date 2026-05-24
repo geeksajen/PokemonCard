@@ -12,8 +12,8 @@ const TurnTransition = ({ isPlayer1Turn, onContinue, vsAI }) => {
     ? (isPlayer1Turn ? 'YOUR TURN' : 'OPPONENT TURN')
     : (isPlayer1Turn ? 'PLAYER 1 TURN' : 'PLAYER 2 TURN');
 
-  const bannerColor = isPlayer1Turn ? 'rgba(59, 130, 246, 0.9)' : 'rgba(239, 68, 68, 0.9)';
-  const shadowColor = isPlayer1Turn ? 'rgba(59, 130, 246, 0.5)' : 'rgba(239, 68, 68, 0.5)';
+  const bannerColor = isPlayer1Turn ? 'var(--palette-player1)' : 'var(--palette-player2)';
+  const shadowColor = isPlayer1Turn ? 'var(--palette-player1-glow)' : 'var(--palette-player2-glow)';
 
   return (
     <div 
@@ -22,7 +22,7 @@ const TurnTransition = ({ isPlayer1Turn, onContinue, vsAI }) => {
       style={{ 
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
         zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: mounted ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0)', 
+        background: mounted ? 'var(--theme-panel-dark)' : 'transparent',
         backdropFilter: mounted ? 'blur(4px)' : 'blur(0px)',
         transition: 'all 0.3s ease',
         cursor: 'pointer',
@@ -54,9 +54,9 @@ const TurnTransition = ({ isPlayer1Turn, onContinue, vsAI }) => {
         </h1>
       </div>
 
-      <p style={{ 
+      <p style={{
         position: 'absolute', bottom: '20%',
-        fontSize: '1.5rem', color: 'rgba(255,255,255,0.9)', 
+        fontSize: '1.5rem', color: 'var(--theme-text-main)',
         fontWeight: 'bold',
         animation: 'pulse 1.5s infinite',
         opacity: mounted ? 1 : 0,

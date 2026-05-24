@@ -8,13 +8,13 @@ const SettingsModal = ({ bgmMuted, sfxMuted, onToggleBGM, onToggleSFX, onReturnL
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
         <button
           onClick={onToggleBGM}
-          style={{ flex: 1, marginRight: '5px', padding: '12px', background: bgmMuted ? 'rgba(255,255,255,0.1)' : 'var(--color-primary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          style={{ flex: 1, marginRight: '5px', padding: '12px', background: bgmMuted ? 'var(--theme-panel-light)' : 'var(--color-primary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
         >
           {bgmMuted ? '🔇 音樂 (關)' : '🎵 音樂 (開)'}
         </button>
         <button
           onClick={onToggleSFX}
-          style={{ flex: 1, marginLeft: '5px', padding: '12px', background: sfxMuted ? 'rgba(255,255,255,0.1)' : 'var(--color-primary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          style={{ flex: 1, marginLeft: '5px', padding: '12px', background: sfxMuted ? 'var(--theme-panel-light)' : 'var(--color-primary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
         >
           {sfxMuted ? '🔈 音效 (關)' : '🔊 音效 (開)'}
         </button>
@@ -27,7 +27,7 @@ const SettingsModal = ({ bgmMuted, sfxMuted, onToggleBGM, onToggleSFX, onReturnL
       </button>
       <button
         onClick={onClose}
-        style={{ display: 'block', width: '100%', padding: '12px', background: 'rgba(255,255,255,0.1)', fontSize: '1.1rem' }}
+        style={{ display: 'block', width: '100%', padding: '12px', background: 'var(--theme-panel-light)', fontSize: '1.1rem' }}
       >
         關閉
       </button>
