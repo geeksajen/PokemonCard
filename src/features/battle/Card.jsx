@@ -107,7 +107,7 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
             )}
           </div>
           
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px', borderRadius: '6px', zIndex: 1 }}>
+          <div style={{ background: 'var(--theme-panel-dark)', padding: '6px', borderRadius: '6px', zIndex: 1 }}>
             <div style={{ fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
               <span>{card.attack.name}</span>
               <span style={{ color: 'var(--color-danger)' }}>{card.attack.damage}</span>
@@ -137,8 +137,8 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
           <div style={{
             width: '60px', height: '60px', borderRadius: '50%',
-            background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '2rem', textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+            background: 'var(--theme-panel-light)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '2rem', textShadow: 'var(--theme-shadow)'
           }}>
             ⚡
           </div>
@@ -150,7 +150,7 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
           <div style={{ fontSize: '1.8rem', textShadow: '0 2px 4px rgba(0,0,0,0.4)' }}>
             {card.type === CardTypes.ITEM ? '🎒' : '👤'}
           </div>
-          <p style={{ fontSize: '0.6rem', margin: 0, lineHeight: 1.35, color: 'rgba(255,255,255,0.92)' }}>
+          <p style={{ fontSize: '0.6rem', margin: 0, lineHeight: 1.35, color: 'var(--theme-text-main)' }}>
             {card.description}
           </p>
         </div>

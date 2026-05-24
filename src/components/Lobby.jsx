@@ -37,15 +37,14 @@ const Lobby = ({ onStartGame }) => {
       width: '100vw',
       position: 'relative',
       overflow: 'hidden',
-      color: 'white',
       fontFamily: "'Noto Sans TC', sans-serif"
     }}>
       {/* Background with split gradient */}
       <div style={{
         position: 'absolute',
         top: 0, left: 0, right: 0, bottom: 0,
-        background: `linear-gradient(90deg, ${p1Color} 0%, #1a1a2e 50%, ${p2Color} 100%)`,
-        opacity: 0.3,
+        background: `linear-gradient(90deg, ${p1Color} 0%, transparent 50%, ${p2Color} 100%)`,
+        opacity: 0.15,
         transition: 'background 0.5s ease',
         zIndex: -1
       }} />
@@ -58,7 +57,7 @@ const Lobby = ({ onStartGame }) => {
         textAlign: 'center',
         zIndex: 10
       }}>
-        <h1 style={{ fontSize: '4rem', margin: 0, textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>PKCard TCG</h1>
+        <h1 style={{ fontSize: '4rem', margin: 0, textShadow: 'var(--theme-shadow)' }}>PKCard TCG</h1>
         <p style={{ fontSize: '1.5rem', opacity: 0.8, marginTop: '10px' }}>選擇您的主題牌組</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
           {[
@@ -71,9 +70,9 @@ const Lobby = ({ onStartGame }) => {
               style={{
                 padding: '10px 24px',
                 fontSize: '1.1rem',
-                border: `2px solid ${vsAI === m.id ? 'var(--color-primary)' : 'rgba(255,255,255,0.2)'}`,
-                background: vsAI === m.id ? 'rgba(255,255,255,0.12)' : 'transparent',
-                color: 'white',
+                border: `2px solid ${vsAI === m.id ? 'var(--color-primary)' : 'var(--theme-glass-border)'}`,
+                background: vsAI === m.id ? 'var(--theme-panel-light)' : 'transparent',
+                color: 'var(--theme-text-main)',
                 borderRadius: '30px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
@@ -98,9 +97,9 @@ const Lobby = ({ onStartGame }) => {
                 style={{
                   padding: '15px 20px',
                   fontSize: '1.2rem',
-                  border: `2px solid ${p1Theme === t.id ? t.color : 'rgba(255,255,255,0.2)'}`,
-                  background: p1Theme === t.id ? 'rgba(255,255,255,0.1)' : 'transparent',
-                  color: 'white',
+                  border: `2px solid ${p1Theme === t.id ? t.color : 'var(--theme-glass-border)'}`,
+                  background: p1Theme === t.id ? 'var(--theme-panel-light)' : 'transparent',
+                  color: 'var(--theme-text-main)',
                   borderRadius: '12px',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
@@ -116,7 +115,7 @@ const Lobby = ({ onStartGame }) => {
 
       {/* VS separator */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100px' }}>
-        <div style={{ fontSize: '3rem', fontWeight: 'bold', fontStyle: 'italic', textShadow: '0 0 20px rgba(255,255,255,0.8)' }}>VS</div>
+        <div style={{ fontSize: '3rem', fontWeight: 'bold', fontStyle: 'italic', textShadow: 'var(--theme-shadow)' }}>VS</div>
       </div>
 
       {/* Player 2 Selection */}
@@ -131,9 +130,9 @@ const Lobby = ({ onStartGame }) => {
                 style={{
                   padding: '15px 20px',
                   fontSize: '1.2rem',
-                  border: `2px solid ${p2Theme === t.id ? t.color : 'rgba(255,255,255,0.2)'}`,
-                  background: p2Theme === t.id ? 'rgba(255,255,255,0.1)' : 'transparent',
-                  color: 'white',
+                  border: `2px solid ${p2Theme === t.id ? t.color : 'var(--theme-glass-border)'}`,
+                  background: p2Theme === t.id ? 'var(--theme-panel-light)' : 'transparent',
+                  color: 'var(--theme-text-main)',
                   borderRadius: '12px',
                   cursor: 'pointer',
                   transition: 'all 0.2s',

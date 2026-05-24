@@ -149,7 +149,7 @@ function StudioPage() {
   return (
     <div className="studio-container">
       {toastMessage && (
-        <div style={{ position: 'fixed', top: '80px', left: '50%', transform: 'translateX(-50%)', background: '#ef4444', color: 'white', padding: '10px 20px', borderRadius: '8px', zIndex: 100, fontWeight: 'bold', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', animation: 'slideInFast 0.3s' }}>
+        <div style={{ position: 'fixed', top: '80px', left: '50%', transform: 'translateX(-50%)', background: 'var(--color-danger)', color: 'var(--theme-text-main)', padding: '10px 20px', borderRadius: '8px', zIndex: 100, fontWeight: 'bold', boxShadow: 'var(--theme-shadow)', animation: 'slideInFast 0.3s' }}>
           {toastMessage}
         </div>
       )}
