@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { CardTypes, EnergyTypes } from '../../models/cards';
+import { CardTypes, EnergyTypes, getCardRarity } from '../../models/cards';
 
 /* ---- 能量屬性色票（複用 Card.jsx 的配色）---- */
 const energyGradient = (type) => {
@@ -93,13 +93,7 @@ const CardInspectModal = ({ card, onClose }) => {
         ? 'linear-gradient(135deg, #14b8a6, #0f766e)'
         : 'linear-gradient(135deg, #f59e0b, #b45309)';
 
-  // Stage 標籤
-  const stageLabel = card.stage === 2 ? '二階進化' : card.stage === 1 ? '一階進化' : '基礎';
-  const stageGradient = card.stage === 2
-    ? 'linear-gradient(90deg, #38bdf8, #fcd34d)'
-    : card.stage === 1
-      ? 'linear-gradient(90deg, #a855f7, #eab308)'
-      : 'linear-gradient(90deg, #64748b, #94a3b8)';
+  const rarity = getCardRarity(card);
 
   return (
     <div
@@ -128,11 +122,7 @@ const CardInspectModal = ({ card, onClose }) => {
           background: accentColor,
           borderRadius: '16px',
           padding: '4px',
-          boxShadow: card.stage === 2
-            ? '0 0 40px rgba(56, 189, 248, 0.6), 0 0 80px rgba(251, 191, 36, 0.3), 0 20px 60px rgba(0,0,0,0.5)'
-            : card.stage === 1
-              ? '0 0 30px rgba(234, 179, 8, 0.5), 0 20px 60px rgba(0,0,0,0.5)'
-              : '0 20px 60px rgba(0,0,0,0.6)',
+          boxShadow: rarity.inspectShadow,
         }}>
           <div style={{
             background: 'linear-gradient(180deg, rgba(15,23,42,0.85), rgba(30,41,59,0.95))',
@@ -159,10 +149,10 @@ const CardInspectModal = ({ card, onClose }) => {
                 {isPokemon && (
                   <span style={{
                     fontSize: '0.7rem', padding: '2px 8px', borderRadius: '6px', fontWeight: 700,
-                    background: stageGradient, color: '#000',
-                    textShadow: card.stage === 2 ? '0 0 3px rgba(255,255,255,0.6)' : 'none',
+                    background: rarity.stageBadge?.gradient, color: '#000',
+                    textShadow: rarity.stageBadge?.textShadow ?? 'none',
                   }}>
-                    {stageLabel}
+                    {rarity.stageBadge?.label}
                   </span>
                 )}
               </div>

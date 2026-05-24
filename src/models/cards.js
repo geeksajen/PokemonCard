@@ -344,3 +344,83 @@ export const generateThemeDeck = (theme) => {
   }
   return deck.sort(() => Math.random() - 0.5);
 };
+
+// ---- 稀有度設定表 ----------------------------------------------------------
+// 集中管理卡牌的所有視覺稀有度屬性。
+// 新增稀有度等級：在此加一筆，Card.jsx / CardInspectModal.jsx 自動生效。
+// 欄位說明：
+//   background    — 卡面主漸層（null → Card.jsx 改用 getEnergyColor）
+//   border        — 卡框邊線
+//   badge         — Card.jsx 右側角標（null = 不顯示；basic 不顯示角標）
+//   stageBadge    — CardInspectModal 的階段標籤（Pokemon 限定；null = 非 Pokemon）
+//   cardShadow    — Card.jsx 的 box-shadow（normal / selected 兩態）
+//   inspectShadow — CardInspectModal 外框光暈
+//   foil          — 是否啟用閃卡反光（Pretask 3 / Feature ① 預留旗標）
+const RARITY_CONFIG = {
+  basic: {
+    background:    'linear-gradient(135deg, #334155, #0f172a)',
+    border:        'none',
+    badge:         null,
+    stageBadge:    { label: '基礎',     gradient: 'linear-gradient(90deg, #64748b, #94a3b8)', textShadow: 'none' },
+    cardShadow:    { normal: 'var(--card-shadow)', selected: 'var(--card-shadow-hover)' },
+    inspectShadow: '0 20px 60px rgba(0,0,0,0.6)',
+    foil:          false,
+  },
+  stage1: {
+    background:    'linear-gradient(135deg, #4f46e5, #a855f7, #eab308)',
+    border:        '1px solid rgba(234,179,8,0.5)',
+    badge:         { label: '進化', background: '#eab308',                              color: '#000', textShadow: 'none' },
+    stageBadge:    { label: '一階進化', gradient: 'linear-gradient(90deg, #a855f7, #eab308)', textShadow: 'none' },
+    cardShadow:    { normal: 'inset 0 0 10px rgba(234,179,8,0.4)', selected: '0 0 20px rgba(234,179,8,0.6)' },
+    inspectShadow: '0 0 30px rgba(234,179,8,0.5), 0 20px 60px rgba(0,0,0,0.5)',
+    foil:          true,
+  },
+  stage2: {
+    background:    'linear-gradient(135deg, #e2e8f0, #38bdf8, #fbbf24)',
+    border:        '2px solid rgba(251,191,36,0.8)',
+    badge:         { label: '二階', background: 'linear-gradient(90deg, #38bdf8, #fcd34d)', color: '#000', textShadow: '0 0 2px rgba(255,255,255,0.8)' },
+    stageBadge:    { label: '二階進化', gradient: 'linear-gradient(90deg, #38bdf8, #fcd34d)', textShadow: '0 0 3px rgba(255,255,255,0.6)' },
+    cardShadow:    { normal: 'inset 0 0 15px rgba(56,189,248,0.6)', selected: '0 0 25px rgba(56,189,248,0.8), 0 0 10px rgba(251,191,36,0.6)' },
+    inspectShadow: '0 0 40px rgba(56,189,248,0.6), 0 0 80px rgba(251,191,36,0.3), 0 20px 60px rgba(0,0,0,0.5)',
+    foil:          true,
+  },
+  energy: {
+    background:    null,
+    border:        'none',
+    badge:         null,
+    stageBadge:    null,
+    cardShadow:    { normal: 'var(--card-shadow)', selected: 'var(--card-shadow-hover)' },
+    inspectShadow: '0 20px 60px rgba(0,0,0,0.6)',
+    foil:          false,
+  },
+  trainer: {
+    background:    'linear-gradient(135deg, #14b8a6, #0f766e)',
+    border:        'none',
+    badge:         null,
+    stageBadge:    null,
+    cardShadow:    { normal: 'var(--card-shadow)', selected: 'var(--card-shadow-hover)' },
+    inspectShadow: '0 20px 60px rgba(0,0,0,0.6)',
+    foil:          false,
+  },
+  item: {
+    background:    'linear-gradient(135deg, #f59e0b, #b45309)',
+    border:        'none',
+    badge:         null,
+    stageBadge:    null,
+    cardShadow:    { normal: 'var(--card-shadow)', selected: 'var(--card-shadow-hover)' },
+    inspectShadow: '0 20px 60px rgba(0,0,0,0.6)',
+    foil:          false,
+  },
+};
+
+// 回傳指定卡牌的稀有度設定物件（唯一查詢入口）。
+// 未來若新增卡種或分級，只需更新 RARITY_CONFIG 與這裡的分派邏輯。
+export const getCardRarity = (card) => {
+  if (!card)                          return RARITY_CONFIG.basic;
+  if (card.type === CardTypes.ENERGY)  return RARITY_CONFIG.energy;
+  if (card.type === CardTypes.TRAINER) return RARITY_CONFIG.trainer;
+  if (card.type === CardTypes.ITEM)    return RARITY_CONFIG.item;
+  if (card.stage === 2)                return RARITY_CONFIG.stage2;
+  if (card.stage === 1)                return RARITY_CONFIG.stage1;
+  return RARITY_CONFIG.basic;
+};
