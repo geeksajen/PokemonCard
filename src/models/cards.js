@@ -31,7 +31,7 @@ export const cardDatabase = {
     hp: 60,
     maxHp: 60,
     energyType: EnergyTypes.FIRE,
-    image: './images/charmander.png',
+    image: '/images/charmander.png',
     attack: { name: '火花', cost: [EnergyTypes.FIRE], damage: 20 }
   },
   'p-002': {
@@ -41,7 +41,7 @@ export const cardDatabase = {
     hp: 60,
     maxHp: 60,
     energyType: EnergyTypes.WATER,
-    image: './images/squirtle.png',
+    image: '/images/squirtle.png',
     attack: { name: '水槍', cost: [EnergyTypes.WATER], damage: 20 }
   },
   'p-003': {
@@ -51,7 +51,7 @@ export const cardDatabase = {
     hp: 70,
     maxHp: 70,
     energyType: EnergyTypes.GRASS,
-    image: './images/bulbasaur.png',
+    image: '/images/bulbasaur.png',
     attack: { name: '藤鞭', cost: [EnergyTypes.GRASS], damage: 20 }
   },
   'p-004': {
@@ -61,7 +61,7 @@ export const cardDatabase = {
     hp: 60,
     maxHp: 60,
     energyType: EnergyTypes.ELECTRIC,
-    image: './images/pikachu.png',
+    image: '/images/pikachu.png',
     attack: { name: '電擊', cost: [EnergyTypes.ELECTRIC], damage: 20 }
   },
   'p-150': {
@@ -71,7 +71,7 @@ export const cardDatabase = {
     hp: 130,
     maxHp: 130,
     energyType: EnergyTypes.PSYCHIC,
-    image: './images/mewtwo.png',
+    image: '/images/mewtwo.png',
     attack: { name: '精神強念', cost: [EnergyTypes.PSYCHIC, EnergyTypes.PSYCHIC], damage: 60 }
   },
   'p-066': {
@@ -81,7 +81,7 @@ export const cardDatabase = {
     hp: 70,
     maxHp: 70,
     energyType: EnergyTypes.FIGHTING,
-    image: './images/machop.png',
+    image: '/images/machop.png',
     attack: { name: '空手劈', cost: [EnergyTypes.FIGHTING], damage: 20 }
   },
   'p-143': {
@@ -91,7 +91,7 @@ export const cardDatabase = {
     hp: 130,
     maxHp: 130,
     energyType: EnergyTypes.NORMAL,
-    image: './images/snorlax.png',
+    image: '/images/snorlax.png',
     attack: {
       name: '泰山壓頂',
       cost: [EnergyTypes.NORMAL, EnergyTypes.NORMAL, EnergyTypes.NORMAL],
@@ -109,7 +109,7 @@ export const cardDatabase = {
     energyType: EnergyTypes.FIRE,
     evolvesFrom: 'p-001',
     stage: 1,
-    image: './images/charmeleon.png',
+    image: '/images/charmeleon.png',
     attack: { name: '火焰放射', cost: [EnergyTypes.FIRE, EnergyTypes.FIRE], damage: 50 }
   },
   'p-002-ev1': {
@@ -121,7 +121,7 @@ export const cardDatabase = {
     energyType: EnergyTypes.WATER,
     evolvesFrom: 'p-002',
     stage: 1,
-    image: './images/wartortle.png',
+    image: '/images/wartortle.png',
     attack: { name: '水砲', cost: [EnergyTypes.WATER, EnergyTypes.WATER], damage: 50 }
   },
   'p-003-ev1': {
@@ -133,7 +133,7 @@ export const cardDatabase = {
     energyType: EnergyTypes.GRASS,
     evolvesFrom: 'p-003',
     stage: 1,
-    image: './images/ivysaur.png',
+    image: '/images/ivysaur.png',
     attack: { name: '飛葉快刀', cost: [EnergyTypes.GRASS, EnergyTypes.GRASS], damage: 50 }
   },
   'p-004-ev1': {
@@ -145,7 +145,7 @@ export const cardDatabase = {
     energyType: EnergyTypes.ELECTRIC,
     evolvesFrom: 'p-004',
     stage: 1,
-    image: './images/raichu.png',
+    image: '/images/raichu.png',
     attack: { name: '十萬伏特', cost: [EnergyTypes.ELECTRIC, EnergyTypes.ELECTRIC], damage: 60 }
   },
 
@@ -159,7 +159,7 @@ export const cardDatabase = {
     energyType: EnergyTypes.FIRE,
     evolvesFrom: 'p-001-ev1',
     stage: 2,
-    image: './images/charizard.png',
+    image: '/images/charizard.png',
     attack: {
       name: '大字爆炎',
       cost: [EnergyTypes.FIRE, EnergyTypes.FIRE, EnergyTypes.FIRE, EnergyTypes.FIRE],
@@ -175,7 +175,7 @@ export const cardDatabase = {
     energyType: EnergyTypes.WATER,
     evolvesFrom: 'p-002-ev1',
     stage: 2,
-    image: './images/blastoise.png',
+    image: '/images/blastoise.png',
     attack: {
       name: '水砲連發',
       cost: [EnergyTypes.WATER, EnergyTypes.WATER, EnergyTypes.WATER],
@@ -191,7 +191,7 @@ export const cardDatabase = {
     energyType: EnergyTypes.GRASS,
     evolvesFrom: 'p-003-ev1',
     stage: 2,
-    image: './images/venusaur.png',
+    image: '/images/venusaur.png',
     attack: {
       name: '日光束',
       cost: [EnergyTypes.GRASS, EnergyTypes.GRASS, EnergyTypes.GRASS, EnergyTypes.GRASS],
@@ -257,7 +257,7 @@ export const cardDatabase = {
     id: 'i-rarecandy',
     type: CardTypes.ITEM,
     name: '神奇糖果',
-    image: './images/rarecandy.png',
+    image: '/images/rarecandy.png',
     effect: { kind: 'rareCandy' },
     description: '當你從手牌將二階進化寶可夢放到基礎寶可夢上時，將自動消耗此卡並跳過一階進化。'
   },
@@ -265,7 +265,7 @@ export const cardDatabase = {
     id: 'i-escaperope',
     type: CardTypes.ITEM,
     name: '離洞繩',
-    image: './images/escaperope.png',
+    image: '/images/escaperope.png',
     effect: { kind: 'escapeRope' },
     description: '雙方玩家都必須將戰鬥區的寶可夢與備戰區的寶可夢互換（對手先替換）。'
   },
@@ -282,7 +282,7 @@ export const cardDatabase = {
     id: 't-boss',
     type: CardTypes.TRAINER,
     name: '老大的指令',
-    image: './images/boss_orders.png',
+    image: '/images/boss_orders.png',
     effect: { kind: 'bossOrders' },
     description: '選擇對手備戰區的一隻寶可夢，並將其與對手戰鬥區的寶可夢互換。'
   }

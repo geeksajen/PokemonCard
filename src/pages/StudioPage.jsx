@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useCardStore } from '../store';
 import { cardRepository } from '../api/CardRepository';
 import { CardTypes } from '../models/cards';
@@ -8,18 +9,28 @@ import CardInspectModal from '../features/battle/CardInspectModal';
 import '../studio.css';
 
 function StudioPage() {
+  const { deckId } = useParams();
+  const navigate = useNavigate();
   const { decks, createDeck, updateDeck } = useCardStore();
-  const [deckCards, setDeckCards] = useState([]);
-  const [coverCardId, setCoverCardId] = useState(null);
-  const [inspectCard, setInspectCard] = useState(null);
-  const [toastMessage, setToastMessage] = useState('');
-  const [showLoadModal, setShowLoadModal] = useState(false);
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const [saveName, setSaveName] = useState('');
-  const [currentDeckId, setCurrentDeckId] = useState(null);
 
   // Fetch all available cards
   const allCards = useMemo(() => cardRepository.getAllCards(), []);
+
+  // 編輯模式：依 URL 的 deckId 載入既有牌組（卡牌 + 封面）作為初始狀態
+  const editingDeck = deckId ? decks.find((d) => String(d.deckId) === deckId) : null;
+  const initialCards = useMemo(() => {
+    if (!editingDeck) return [];
+    return editingDeck.cardIds.map((id) => allCards.find((c) => c.id === id)).filter(Boolean);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [deckCards, setDeckCards] = useState(initialCards);
+  const [coverCardId, setCoverCardId] = useState(editingDeck?.coverCardId ?? null);
+  const [inspectCard, setInspectCard] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [currentDeckId, setCurrentDeckId] = useState(editingDeck?.deckId ?? null);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -63,25 +74,14 @@ function StudioPage() {
   const handleClear = () => {
     if (window.confirm('確定要清空當前牌組嗎？')) {
       setDeckCards([]);
-      setCurrentDeckId(null);
+      setCoverCardId(null);
     }
-  };
-
-  const handleLoadDeck = (deck) => {
-    const loadedCards = deck.cardIds.map(id => allCards.find(c => c.id === id)).filter(Boolean);
-    setDeckCards(loadedCards);
-    setCurrentDeckId(deck.deckId);
-    setShowLoadModal(false);
-    showToast(`已讀取牌組：${deck.deckName}`);
   };
 
   const handleAutoBuild = () => {
     if (deckCards.length > 0) {
       if (!window.confirm('智能組牌會清空目前的牌組，確定要繼續嗎？')) return;
     }
-    
-    // 智能組牌視為全新的一副牌
-    setCurrentDeckId(null);
 
     const deckTypes = [
       {
@@ -129,10 +129,15 @@ function StudioPage() {
       showToast('牌組至少需要一隻基礎寶可夢！');
       return;
     }
-    const defaultName = currentDeckId
-      ? decks.find(d => d.deckId === currentDeckId)?.deckName || '我的新牌組'
-      : '我的新牌組';
-    setSaveName(defaultName);
+    // 編輯既有牌組：直接覆蓋，不再要求重新命名（spec 3.2）
+    if (currentDeckId) {
+      const deckName = decks.find(d => d.deckId === currentDeckId)?.deckName || '我的新牌組';
+      updateDeck(currentDeckId, deckName, deckCards.map(c => c.id), coverCardId);
+      showToast('牌組儲存成功！');
+      return;
+    }
+    // 新增牌組：彈出命名對話框
+    setSaveName('我的新牌組');
     setShowSaveModal(true);
   };
 
@@ -140,50 +145,23 @@ function StudioPage() {
     const deckName = saveName.trim();
     if (!deckName) return;
 
-    const cardIds = deckCards.map(c => c.id);
-    if (currentDeckId) {
-      updateDeck(currentDeckId, deckName, cardIds);
-    } else {
-      const newDeckId = Date.now();
-      createDeck(deckName, cardIds, newDeckId);
-      setCurrentDeckId(newDeckId);
-    }
+    const newDeckId = Date.now();
+    createDeck(deckName, deckCards.map(c => c.id), newDeckId, coverCardId);
+    setCurrentDeckId(newDeckId);
     setShowSaveModal(false);
     showToast('牌組儲存成功！');
+    // 新檔存檔後導向編輯路由，後續儲存即走「覆蓋」分支
+    navigate(`/studio/edit/${newDeckId}`, { replace: true });
   };
 
   const coverCard = coverCardId ? allCards.find(c => c.id === coverCardId) : null;
-  const coverImageUrl = coverCard ? coverCard.imageUrl : '';
+  const coverImageUrl = coverCard ? coverCard.image : '';
 
   return (
     <div className="studio-container">
       {toastMessage && (
         <div style={{ position: 'fixed', top: '80px', left: '50%', transform: 'translateX(-50%)', background: '#ef4444', color: 'white', padding: '10px 20px', borderRadius: '8px', zIndex: 100, fontWeight: 'bold', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', animation: 'slideInFast 0.3s' }}>
           {toastMessage}
-        </div>
-      )}
-
-      {showLoadModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#1f2937', padding: '20px', borderRadius: '12px', width: '400px', maxWidth: '90%', color: 'white' }}>
-            <h2 style={{ marginTop: 0 }}>讀取牌組</h2>
-            {decks.length === 0 ? (
-              <p style={{ color: 'gray' }}>您尚未儲存任何牌組。</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto' }}>
-                {decks.map(deck => (
-                  <button 
-                    key={deck.deckId} 
-                    onClick={() => handleLoadDeck(deck)}
-                    style={{ padding: '10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: 'white', cursor: 'pointer', textAlign: 'left' }}
-                  >
-                    {deck.deckName} ({deck.cardIds.length} 張)
-                  </button>
-                ))}
-              </div>
-            )}
-            <button onClick={() => setShowLoadModal(false)} style={{ marginTop: '20px', width: '100%', padding: '10px', background: 'transparent', color: 'white', border: '1px solid gray', borderRadius: '8px', cursor: 'pointer' }}>取消</button>
-          </div>
         </div>
       )}
 
@@ -215,10 +193,13 @@ function StudioPage() {
       />
       
       <div style={{ flex: 4, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '10px', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={() => setShowLoadModal(true)} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', padding: '8px 16px', borderRadius: '20px', cursor: 'pointer' }}>
-            📁 讀取牌組
+        <div style={{ padding: '10px', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button onClick={() => navigate('/studio')} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', padding: '8px 16px', borderRadius: '20px', cursor: 'pointer' }}>
+            ⬅ 返回列表
           </button>
+          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
+            {currentDeckId ? '編輯牌組' : '建立新牌組'}
+          </span>
         </div>
         <DeckList 
           deckCards={deckCards} 

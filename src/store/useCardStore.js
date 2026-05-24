@@ -24,7 +24,7 @@ export const useCardStore = create(
           customCards: state.customCards.filter((card) => card.customId !== customId),
         })),
 
-      createDeck: (deckName, cardIds, deckId = Date.now()) =>
+      createDeck: (deckName, cardIds, deckId = Date.now(), coverCardId = null) =>
         set((state) => ({
           decks: [
             ...state.decks,
@@ -32,15 +32,16 @@ export const useCardStore = create(
               deckId,
               deckName,
               cardIds,
+              coverCardId,
               createdAt: new Date().toISOString(),
             },
           ],
         })),
 
-      updateDeck: (deckId, deckName, cardIds) =>
+      updateDeck: (deckId, deckName, cardIds, coverCardId = null) =>
         set((state) => ({
           decks: state.decks.map((deck) =>
-            deck.deckId === deckId ? { ...deck, deckName, cardIds } : deck
+            deck.deckId === deckId ? { ...deck, deckName, cardIds, coverCardId } : deck
           ),
         })),
 

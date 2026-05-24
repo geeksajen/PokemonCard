@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { HomePage, BattlePage, LoginPage, StudioPage, ProfilePage } from './pages';
+import { HomePage, BattlePage, LoginPage, StudioPage, DeckListPage, ProfilePage } from './pages';
 import Navigation from './components/Navigation';
 import './api/CardRepository'; // Initialize CardRepository
 
@@ -15,7 +15,9 @@ function AppContent() {
         <Route path="/" element={<HomePage />} />
         <Route path="/battle" element={<BattlePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/studio" element={<StudioPage />} />
+        <Route path="/studio" element={<DeckListPage />} />
+        <Route path="/studio/new" element={<StudioPage />} />
+        <Route path="/studio/edit/:deckId" element={<StudioPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Routes>
     </div>
