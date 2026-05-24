@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCardStore } from '../store';
 
 const themes = [
   { id: 'fire', name: '🔥 烈焰突擊', color: 'rgba(239, 68, 68, 0.8)' },
@@ -10,12 +11,24 @@ const themes = [
 
 const Lobby = ({ onStartGame }) => {
   const navigate = useNavigate();
+  const { decks } = useCardStore();
   const [p1Theme, setP1Theme] = useState('fire');
   const [p2Theme, setP2Theme] = useState('water');
   const [vsAI, setVsAI] = useState(true);
 
-  const p1Color = themes.find(t => t.id === p1Theme).color;
-  const p2Color = themes.find(t => t.id === p2Theme).color;
+  // Combine official themes and custom decks
+  const customThemes = decks.map(d => ({
+    id: `custom_${d.deckId}`,
+    name: `🛠️ ${d.deckName}`,
+    color: 'rgba(139, 92, 246, 0.8)', // Purple for custom decks
+    isCustom: true,
+    deck: d
+  }));
+  
+  const allThemes = [...themes, ...customThemes];
+
+  const p1Color = allThemes.find(t => t.id === p1Theme)?.color || themes[0].color;
+  const p2Color = allThemes.find(t => t.id === p2Theme)?.color || themes[1].color;
 
   return (
     <div style={{
@@ -77,25 +90,27 @@ const Lobby = ({ onStartGame }) => {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
         <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>玩家 1</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%', maxWidth: '300px' }}>
-          {themes.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setP1Theme(t.id)}
-              style={{
-                padding: '15px 20px',
-                fontSize: '1.2rem',
-                border: `2px solid ${p1Theme === t.id ? t.color : 'rgba(255,255,255,0.2)'}`,
-                background: p1Theme === t.id ? 'rgba(255,255,255,0.1)' : 'transparent',
-                color: 'white',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: p1Theme === t.id ? `0 0 15px ${t.color}` : 'none'
-              }}
-            >
-              {t.name}
-            </button>
-          ))}
+          <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', paddingRight: '10px' }}>
+            {allThemes.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setP1Theme(t.id)}
+                style={{
+                  padding: '15px 20px',
+                  fontSize: '1.2rem',
+                  border: `2px solid ${p1Theme === t.id ? t.color : 'rgba(255,255,255,0.2)'}`,
+                  background: p1Theme === t.id ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  color: 'white',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: p1Theme === t.id ? `0 0 15px ${t.color}` : 'none'
+                }}
+              >
+                {t.name}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -108,25 +123,27 @@ const Lobby = ({ onStartGame }) => {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
         <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>{vsAI ? '🤖 電腦' : '玩家 2'}</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%', maxWidth: '300px' }}>
-          {themes.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setP2Theme(t.id)}
-              style={{
-                padding: '15px 20px',
-                fontSize: '1.2rem',
-                border: `2px solid ${p2Theme === t.id ? t.color : 'rgba(255,255,255,0.2)'}`,
-                background: p2Theme === t.id ? 'rgba(255,255,255,0.1)' : 'transparent',
-                color: 'white',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: p2Theme === t.id ? `0 0 15px ${t.color}` : 'none'
-              }}
-            >
-              {t.name}
-            </button>
-          ))}
+          <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', paddingRight: '10px' }}>
+            {allThemes.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setP2Theme(t.id)}
+                style={{
+                  padding: '15px 20px',
+                  fontSize: '1.2rem',
+                  border: `2px solid ${p2Theme === t.id ? t.color : 'rgba(255,255,255,0.2)'}`,
+                  background: p2Theme === t.id ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  color: 'white',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: p2Theme === t.id ? `0 0 15px ${t.color}` : 'none'
+                }}
+              >
+                {t.name}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -138,8 +155,17 @@ const Lobby = ({ onStartGame }) => {
       }}>
         <button
           onClick={() => {
-            onStartGame(p1Theme, p2Theme, vsAI);
-            navigate(`/battle?p1=${p1Theme}&p2=${p2Theme}&vsAI=${vsAI}`);
+            const finalP1 = p1Theme.startsWith('custom_') ? customThemes.find(t => t.id === p1Theme).deck : p1Theme;
+            const finalP2 = p2Theme.startsWith('custom_') ? customThemes.find(t => t.id === p2Theme).deck : p2Theme;
+            
+            // Pass the resolved deck objects via router state
+            navigate('/battle', { 
+              state: { 
+                p1Theme: finalP1, 
+                p2Theme: finalP2, 
+                vsAI 
+              } 
+            });
           }}
           style={{
             padding: '20px 60px',

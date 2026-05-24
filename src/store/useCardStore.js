@@ -24,12 +24,12 @@ export const useCardStore = create(
           customCards: state.customCards.filter((card) => card.customId !== customId),
         })),
 
-      createDeck: (deckName, cardIds) =>
+      createDeck: (deckName, cardIds, deckId = Date.now()) =>
         set((state) => ({
           decks: [
             ...state.decks,
             {
-              deckId: Date.now(),
+              deckId,
               deckName,
               cardIds,
               createdAt: new Date().toISOString(),
@@ -54,7 +54,6 @@ export const useCardStore = create(
     }),
     {
       name: 'card-storage',
-      storage: typeof window !== 'undefined' ? localStorage : undefined,
     }
   )
 );

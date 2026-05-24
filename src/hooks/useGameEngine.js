@@ -53,10 +53,20 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
 
   useEffect(() => {
     const initialState = createInitialGameState(p1Theme, p2Theme);
-    for (let i = 0; i < INITIAL_HAND_SIZE; i++) {
-      initialState.players.player1.hand.push(initialState.players.player1.deck.pop());
-      initialState.players.player2.hand.push(initialState.players.player2.deck.pop());
-    }
+    const isBasicPokemon = (c) => c.type === CardTypes.POKEMON && !c.stage;
+    // 起手重抽（mulligan）：手牌沒有基礎寶可夢就洗回重抽，否則無法放置戰鬥區寶可夢而卡死。
+    // 牌組已於工坊存檔時驗證至少含一隻基礎寶可夢，迴圈必定收斂；上限 20 次為安全防護。
+    const drawOpeningHand = (player) => {
+      for (let attempt = 0; attempt < 20; attempt++) {
+        player.deck.push(...player.hand);
+        player.hand = [];
+        player.deck.sort(() => Math.random() - 0.5);
+        for (let i = 0; i < INITIAL_HAND_SIZE; i++) player.hand.push(player.deck.pop());
+        if (player.hand.some(isBasicPokemon)) break;
+      }
+    };
+    drawOpeningHand(initialState.players.player1);
+    drawOpeningHand(initialState.players.player2);
     setGameState(initialState);
   }, [p1Theme, p2Theme]);
 

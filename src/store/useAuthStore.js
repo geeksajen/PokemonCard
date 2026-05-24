@@ -4,8 +4,12 @@ import { persist } from 'zustand/middleware';
 export const useAuthStore = create(
   persist(
     (set) => ({
-      isLoggedIn: false,
-      currentUser: null,
+      isLoggedIn: true,
+      currentUser: {
+        id: 999,
+        username: '測試玩家',
+        createdAt: new Date().toISOString(),
+      },
 
       login: (username) =>
         set({
@@ -35,7 +39,6 @@ export const useAuthStore = create(
     }),
     {
       name: 'auth-storage',
-      storage: typeof window !== 'undefined' ? localStorage : undefined,
     }
   )
 );

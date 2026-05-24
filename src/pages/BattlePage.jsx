@@ -1,14 +1,15 @@
 import React from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import GameArena from '../features/battle/GameArena';
 
 function BattlePage() {
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
 
-  const p1Theme = searchParams.get('p1') || 'fire';
-  const p2Theme = searchParams.get('p2') || 'water';
-  const vsAI = searchParams.get('vsAI') !== 'false';
+  const state = location.state || {};
+  const p1Theme = state.p1Theme || 'fire';
+  const p2Theme = state.p2Theme || 'water';
+  const vsAI = state.vsAI !== false;
 
   const handleReturnLobby = () => {
     navigate('/');

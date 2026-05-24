@@ -1,7 +1,15 @@
 import { generateThemeDeck } from './cards';
+import { cardRepository } from '../api/CardRepository';
 import { INITIAL_PRIZES } from '../game/constants';
 
 export const createInitialGameState = (player1Theme = 'fire', player2Theme = 'water') => {
+  const getDeck = (theme) => {
+    if (typeof theme === 'object' && theme.cardIds) {
+      return theme.cardIds.map(id => cardRepository.instantiateCard(id)).sort(() => Math.random() - 0.5);
+    }
+    return generateThemeDeck(theme);
+  };
+
   return {
     turn: 1,
     currentPlayer: 'player1', // 'player1' or 'player2'
@@ -17,7 +25,7 @@ export const createInitialGameState = (player1Theme = 'fire', player2Theme = 'wa
       player1: {
         id: 'player1',
         name: 'Player 1',
-        deck: generateThemeDeck(player1Theme),
+        deck: getDeck(player1Theme),
         hand: [],
         activePokemon: null,
         bench: [], // Max 3
@@ -27,7 +35,7 @@ export const createInitialGameState = (player1Theme = 'fire', player2Theme = 'wa
       player2: {
         id: 'player2',
         name: 'Player 2',
-        deck: generateThemeDeck(player2Theme),
+        deck: getDeck(player2Theme),
         hand: [],
         activePokemon: null,
         bench: [], // Max 3

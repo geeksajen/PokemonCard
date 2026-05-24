@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Card from '../battle/Card';
 import { CardTypes } from '../../models/cards';
 
-const ELEMENTS = ['fire', 'water', 'grass', 'lightning', 'psychic', 'fighting', 'colorless'];
+const ELEMENTS = ['fire', 'water', 'grass', 'electric', 'psychic', 'fighting', 'normal'];
 const TYPES = [CardTypes.POKEMON, CardTypes.TRAINER, CardTypes.ENERGY];
 
 const CardLibrary = ({ allCards, onAddCard, onInspectCard, deckCount }) => {
@@ -11,9 +11,16 @@ const CardLibrary = ({ allCards, onAddCard, onInspectCard, deckCount }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredCards = allCards.filter(card => {
-    if (filterElement && card.energyType !== filterElement && card.type === CardTypes.POKEMON) return false;
-    if (filterElement && card.energyType !== filterElement && card.type === CardTypes.ENERGY && filterElement !== 'colorless') return false;
-    if (filterType && card.type !== filterType) return false;
+    // 屬性篩選只適用於有 energyType 的卡（寶可夢、能量）
+    const hasElement = card.type === CardTypes.POKEMON || card.type === CardTypes.ENERGY;
+    if (filterElement && hasElement && card.energyType !== filterElement) return false;
+    if (filterType) {
+      // 「訓練家」按鈕同時涵蓋支援者(trainer)與物品(item)，與 DeckList 分組一致
+      const matchType = filterType === CardTypes.TRAINER
+        ? (card.type === CardTypes.TRAINER || card.type === CardTypes.ITEM)
+        : card.type === filterType;
+      if (!matchType) return false;
+    }
     if (searchQuery && !card.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
@@ -48,7 +55,7 @@ const CardLibrary = ({ allCards, onAddCard, onInspectCard, deckCount }) => {
             className={`filter-btn ${filterElement === el ? 'active' : ''}`}
             onClick={() => setFilterElement(filterElement === el ? null : el)}
           >
-            {el === 'fire' ? '火' : el === 'water' ? '水' : el === 'grass' ? '草' : el === 'lightning' ? '電' : el === 'psychic' ? '超' : el === 'fighting' ? '鬥' : '無'}
+            {el === 'fire' ? '火' : el === 'water' ? '水' : el === 'grass' ? '草' : el === 'electric' ? '電' : el === 'psychic' ? '超' : el === 'fighting' ? '鬥' : '無'}
           </button>
         ))}
       </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CardTypes } from '../../models/cards';
 
-const DeckList = ({ deckCards, onRemoveCard, onSave, onClear, onCoverSelect, coverCardId }) => {
+const DeckList = ({ deckCards, onRemoveCard, onSave, onClear, onAutoBuild, onCoverSelect, coverCardId }) => {
   const totalCount = deckCards.length;
   
   // Group cards by ID to show counts
@@ -64,6 +64,13 @@ const DeckList = ({ deckCards, onRemoveCard, onSave, onClear, onCoverSelect, cov
 
       <div className="deck-actions">
         <button className="deck-action-btn clear" onClick={onClear}>清空</button>
+        <button 
+          className="deck-action-btn" 
+          onClick={onAutoBuild}
+          style={{ background: 'linear-gradient(45deg, #8b5cf6, #3b82f6)', color: 'white' }}
+        >
+          ✨ 智能組牌
+        </button>
         <button 
           className="deck-action-btn save" 
           onClick={onSave}
