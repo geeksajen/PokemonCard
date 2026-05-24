@@ -1,15 +1,9 @@
 import React, { useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store';
+import { activePack } from '../themes/active';
 
 const STARS_COUNT = 90;
-
-const ACE_POKEMON = {
-  fire:     { name: '噴火龍', image: '/images/charizard.png',  glow: 'rgba(239, 68, 68, 0.45)' },
-  water:    { name: '水箭龜', image: '/images/blastoise.png',  glow: 'rgba(59, 130, 246, 0.45)' },
-  grass:    { name: '妙蛙花', image: '/images/venusaur.png',   glow: 'rgba(34, 197, 94, 0.45)' },
-  electric: { name: '雷丘',   image: '/images/raichu.png',     glow: 'rgba(234, 179, 8, 0.45)' },
-};
 
 const NAV_ITEMS = [
   { icon: '🛠️', label: '卡牌工坊', sub: 'Collection / Studio', to: '/studio', active: true },
@@ -39,7 +33,7 @@ function HomePage() {
   const navigate  = useNavigate();
   const { currentUser } = useAuthStore();
 
-  const ace = ACE_POKEMON.fire;
+  const ace = activePack.aceShowcase[activePack.defaultAceKey];
 
   const stars = useMemo(() =>
     Array.from({ length: STARS_COUNT }, (_, i) => ({
@@ -188,18 +182,32 @@ function HomePage() {
           borderRadius: '50%', filter: 'blur(28px)',
         }} />
 
-        {/* Floating image */}
-        <img
-          src={ace.image}
-          alt={ace.name}
-          style={{
-            width: '320px', height: '320px',
-            objectFit: 'contain',
-            imageRendering: 'pixelated',
-            animation: 'floatPokemon 3s ease-in-out infinite alternate',
-            filter: `drop-shadow(0 24px 48px ${ace.glow})`,
-          }}
-        />
+        {/* Floating image (gracefully handles packs that haven't shipped art) */}
+        {ace.image ? (
+          <img
+            src={ace.image}
+            alt={ace.name}
+            style={{
+              width: '320px', height: '320px',
+              objectFit: 'contain',
+              imageRendering: 'pixelated',
+              animation: 'floatPokemon 3s ease-in-out infinite alternate',
+              filter: `drop-shadow(0 24px 48px ${ace.glow})`,
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: '320px', height: '320px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '8rem',
+              animation: 'floatPokemon 3s ease-in-out infinite alternate',
+              filter: `drop-shadow(0 24px 48px ${ace.glow})`,
+            }}
+          >
+            🃏
+          </div>
+        )}
 
         {/* Frosted name badge */}
         <div style={{

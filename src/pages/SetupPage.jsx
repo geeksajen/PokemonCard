@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCardStore } from '../store';
+import { activePack } from '../themes/active';
 
-const themes = [
-  { id: 'fire',     name: '🔥 烈焰突擊', color: 'rgba(239, 68, 68, 0.8)' },
-  { id: 'water',    name: '💧 水花四濺', color: 'rgba(59, 130, 246, 0.8)' },
-  { id: 'grass',    name: '🌿 藤蔓生長', color: 'rgba(34, 197, 94, 0.8)' },
-  { id: 'electric', name: '⚡ 十萬伏特', color: 'rgba(234, 179, 8, 0.8)' },
-];
+const themes = activePack.starterDecks;
 
 function DeckList({ themes, selected, onSelect }) {
   return (
@@ -39,14 +35,14 @@ function DeckList({ themes, selected, onSelect }) {
 function SetupPage() {
   const navigate = useNavigate();
   const { decks } = useCardStore();
-  const [p1Theme, setP1Theme] = useState('fire');
-  const [p2Theme, setP2Theme] = useState('water');
+  const [p1Theme, setP1Theme] = useState(themes[0]?.id ?? '');
+  const [p2Theme, setP2Theme] = useState(themes[1]?.id ?? themes[0]?.id ?? '');
   const [vsAI, setVsAI]       = useState(true);
 
   const customThemes = decks.map(d => ({
     id: `custom_${d.deckId}`,
     name: `🛠️ ${d.deckName}`,
-    color: 'rgba(139, 92, 246, 0.8)',
+    color: activePack.customDeckColor,
     isCustom: true,
     deck: d,
   }));

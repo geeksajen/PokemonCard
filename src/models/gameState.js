@@ -1,8 +1,13 @@
 import { generateThemeDeck } from './cards';
+import { activePack } from '../themes/active';
 import { cardRepository } from '../api/CardRepository';
 import { INITIAL_PRIZES } from '../game/constants';
 
-export const createInitialGameState = (player1Theme = 'fire', player2Theme = 'water') => {
+const _themeKeys = Object.keys(activePack.themeMap);
+const _defaultP1 = _themeKeys[0];
+const _defaultP2 = _themeKeys[1] || _themeKeys[0];
+
+export const createInitialGameState = (player1Theme = _defaultP1, player2Theme = _defaultP2) => {
   const getDeck = (theme) => {
     if (typeof theme === 'object' && theme.cardIds) {
       return theme.cardIds.map(id => cardRepository.instantiateCard(id)).sort(() => Math.random() - 0.5);
