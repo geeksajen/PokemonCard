@@ -386,13 +386,9 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
     }
   };
 
-  const endTurn = () => {
-    if (!currentPlayer.activePokemon && currentPlayer.bench.length > 0) {
-      showToast('戰鬥區空缺，請先從備戰區推派一隻寶可夢上場！');
-      sfxError();
-      return;
-    }
-    const ended = endTurnState(gameState).state;
+  // 從指定 state 結束回合並交給對手（供手動結束與攻擊後自動結束共用）
+  const endTurnFrom = (state) => {
+    const ended = endTurnState(state).state;
     setSelectedCard(null);
     sfxEndTurn();
     if (vsAI) {
@@ -402,6 +398,15 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
       setGameState(ended);
       setShowTurnTransition(true);
     }
+  };
+
+  const endTurn = () => {
+    if (!currentPlayer.activePokemon && currentPlayer.bench.length > 0) {
+      showToast('戰鬥區空缺，請先從備戰區推派一隻寶可夢上場！');
+      sfxError();
+      return;
+    }
+    endTurnFrom(gameState);
   };
 
   const handleTurnTransitionClick = () => {
@@ -456,8 +461,12 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false) => {
       sfxError();
       return;
     }
-    // 人類玩家固定在下方，被攻擊的對手永遠在上方
-    performAttack(gameState, currentPlayerId, true);
+    // 人類玩家固定在下方，被攻擊的對手永遠在上方。
+    // 攻擊即結束回合：結算完成後（若尚未分出勝負）自動換手給對手。
+    performAttack(gameState, currentPlayerId, true, (resolved) => {
+      if (resolved.winner) return;
+      endTurnFrom(resolved);
+    });
   };
 
   return {

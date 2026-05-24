@@ -17,14 +17,21 @@ There are no unit tests configured in this project.
 
 This is a local-multiplayer TCG engine built with React + Vite, packaged as an Electron desktop app. The engine is **decoupled from its content** — Pokémon is the default theme pack, but the game logic does not know about Pokémon. See [`spec/engine_theme_separation.md`](spec/engine_theme_separation.md).
 
-**App flow:** `App.jsx` holds top-level state (`lobby` | `playing`). Lobby lets players pick deck themes; GameArena runs the game.
+**App flow:** `App.jsx` is a `react-router-dom` router. Routes: `/` (HomePage), `/setup` (SetupPage — pick decks), `/battle` (BattlePage → GameArena), `/login`, `/studio` + `/studio/new` + `/studio/edit/:deckId` (deck builder), `/profile`. SetupPage navigates to `/battle` passing `{ p1Theme, p2Theme, vsAI }` via router state. `Navigation` is hidden on the battle/setup/home routes.
+
+**Project structure (feature-based):**
+
+- `src/pages/` — route-level pages (`HomePage`, `SetupPage`, `BattlePage`, `LoginPage`, `StudioPage`, `ProfilePage`). `DeckListPage` lives in `features/studio` but is re-exported here.
+- `src/features/battle/` — the in-game arena: `GameArena`, `Board`, `Hand`, `Card`, `CardInspectModal`, `DragOverlay`, plus `arena/` sub-components (`HudOverlay`, `PilePair`, `SettingsModal`, `LogDrawer`, `TurnTransition`, `DeckSearchModal`, `WinnerScreen`, `CoinFlipScreen`).
+- `src/features/studio/` — deck builder (`DeckListPage`, `StudioPage`/editor, `CardLibrary`, `DeckList`).
+- `src/api/` — `CardRepository`: single lookup layer over official (`cardDatabase`) + custom cards (from `useCardStore`). On import it calls `setCardInstantiator` so `generateThemeDeck` instantiates via the repo (official + custom).
+- `src/store/` — Zustand stores (`useAuthStore`, `useCardStore` — persisted custom cards & decks, `useThemeStore` — dark/light).
 
 **Layer separation — this is the key design pattern:**
 
 - `src/game/rules.js` — Pure game logic only. All functions take `(state, ...args)` and return `{ ok, state }` or `{ ok, error }`. Uses `structuredClone` for immutability. No React, no side effects, no audio.
 - `src/hooks/useGameEngine.js` — Orchestration layer. Calls rules.js functions, applies results to React state, triggers sound effects, manages animation state (`damageAnim`, `attackAnim`, `faintAnim`, `drawnCardAnim`), and shows toasts. All game-related state lives here.
-- `src/components/GameArena.jsx` — Renders the full arena by consuming `useGameEngine`. Holds only pure UI toggles (`showSettings`, `showLog`).
-- `src/components/arena/` — Sub-components: `Board`, `HudOverlay`, `PilePair`, `SettingsModal`, `LogDrawer`, `TurnTransition`, `DeckSearchModal`, `WinnerScreen`.
+- `src/features/battle/GameArena.jsx` — Renders the full arena by consuming `useGameEngine`. Holds only pure UI toggles (`showSettings`, `showLog`).
 
 **Data models (engine layer — theme-agnostic):**
 
