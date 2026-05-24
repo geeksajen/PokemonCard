@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store';
+import ThemeToggle from './ThemeToggle';
 
 function Navigation() {
   const { isLoggedIn, currentUser, logout } = useAuthStore();
@@ -17,6 +18,7 @@ function Navigation() {
         )}
       </div>
       <div className="main-nav-right">
+        <ThemeToggle />
         {isLoggedIn ? (
           <>
             <span className="main-nav-user">歡迎 {currentUser?.username}</span>
