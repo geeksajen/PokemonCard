@@ -1,5 +1,10 @@
 # 弱點與抵抗力 (Weakness & Resistance) 規格企劃書
 
+> **狀態:✅ 已實作完成 — 2026-05-27**
+> 引擎(§2/§3)、toast 串接(§4)、UI 三處(§5,其中 §5.3 由 Card 元件複用達成)、
+> 卡牌資料(§6)、對戰選項開關全鏈(§8)皆已落地。
+> 額外超出規格:AI 決策([ai.js](../src/game/ai.js))已透過 `getMatchupEffectiveness` 納入相剋考量(§8.4 原列為後續增強)。
+
 ## 1. 系統設計目標
 為遊戲引入屬性相剋的深度策略：
 - 寶可夢受到自己「弱點」屬性的攻擊時，傷害加倍（或增加）。
@@ -67,6 +72,7 @@ GameArena.jsx 無需改動。
 
 ### 5.3 牌庫工坊 ([src/features/studio/CardLibrary.jsx](../src/features/studio/CardLibrary.jsx))
 - 卡牌庫瀏覽時亦顯示弱抵，方便組牌時評估。
+- ✅ 實作方式：CardLibrary 直接以 `<Card>` 元件渲染每張卡，弱抵列由 §5.1 的 Card.jsx 一併呈現，無需在 CardLibrary 另寫渲染。
 
 ## 6. 卡牌資料庫更新 ([src/themes/pokemon/cards.js](../src/themes/pokemon/cards.js))
 

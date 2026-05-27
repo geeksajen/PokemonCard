@@ -123,14 +123,14 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
               {card.weakness && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                   弱
-                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: getEnergyColor(card.weakness.type), border: '1px solid white' }} />
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: getEnergyColor(card.weakness.type), border: '1px solid var(--theme-glass-border)' }} />
                   {card.weakness.value}
                 </span>
               )}
               {card.resistance && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                   抵
-                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: getEnergyColor(card.resistance.type), border: '1px solid white' }} />
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: getEnergyColor(card.resistance.type), border: '1px solid var(--theme-glass-border)' }} />
                   {card.resistance.value}
                 </span>
               )}
@@ -144,7 +144,7 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
                  <div key={idx} style={{
                    width: '16px', height: '16px', borderRadius: '50%',
                    background: getEnergyColor(energy.energyType),
-                   border: '1px solid white', marginLeft: '-6px',
+                   border: '1px solid var(--theme-glass-border)', marginLeft: '-6px',
                    boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
                  }}></div>
                ))}
