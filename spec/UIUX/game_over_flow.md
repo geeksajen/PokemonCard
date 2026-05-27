@@ -1,5 +1,13 @@
 # 遊戲結算畫面 (Game Over Screen) UI/UX 規劃
 
+> **狀態:✅ 已實作完成 — 2026-05-27**
+> 
+> **實作摘要:**
+> - **引擎層**: `gameState.winReason` enum ('prizes'|'bench_out'|'deck_out')，由 rules.js `resolveKnockout` / `drawForTurn` 輸出
+> - **協調層**: `useGameEngine` 中 `gameOverStage` 狀態機 (null → 'cinematic' → 'panel'，延遲 2 秒)，統一 KO 與牌組耗盡的動畫時序
+> - **UI 層**: `GameOverPanel` 元件、`showReviewMode` 切換、檢視按鈕、LogDrawer 整合
+> - **CSS**: 代幣制風格（`--theme-*`, `--palette-*`），`gameOverBannerIn` 動畫，全層級無硬編碼顏色
+
 為了解決目前遊戲結束時「直接蓋版導致玩家一頭霧水」的問題，我們將重新設計結算流程與 UI，讓玩家能清楚明白勝負原因，並允許他們事後覆盤。
 
 ## 1. 使用者痛點分析
