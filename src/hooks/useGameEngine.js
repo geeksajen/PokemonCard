@@ -323,6 +323,10 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
       return;
     }
 
+    // 備戰區來源除了上面的推派(→戰鬥區)外無其他合法落點：
+    // 放回備戰區/空白處皆視為無效，避免被當成「打出手牌」而誤觸進化判定。
+    if (source?.type !== 'hand') return;
+
     // 手牌 → 戰鬥區
     if (zone === 'my-active') {
       playToLocation(card, { zone: 'active' });

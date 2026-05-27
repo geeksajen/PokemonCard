@@ -145,7 +145,7 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
                     card={benchPokemon}
                     isFaceDown={faceDown}
                     isSelectable={!faceDown && !!onBenchClick}
-                    onClick={(e) => { e.stopPropagation(); onBenchClick && onBenchClick(benchPokemon, idx); }}
+                    onClick={() => onBenchClick && onBenchClick(benchPokemon, idx)}
                   />
                 </div>
               ) : (

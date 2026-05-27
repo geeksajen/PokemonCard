@@ -221,7 +221,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
           damageTaken={damageAnim && !damageAnim.isTopPlayer ? damageAnim.damage : null}
           onActiveClick={humanCanAct ? handleMyActiveClick : undefined}
           onBenchClick={humanCanAct ? handleMyBenchClick : undefined}
-          onBenchPointerDragStart={humanCanAct ? handleBenchPointerDragStart : undefined}
+          onBenchPointerDragStart={humanCanAct && !gameState.pendingAction ? handleBenchPointerDragStart : undefined}
           registerZone={registerZone}
           dragState={dragState}
           onInspect={setInspectCard}
