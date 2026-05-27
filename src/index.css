@@ -62,6 +62,7 @@
   --theme-glass-border: rgba(255, 255, 255, 0.1);
   --theme-text-main: #f8fafc;
   --theme-text-muted: #94a3b8;
+  --theme-text-on-accent: #ffffff; /* 文字置於彩色 accent 背景（如 player1 按鈕）上 */
   --theme-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   --theme-blur: blur(12px);
 
@@ -108,6 +109,7 @@
   --theme-glass-border: rgba(255, 255, 255, 0.8);
   --theme-text-main: #1e293b;
   --theme-text-muted: #64748b;
+  --theme-text-on-accent: #ffffff;
   --theme-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   --theme-blur: blur(15px);
 
@@ -562,6 +564,96 @@ button:disabled {
 .ready-button:active {
   transform: translateY(0) scale(0.95);
 }
+
+/* --- Game Over / 結算流程 --- */
+@keyframes gameOverBannerIn {
+  0%   { opacity: 0; transform: scale(0.6); letter-spacing: 0.5em; }
+  60%  { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); letter-spacing: 0.12em; }
+}
+
+/* 階段一：VICTORY / DEFEAT 大字（不蓋版、不擋盤面，純演出） */
+.game-over-cinematic {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.game-over-banner {
+  font-size: clamp(3rem, 12vw, 8rem);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  animation: gameOverBannerIn 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards;
+}
+
+/* 階段二：結算面板（半透明遮罩 + 浮層，不卸載 arena） */
+.game-over-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fadeIn 0.3s ease-out forwards;
+}
+.game-over-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: min(90vw, 420px);
+  padding: 28px 24px;
+  border-radius: 18px;
+  background: var(--theme-panel-base);
+  border: 1px solid var(--theme-glass-border);
+  box-shadow: var(--theme-shadow);
+}
+.game-over-btn {
+  width: 100%;
+  padding: 12px 18px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: 12px;
+  border: 1px solid var(--theme-glass-border);
+  background: var(--theme-panel-light);
+  color: var(--theme-text-main);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.game-over-btn:hover { transform: translateY(-2px); }
+.game-over-btn:active { transform: translateY(0) scale(0.98); }
+.game-over-btn-primary {
+  background: var(--palette-player1);
+  border-color: var(--palette-player1);
+  color: var(--theme-text-on-accent);
+  box-shadow: 0 6px 16px var(--palette-player1-glow);
+}
+
+/* 階段三：盤面檢視時，結算選單縮成角落的返回鈕 */
+.game-over-review-exit {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid var(--theme-glass-border);
+  background: var(--theme-panel-dark);
+  color: var(--theme-text-main);
+  cursor: pointer;
+  box-shadow: var(--theme-shadow);
+}
+.game-over-review-exit:hover { transform: translateX(-50%) translateY(-2px); }
 
 /* --- Attack Animations --- */
 .projectile-container {

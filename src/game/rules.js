@@ -463,10 +463,12 @@ export const resolveKnockout = (state, attackerId, faintedPokemon) => {
   if (me.prizes <= 0) {
     winner = attackerId;
     newState.winner = winner;
+    newState.winReason = 'prizes';
   } else if (opp.bench.length === 0) {
     pushLog(newState, 'system', `${opp.name} 場上已無寶可夢可遞補，${me.name} 獲得勝利！`);
     winner = attackerId;
     newState.winner = winner;
+    newState.winReason = 'bench_out';
   }
   return { ok: true, state: newState, winner };
 };
@@ -660,6 +662,7 @@ export const drawForTurn = (state) => {
   }
   const prevPlayerId = getOpponentId(newState.currentPlayer);
   newState.winner = prevPlayerId;
+  newState.winReason = 'deck_out';
   pushLog(
     newState,
     'system',

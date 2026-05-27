@@ -61,6 +61,8 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
   const [attackAnim, setAttackAnim] = useState(null);
   const [drawnCardAnim, setDrawnCardAnim] = useState(null);
   const [faintAnim, setFaintAnim] = useState(null);
+  // 結算演出階段：null（未結束）| 'cinematic'（VICTORY/DEFEAT 大字）| 'panel'（結算面板）
+  const [gameOverStage, setGameOverStage] = useState(null);
 
   useEffect(() => {
     const initialState = createInitialGameState(p1Theme, p2Theme, { weaknessResistance });
@@ -107,6 +109,19 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
   }, [vsAI, gameState?.phase, gameState?.players.player2.isReady]);
 
   const showToast = (message) => setToast({ id: Date.now(), message });
+
+  // ---- 結算演出編排 ------------------------------------------------------
+  // winner 出現後，先播 VICTORY/DEFEAT 大字（cinematic），約 2 秒後再揭開結算面板。
+  // 動畫狀態屬編排層，依設計留在 useGameEngine（GameArena 僅持有 showReviewMode 純 UI toggle）。
+  useEffect(() => {
+    if (!gameState?.winner) {
+      setGameOverStage(null);
+      return;
+    }
+    setGameOverStage('cinematic');
+    const t = setTimeout(() => setGameOverStage('panel'), 2000);
+    return () => clearTimeout(t);
+  }, [gameState?.winner]);
 
   // 套用一個規則層回傳的 { ok, state, error }：成功播音效，失敗時視情況提示
   const applyResult = (result) => {
@@ -495,6 +510,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
     attackAnim,
     drawnCardAnim,
     faintAnim,
+    gameOverStage,
     coinFlip,
     // 動作
     handleReadyClick,

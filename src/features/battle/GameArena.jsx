@@ -10,7 +10,7 @@ import SettingsModal from './arena/SettingsModal';
 import LogDrawer from './arena/LogDrawer';
 import TurnTransition from './arena/TurnTransition';
 import DeckSearchModal from './arena/DeckSearchModal';
-import WinnerScreen from './arena/WinnerScreen';
+import GameOverPanel from './arena/GameOverPanel';
 import CoinFlipScreen from './arena/CoinFlipScreen';
 import { useGameEngine } from '../../hooks/useGameEngine';
 import { useDragDrop } from '../../hooks/useDragDrop';
@@ -26,6 +26,8 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
   const [showSettings, setShowSettings] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [inspectCard, setInspectCard] = useState(null);
+  // 結算後的盤面檢視模式（純 UI toggle）：隱藏結算面板讓玩家覆盤、截圖
+  const [showReviewMode, setShowReviewMode] = useState(false);
 
   if (engine.loading) {
     return <div style={{ color: 'white', padding: '2rem' }}>載入遊戲中...</div>;
@@ -46,6 +48,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
     attackAnim,
     drawnCardAnim,
     faintAnim,
+    gameOverStage,
     coinFlip,
     toggleBGM,
     toggleSFX,
@@ -65,10 +68,6 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
     handleCancelPending,
   } = engine;
 
-  if (gameState.winner) {
-    return <WinnerScreen winner={gameState.winner} vsAI={vsAI} onReturnLobby={onReturnLobby} />;
-  }
-
   const isPlayer1Turn = currentPlayerId === 'player1';
   // 單人模式：人類(player1)固定在下方、AI(player2)固定在上方。雙人熱座沿用翻轉。
   const topPlayer = vsAI
@@ -80,7 +79,8 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
 
   // 是否允許下方玩家操作（雙人模式恆為真；單人模式僅限人類回合）
   const isSetup = gameState.phase === 'setup';
-  const humanCanAct = !vsAI || isPlayer1Turn;
+  // 結算後鎖定所有操作（攻擊/撤退/出牌/結束回合），但保留右鍵檢視卡牌供覆盤
+  const humanCanAct = (!vsAI || isPlayer1Turn) && !gameState.winner;
   const retreatDisabled = !humanCanAct || !canRetreat(gameState, currentPlayerId).ok;
   const readyDisabled = !bottomPlayer.activePokemon || bottomPlayer.isReady;
   const topLabel = vsAI ? '🤖 電腦' : (isPlayer1Turn ? '玩家 2' : '玩家 1');
@@ -289,6 +289,41 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
           firstPlayerLabel={coinFlip.firstPlayerLabel}
           onDone={handleCoinFlipDone}
         />
+      )}
+
+      {/* 結算階段一：VICTORY / DEFEAT 大字演出（不卸載 arena） */}
+      {gameOverStage === 'cinematic' && (() => {
+        const humanWon = gameState.winner === 'player1';
+        const text = vsAI
+          ? (humanWon ? 'VICTORY' : 'DEFEAT')
+          : `玩家 ${humanWon ? '1' : '2'} 獲勝`;
+        const color = vsAI
+          ? (humanWon ? 'var(--color-energy)' : 'var(--color-danger)')
+          : (humanWon ? 'var(--palette-player1)' : 'var(--palette-player2)');
+        return (
+          <div className="game-over-cinematic">
+            <div className="game-over-banner" style={{ color }}>{text}</div>
+          </div>
+        );
+      })()}
+
+      {/* 結算階段二：結算面板（檢視模式下隱藏） */}
+      {gameOverStage === 'panel' && !showReviewMode && (
+        <GameOverPanel
+          winner={gameState.winner}
+          winReason={gameState.winReason}
+          vsAI={vsAI}
+          onRematch={onReturnLobby}
+          onReview={() => setShowReviewMode(true)}
+          onShowLog={() => { setShowReviewMode(true); setShowLog(true); }}
+        />
+      )}
+
+      {/* 結算階段三：檢視模式下的返回結算選單按鈕 */}
+      {gameOverStage === 'panel' && showReviewMode && (
+        <button className="game-over-review-exit" onClick={() => { setShowReviewMode(false); setShowLog(false); }}>
+          ⬅ 返回結算選單
+        </button>
       )}
 
       {/* 拖曳浮層 - 最上層 */}

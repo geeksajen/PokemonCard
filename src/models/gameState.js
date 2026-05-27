@@ -20,6 +20,7 @@ export const createInitialGameState = (player1Theme = _defaultP1, player2Theme =
     phase: 'setup', // 'setup'（佈置基礎寶可夢）| 'main'（正式對戰）
     currentPlayer: 'player1', // 'player1' or 'player2'
     winner: null,
+    winReason: null, // 'prizes' | 'bench_out' | 'deck_out'，供結算面板對應文案
 
     // 對戰規則選項（theme-agnostic）。預設啟用屬性相剋。
     options: {
