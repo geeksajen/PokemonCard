@@ -177,10 +177,12 @@ h1, h2, h3, h4, h5, h6 {
 .hand-card {
   cursor: pointer;
 }
+/* 懸停聚焦：在扇形旋轉的基礎上「立正放大」，並拉到最上層避免被相鄰卡遮蔽，
+   創造翻閱實體牌的清晰感。z-index 高於抽牌動畫(50)以確保聚焦卡永遠在最前。 */
 .hand-card:hover {
-  transform: translateY(-30px) scale(1.15) rotate(0deg) !important;
-  z-index: 10;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+  transform: translateY(-40px) scale(1.15) rotate(0deg) !important;
+  z-index: 100;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.55));
 }
 
 .hand-wrapper-top {
