@@ -229,8 +229,24 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
   };
 
   // ---- 放置卡牌 ----------------------------------------------------------
-  const playToLocation = (card, location) =>
-    applyResult(playCardOnPokemon(gameState, currentPlayerId, card, location));
+  const playToLocation = (card, location) => {
+    const result = playCardOnPokemon(gameState, currentPlayerId, card, location);
+    applyResult(result);
+    // 補血浮動文字：傷藥成功使用後，於目標卡牌顯示綠色正數（依實際回復量）。
+    // 出牌方恆為當前玩家＝畫面下方，故 isTopPlayer 固定為 false。
+    if (result.ok && card.type === CardTypes.ITEM && card.effect?.kind === 'heal') {
+      const readHp = (state) => {
+        const p = state.players[currentPlayerId];
+        const slot = location.zone === 'active' ? p.activePokemon : p.bench[location.index];
+        return slot?.currentHp ?? 0;
+      };
+      const healed = readHp(result.state) - readHp(gameState);
+      if (healed > 0) {
+        setDamageAnim({ amount: healed, kind: 'heal', isTopPlayer: false, zone: location.zone, benchIndex: location.index });
+        setTimeout(() => setDamageAnim(null), 1050);
+      }
+    }
+  };
 
   const handleMyActiveClick = () => {
     // 準備階段：點擊已佈置的戰鬥寶可夢將其收回手牌（供重新選擇）
@@ -453,12 +469,13 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
       setGameState(afterDamage);
       if (effectiveness === 'weakness') showToast('效果絕佳！');
       else if (effectiveness === 'resistance') showToast('效果不好…');
-      setDamageAnim({ damage, isTopPlayer: defenderIsTop });
+      // 浮動戰鬥文字：攻擊一律命中對手戰鬥區，紅色負數。
+      setDamageAnim({ amount: damage, kind: 'damage', isTopPlayer: defenderIsTop, zone: 'active' });
       if (damage >= 80) {
         setBigDamageShake(true);
         setTimeout(() => setBigDamageShake(false), 500);
       }
-      setTimeout(() => setDamageAnim(null), 500);
+      setTimeout(() => setDamageAnim(null), 850);
 
       if (knockedOut) {
         setFaintAnim({ pokemon: faintedPokemon, isTopPlayer: defenderIsTop });

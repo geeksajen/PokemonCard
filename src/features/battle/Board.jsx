@@ -3,9 +3,29 @@ import Card from './Card';
 
 const EMPTY_VALID_ZONES = new Set();
 
-const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, damageTaken, onBenchPointerDragStart, registerZone, dragState, onInspect, pendingAction, validZones = EMPTY_VALID_ZONES, faceDown = false, attackReady = false }) => {
+const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, combatText, onBenchPointerDragStart, registerZone, dragState, onInspect, pendingAction, validZones = EMPTY_VALID_ZONES, faceDown = false, attackReady = false }) => {
   // 攻擊就緒：出戰寶可夢能量已滿足招式需求（由 GameArena 經 canAttack 判定後傳入）
   const showAttackReady = attackReady && !!activePokemon;
+
+  // 浮動戰鬥文字（傷害/補血）：combatText 描述命中的位置、種類與數值。
+  // 僅在「本側（isTopPlayer 相符）」且「位置相符」的卡牌中央渲染對應跳字。
+  const combatTextHere = (zone, benchIndex) =>
+    combatText &&
+    combatText.isTopPlayer === isTopPlayer &&
+    combatText.zone === zone &&
+    (zone !== 'bench' || combatText.benchIndex === benchIndex)
+      ? combatText
+      : null;
+  const renderCombatText = (zone, benchIndex) => {
+    const ct = combatTextHere(zone, benchIndex);
+    if (!ct) return null;
+    const isHeal = ct.kind === 'heal';
+    return (
+      <div className={`combat-text ${isHeal ? 'combat-text-heal' : 'combat-text-damage'}`}>
+        {isHeal ? '+' : '-'}{ct.amount}
+      </div>
+    );
+  };
   // 拖曳 / pending 狀態
   const isDragging = dragState?.isDragging;
   const hoverZone = dragState?.hoverZone;
@@ -83,11 +103,11 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
         )}
         {activePokemon ? (
           <div
-            className={damageTaken ? 'shake-anim' : ''}
+            className={combatTextHere('active')?.kind === 'damage' ? 'shake-anim' : ''}
             style={{ position: 'relative' }}
             onContextMenu={(e) => { e.preventDefault(); if (!faceDown) onInspect && onInspect(activePokemon); }}
           >
-            {damageTaken && <div className="damage-text">-{damageTaken}</div>}
+            {renderCombatText('active')}
             <Card
               card={activePokemon}
               isFaceDown={faceDown}
@@ -136,9 +156,9 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
               }}
             >
               {benchPokemon ? (
-                  <div 
+                  <div
                   className={onBenchPointerDragStart ? 'bench-card-draggable' : ''}
-                  style={{ pointerEvents: onBenchClick ? 'auto' : 'none' }}
+                  style={{ pointerEvents: onBenchClick ? 'auto' : 'none', position: 'relative' }}
                   onPointerDown={(e) => {
                     if (onBenchPointerDragStart) {
                       onBenchPointerDragStart(idx, e);
@@ -146,6 +166,7 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
                   }}
                   onContextMenu={(e) => { e.preventDefault(); if (!faceDown) onInspect && onInspect(benchPokemon); }}
                 >
+                  {renderCombatText('bench', idx)}
                   <Card
                     card={benchPokemon}
                     isFaceDown={faceDown}

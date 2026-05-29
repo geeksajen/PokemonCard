@@ -211,7 +211,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
           bench={topPlayer.bench}
           isTopPlayer={true}
           faceDown={isSetup}
-          damageTaken={damageAnim && damageAnim.isTopPlayer ? damageAnim.damage : null}
+          combatText={damageAnim}
           onBenchClick={!isSetup && humanCanAct ? handleOpponentBenchClick : undefined}
           onInspect={setInspectCard}
           pendingAction={gameState.pendingAction}
@@ -222,7 +222,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
           isTopPlayer={false}
           attackReady={attackReady}
           validZones={validDropZones}
-          damageTaken={damageAnim && !damageAnim.isTopPlayer ? damageAnim.damage : null}
+          combatText={damageAnim}
           onActiveClick={humanCanAct ? handleMyActiveClick : undefined}
           onBenchClick={humanCanAct ? handleMyBenchClick : undefined}
           onBenchPointerDragStart={humanCanAct && !gameState.pendingAction ? handleBenchPointerDragStart : undefined}
