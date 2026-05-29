@@ -866,6 +866,39 @@ button:disabled {
   transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
+/* --- 攻擊就緒呼吸燈 (Attack Ready Glow) --- */
+/* 我方回合、本回合未攻擊、出戰寶可夢能量已滿足招式需求時，
+   為其外框加上金色（--color-energy）緩慢呼吸光暈與 ⚔️ 角標，降低新手認知負擔。 */
+@keyframes attack-ready-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px color-mix(in srgb, var(--color-energy) 55%, transparent),
+                inset 0 0 8px color-mix(in srgb, var(--color-energy) 22%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 28px color-mix(in srgb, var(--color-energy) 95%, transparent),
+                inset 0 0 16px color-mix(in srgb, var(--color-energy) 45%, transparent);
+  }
+}
+.attack-ready-glow {
+  border-color: color-mix(in srgb, var(--color-energy) 85%, transparent) !important;
+  animation: attack-ready-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes attack-ready-badge-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-4px); }
+}
+.attack-ready-badge {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  z-index: 30;
+  font-size: 1.4rem;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-energy) 90%, transparent));
+  animation: attack-ready-badge-bob 1.4s ease-in-out infinite;
+}
+
 /* 卡牌放置彈簧回彈動畫 */
 @keyframes card-drop-bounce {
   0%   { transform: scale(1.15); }

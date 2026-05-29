@@ -14,7 +14,7 @@ import GameOverPanel from './arena/GameOverPanel';
 import CoinFlipScreen from './arena/CoinFlipScreen';
 import { useGameEngine } from '../../hooks/useGameEngine';
 import { useDragDrop } from '../../hooks/useDragDrop';
-import { getValidTargets, canRetreat } from '../../game/rules';
+import { getValidTargets, canRetreat, canAttack } from '../../game/rules';
 
 const EMPTY_ZONES = new Set();
 
@@ -82,6 +82,9 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
   // 結算後鎖定所有操作（攻擊/撤退/出牌/結束回合），但保留右鍵檢視卡牌供覆盤
   const humanCanAct = (!vsAI || isPlayer1Turn) && !gameState.winner;
   const retreatDisabled = !humanCanAct || !canRetreat(gameState, currentPlayerId).ok;
+  // 攻擊就緒提示：我方回合、本回合未攻擊、出戰寶可夢能量已滿足招式需求時發光。
+  // canAttack 已涵蓋上述三項判定（含對手戰鬥區須有寶可夢），準備階段不適用。
+  const attackReady = !isSetup && humanCanAct && canAttack(gameState, currentPlayerId).ok;
   const readyDisabled = !bottomPlayer.activePokemon || bottomPlayer.isReady;
   const topLabel = vsAI ? '🤖 電腦' : (isPlayer1Turn ? '玩家 2' : '玩家 1');
   const bottomLabel = vsAI ? '玩家 1' : (isPlayer1Turn ? '玩家 1' : '玩家 2');
@@ -217,6 +220,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
           activePokemon={bottomPlayer.activePokemon}
           bench={bottomPlayer.bench}
           isTopPlayer={false}
+          attackReady={attackReady}
           validZones={validDropZones}
           damageTaken={damageAnim && !damageAnim.isTopPlayer ? damageAnim.damage : null}
           onActiveClick={humanCanAct ? handleMyActiveClick : undefined}

@@ -3,7 +3,9 @@ import Card from './Card';
 
 const EMPTY_VALID_ZONES = new Set();
 
-const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, damageTaken, onBenchPointerDragStart, registerZone, dragState, onInspect, pendingAction, validZones = EMPTY_VALID_ZONES, faceDown = false }) => {
+const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, damageTaken, onBenchPointerDragStart, registerZone, dragState, onInspect, pendingAction, validZones = EMPTY_VALID_ZONES, faceDown = false, attackReady = false }) => {
+  // 攻擊就緒：出戰寶可夢能量已滿足招式需求（由 GameArena 經 canAttack 判定後傳入）
+  const showAttackReady = attackReady && !!activePokemon;
   // 拖曳 / pending 狀態
   const isDragging = dragState?.isDragging;
   const hoverZone = dragState?.hoverZone;
@@ -57,10 +59,10 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
       width: '100%'
     }}>
       {/* 戰鬥區 (Active Pokemon) */}
-      <div 
+      <div
         ref={!isTopPlayer && registerZone ? registerZone('my-active') : undefined}
         onClick={() => !activePokemon && onActiveClick && onActiveClick()}
-        className={getZoneClass(activePokemon, false, 'my-active')}
+        className={`${getZoneClass(activePokemon, false, 'my-active')} ${showAttackReady ? 'attack-ready-glow' : ''}`}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -76,6 +78,9 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
           background: (!activePokemon && onActiveClick) ? 'var(--theme-panel-light)' : 'transparent'
         }}
       >
+        {showAttackReady && (
+          <div className="attack-ready-badge" title="攻擊就緒">⚔️</div>
+        )}
         {activePokemon ? (
           <div
             className={damageTaken ? 'shake-anim' : ''}
