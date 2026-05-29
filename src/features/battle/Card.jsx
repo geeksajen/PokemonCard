@@ -45,8 +45,8 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
   const bgStyle = rarity.background ?? getEnergyColor(card.energyType);
 
   return (
-    <div 
-      className={`glass-panel ${isSelectable ? 'animate-fade-in' : ''}`}
+    <div
+      className={`glass-panel card-shine-host ${isSelectable ? 'animate-fade-in' : ''}`}
       onClick={isSelectable ? () => onClick(card) : undefined}
       style={{
         width: 'var(--card-width)',
@@ -175,6 +175,9 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
           </p>
         </div>
       )}
+
+      {/* 閃卡反光層：懸停時掃光；高稀有度（rarity.foil）走彩虹雷射，其餘為素白 */}
+      <div className={`card-shine ${rarity.foil ? 'card-shine-holo' : ''}`} />
     </div>
   );
 };

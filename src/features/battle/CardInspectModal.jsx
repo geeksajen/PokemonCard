@@ -136,6 +136,9 @@ const CardInspectModal = ({ card, onClose }) => {
             position: 'relative',
             overflow: 'hidden',
           }}>
+            {/* 閃卡展示光澤：高稀有度卡牌在檢視器中常駐流動的彩虹反光 */}
+            {rarity.foil && <div className="card-shine card-shine-holo card-shine-idle" />}
+
             {/* 屬性光暈 */}
             {isPokemon && (
               <div style={{

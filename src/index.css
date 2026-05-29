@@ -995,3 +995,57 @@ button:disabled {
 .coin-result-in {
   animation: coin-result-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
+
+/* --- Foil / Holo Shine (卡牌閃卡/亮面反光) --- */
+/* 在卡牌上覆蓋一層 pointer-events:none 的隱形光澤層；懸停時光束自左上掃到右下。
+   稀有度高（RARITY_CONFIG.foil = true，即一/二階進化）改用彩虹雷射光澤，
+   其餘為素白反光。父層需加 .card-shine-host 才能由 :hover 觸發掃光。 */
+.card-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.35) 45%,
+    rgba(255, 255, 255, 0.60) 50%,
+    rgba(255, 255, 255, 0.35) 55%,
+    transparent 70%
+  );
+  background-size: 250% 250%;
+  background-position: 150% 150%;   /* 起始：光束位於卡牌右下外側（不可見） */
+  mix-blend-mode: screen;
+  transition: background-position 0.7s ease, opacity 0.25s ease;
+}
+.card-shine-holo {
+  background: linear-gradient(
+    115deg,
+    transparent 18%,
+    rgba(255, 60, 172, 0.30) 36%,
+    rgba(56, 189, 248, 0.34) 46%,
+    rgba(132, 255, 120, 0.32) 54%,
+    rgba(251, 191, 36, 0.30) 64%,
+    transparent 82%
+  );
+  background-size: 250% 250%;
+  background-position: 150% 150%;
+}
+/* 懸停（手牌或棋盤上的卡）→ 光束掃過後停在左上外側 */
+.card-shine-host:hover .card-shine {
+  opacity: 1;
+  background-position: -50% -50%;
+}
+
+/* 檢視器展示用：常駐緩慢流動的彩虹光澤（不需懸停，營造收藏質感） */
+@keyframes holo-idle-sweep {
+  0%   { background-position: 150% 150%; opacity: 0.35; }
+  50%  { background-position: -30% -30%; opacity: 0.75; }
+  100% { background-position: 150% 150%; opacity: 0.35; }
+}
+.card-shine-idle {
+  opacity: 0.5;
+  animation: holo-idle-sweep 3.5s ease-in-out infinite;
+}
