@@ -111,6 +111,13 @@ export const sfxError = () => {
   setTimeout(() => playTone(200, 'square', 0.15, 0.1, 0.01, 0.15), 100);
 };
 
+// 🗡️ 回合開始橫幅：清脆的「鏘」一聲（拔劍／重擊感）
+export const sfxTurnStart = () => {
+  playNoise(0.12, 0.10, 3200);                                  // 金屬擦聲
+  playTone(880, 'triangle', 0.14, 0.16, 0.004, 0.14);           // 主擊
+  setTimeout(() => playTone(1320, 'triangle', 0.2, 0.13, 0.004, 0.2), 60); // 上揚泛音
+};
+
 // ========== 8-bit 背景音樂引擎 ==========
 
 let bgmInterval = null;

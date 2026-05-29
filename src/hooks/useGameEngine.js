@@ -35,10 +35,14 @@ import {
   sfxEndTurn,
   sfxVictory,
   sfxError,
+  sfxTurnStart,
   AudioSettings,
   startBGM,
   stopBGM,
 } from '../utils/sounds';
+
+// 「你的回合」橫幅顯示時長（ms）；之後才開始抽牌
+const TURN_BANNER_MS = 1100;
 
 // 集中管理遊戲狀態、UI 狀態與所有副作用（state 更新 / 音效 / 動畫 / 提示）。
 // 規則判定一律委派給 src/game/rules.js 的純函式。
@@ -63,6 +67,8 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
   const [faintAnim, setFaintAnim] = useState(null);
   // 結算演出階段：null（未結束）| 'cinematic'（VICTORY/DEFEAT 大字）| 'panel'（結算面板）
   const [gameOverStage, setGameOverStage] = useState(null);
+  // 「你的回合」過場橫幅：null 或 { id }（id 變更即重播動畫）
+  const [turnBanner, setTurnBanner] = useState(null);
 
   useEffect(() => {
     const initialState = createInitialGameState(p1Theme, p2Theme, { weaknessResistance });
@@ -405,8 +411,8 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
   };
 
   // ---- 回合流程 ----------------------------------------------------------
-  // 為新的當前玩家抽牌並播放抽牌動畫（AI 模式下取代「點擊繼續」過場）
-  const proceedToDraw = (state) => {
+  // 實際抽牌並播放抽牌動畫（AI 模式下取代「點擊繼續」過場）
+  const runDraw = (state) => {
     const { state: drawn, drawnCardId, deckOut } = drawForTurn(state);
     setGameState(drawn);
     if (deckOut) {
@@ -418,6 +424,21 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
     if (drawnCardId && !hideDraw) {
       setDrawnCardAnim({ cardId: drawnCardId, playerId: drawn.currentPlayer });
       setTimeout(() => setDrawnCardAnim(null), 2200);
+    }
+  };
+
+  // 為新的當前玩家抽牌。單人模式下，當控制權「切回人類玩家」時，先播放
+  // 「你的回合」霸氣橫幅再抽牌（橫幅期間全螢幕攔截點擊，避免搶先操作造成狀態競態）。
+  const proceedToDraw = (state) => {
+    if (vsAI && state.currentPlayer === 'player1' && !state.winner) {
+      sfxTurnStart();
+      setTurnBanner({ id: Date.now() });
+      setTimeout(() => {
+        setTurnBanner(null);
+        runDraw(state);
+      }, TURN_BANNER_MS);
+    } else {
+      runDraw(state);
     }
   };
 
@@ -529,6 +550,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
     faintAnim,
     gameOverStage,
     coinFlip,
+    turnBanner,
     // 動作
     handleReadyClick,
     handleCoinFlipDone,

@@ -9,6 +9,7 @@ import HudOverlay from './arena/HudOverlay';
 import SettingsModal from './arena/SettingsModal';
 import LogDrawer from './arena/LogDrawer';
 import TurnTransition from './arena/TurnTransition';
+import TurnBanner from './arena/TurnBanner';
 import DeckSearchModal from './arena/DeckSearchModal';
 import GameOverPanel from './arena/GameOverPanel';
 import CoinFlipScreen from './arena/CoinFlipScreen';
@@ -50,6 +51,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
     faintAnim,
     gameOverStage,
     coinFlip,
+    turnBanner,
     toggleBGM,
     toggleSFX,
     handleReadyClick,
@@ -153,6 +155,8 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
       {showTurnTransition && !gameState.winner && (
         <TurnTransition isPlayer1Turn={isPlayer1Turn} onContinue={handleTurnTransitionClick} vsAI={vsAI} />
       )}
+
+      {turnBanner && !gameState.winner && <TurnBanner key={turnBanner.id} />}
 
       {/* 對手手牌實體佔位 */}
       <div style={{ height: '40px', position: 'relative', zIndex: 30, flexShrink: 0 }}>
