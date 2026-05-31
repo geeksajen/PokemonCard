@@ -3,9 +3,15 @@ import Card from './Card';
 
 const EMPTY_VALID_ZONES = new Set();
 
-const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, combatText, onBenchPointerDragStart, registerZone, dragState, onInspect, pendingAction, validZones = EMPTY_VALID_ZONES, faceDown = false, attackReady = false, evolvedCardId = null }) => {
+const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, combatText, onBenchPointerDragStart, registerZone, dragState, onInspect, pendingAction, validZones = EMPTY_VALID_ZONES, faceDown = false, attackReady = false, evolvedCardId = null, dropRipple = null }) => {
   // 攻擊就緒：出戰寶可夢能量已滿足招式需求（由 GameArena 經 canAttack 判定後傳入）
   const showAttackReady = attackReady && !!activePokemon;
+
+  // 放置漣漪：dropRipple 描述剛放置的棋盤格，於相符的格子中央播放擴散光圈。
+  const rippleHere = (zone, benchIndex) =>
+    dropRipple &&
+    dropRipple.zone === zone &&
+    (zone !== 'bench' || dropRipple.benchIndex === benchIndex);
 
   // 浮動戰鬥文字（傷害/補血）：combatText 描述命中的位置、種類與數值。
   // 僅在「本側（isTopPlayer 相符）」且「位置相符」的卡牌中央渲染對應跳字。
@@ -101,6 +107,7 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
         {showAttackReady && (
           <div className="attack-ready-badge" title="攻擊就緒">⚔️</div>
         )}
+        {rippleHere('active') && <div className="drop-ripple" key={dropRipple.id} />}
         {activePokemon ? (
           <div
             className={combatTextHere('active')?.kind === 'damage' ? 'shake-anim' : ''}
@@ -151,12 +158,14 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                position: 'relative',
                 transform: 'scale(0.8)', // 備戰區為輔助，縮小至 80%
                 transformOrigin: isTopPlayer ? 'bottom center' : 'top center',
                 cursor: (!benchPokemon && onBenchClick) ? 'pointer' : 'default',
                 background: (!benchPokemon && onBenchClick) ? 'var(--theme-panel-light)' : 'transparent'
               }}
             >
+              {rippleHere('bench', idx) && <div className="drop-ripple" key={dropRipple.id} />}
               {benchPokemon ? (
                   <div
                   className={onBenchPointerDragStart ? 'bench-card-draggable' : ''}

@@ -18,6 +18,7 @@ export const useDragDrop = () => {
     velocityX: 0,
     velocityY: 0,
     hoverZone: null, // 'my-active' | 'my-bench-0' | 'my-bench-1' | 'my-bench-2' | 'board' | null
+    hoverZoneCenter: null, // 懸停 zone 的中心座標 {x,y}（供磁吸吸附用）
   });
 
   // --- Refs（在 event listener 中讀取，避免 stale closure）---
@@ -74,6 +75,16 @@ export const useDragDrop = () => {
 
       const hoverZone = hitTest(e.clientX, e.clientY);
 
+      // 取得懸停 zone 的中心座標，供 DragOverlay 計算磁吸偏移
+      let hoverZoneCenter = null;
+      if (hoverZone) {
+        const el = zonesRef.current[hoverZone];
+        if (el) {
+          const r = el.getBoundingClientRect();
+          hoverZoneCenter = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        }
+      }
+
       setDragState({
         isDragging: true,
         card: info.card,
@@ -83,6 +94,7 @@ export const useDragDrop = () => {
         velocityX: info.smoothVx,
         velocityY: info.smoothVy,
         hoverZone,
+        hoverZoneCenter,
       });
     };
 
@@ -147,6 +159,7 @@ export const useDragDrop = () => {
       velocityX: 0,
       velocityY: 0,
       hoverZone: null,
+      hoverZoneCenter: null,
     });
   }, []);
 
@@ -173,6 +186,7 @@ export const useDragDrop = () => {
       velocityX: 0,
       velocityY: 0,
       hoverZone: null,
+      hoverZoneCenter: null,
     });
   }, []);
 

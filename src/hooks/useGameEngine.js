@@ -77,6 +77,8 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
   const [turnBanner, setTurnBanner] = useState(null);
   // 進化高光：剛完成進化的卡牌 instanceId（短暫存在，供 Card 播放閃光動畫）
   const [evolvedCardId, setEvolvedCardId] = useState(null);
+  // 放置漣漪：剛放置卡牌的棋盤格 { zone, benchIndex, id }（id 變更即重播動畫）
+  const [dropRipple, setDropRipple] = useState(null);
 
   useEffect(() => {
     const initialState = createInitialGameState(p1Theme, p2Theme, { weaknessResistance });
@@ -257,6 +259,11 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
   const playToLocation = (card, location) => {
     const result = playCardOnPokemon(gameState, currentPlayerId, card, location);
     applyResult(result);
+    // 放置漣漪：成功放到某個棋盤格時，於該格觸發擴散光圈，強化「拍在桌上」的回饋感。
+    if (result.ok) {
+      setDropRipple({ zone: location.zone, benchIndex: location.index, id: Date.now() });
+      setTimeout(() => setDropRipple(null), 600);
+    }
     // 補血浮動文字：傷藥成功使用後，於目標卡牌顯示綠色正數（依實際回復量）。
     // 出牌方恆為當前玩家＝畫面下方，故 isTopPlayer 固定為 false。
     if (result.ok && card.type === CardTypes.ITEM && card.effect?.kind === 'heal') {
@@ -576,6 +583,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
     turnBanner,
     evolvedCardId,
     cinematicAttack,
+    dropRipple,
     // 動作
     handleReadyClick,
     handleCoinFlipDone,

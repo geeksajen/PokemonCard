@@ -57,6 +57,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
     turnBanner,
     evolvedCardId,
     cinematicAttack,
+    dropRipple,
     toggleBGM,
     toggleSFX,
     handleReadyClick,
@@ -236,6 +237,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
           validZones={validDropZones}
           combatText={damageAnim}
           evolvedCardId={evolvedCardId}
+          dropRipple={dropRipple}
           onActiveClick={humanCanAct ? handleMyActiveClick : undefined}
           onBenchClick={humanCanAct ? handleMyBenchClick : undefined}
           onBenchPointerDragStart={humanCanAct && !gameState.pendingAction ? handleBenchPointerDragStart : undefined}
@@ -344,7 +346,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
       )}
 
       {/* 拖曳浮層 - 最上層 */}
-      <DragOverlay dragState={dragState} />
+      <DragOverlay dragState={dragState} validDropZones={validDropZones} />
 
       {/* 棄牌堆檢視器 */}
       {discardView && (
