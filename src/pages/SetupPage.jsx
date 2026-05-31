@@ -1,40 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCardStore } from '../store';
 import { activePack } from '../themes/active';
+import { cardRepository } from '../api/CardRepository';
+import { getDominantEnergy, elementColorVar, elementEmoji } from '../utils/deckInsights';
+import DeckBoxCarousel from '../features/lobby/DeckBoxCarousel';
 
 const themes = activePack.starterDecks;
 
-function DeckList({ themes, selected, onSelect }) {
-  return (
-    <div style={{
-      maxHeight: '360px', overflowY: 'auto', width: '100%', maxWidth: '280px',
-      display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '6px',
-    }}>
-      {themes.map(t => (
-        <button
-          key={t.id}
-          onClick={() => onSelect(t.id)}
-          style={{
-            padding: '14px 18px', fontSize: '1.05rem',
-            border: `2px solid ${selected === t.id ? t.color : 'var(--theme-glass-border)'}`,
-            background: selected === t.id ? 'var(--theme-panel-base)' : 'var(--theme-panel-light)',
-            color: 'var(--theme-text-main)', borderRadius: '12px', cursor: 'pointer',
-            transition: 'all 0.2s',
-            boxShadow: selected === t.id ? `0 0 15px ${t.color}` : 'none',
-            textAlign: 'left',
-          }}
-        >
-          {t.name}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function SetupPage() {
   const navigate = useNavigate();
-  const { decks } = useCardStore();
+  const { decks, setSelectedDeck } = useCardStore();
+  const allCards = useMemo(() => cardRepository.getAllCards(), []);
   const [p1Theme, setP1Theme] = useState(themes[0]?.id ?? '');
   const [p2Theme, setP2Theme] = useState(themes[1]?.id ?? themes[0]?.id ?? '');
   const [weaknessEnabled, setWeaknessEnabled] = useState(true); // 屬性相剋，預設啟用
@@ -48,6 +25,20 @@ function SetupPage() {
     deck: d,
   }));
   const allThemes = [...themes, ...customThemes];
+
+  // 牌盒輪播選項：依牌組主要能量屬性上色與配圖示（starter 的 id 即屬性 key）
+  const deckBoxOptions = useMemo(() => allThemes.map((t) => {
+    const element = t.isCustom ? getDominantEnergy(t.deck.cardIds, allCards) : t.id;
+    return { id: t.id, name: t.name, boxColor: elementColorVar(element), emoji: elementEmoji(element) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [decks, allCards]);
+
+  // 選 P1 牌組時同步更新大廳「目前選定牌組」（自訂牌組才有 deckId 可供王牌看板讀取）
+  const handleSelectP1 = (id) => {
+    setP1Theme(id);
+    const t = allThemes.find((x) => x.id === id);
+    setSelectedDeck(t?.isCustom ? t.deck.deckId : null);
+  };
 
   const p1Color = allThemes.find(t => t.id === p1Theme)?.color || themes[0].color;
   const p2Color = allThemes.find(t => t.id === p2Theme)?.color || themes[1].color;
@@ -116,7 +107,7 @@ function SetupPage() {
           <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', letterSpacing: '0.05em' }}>
             玩家 1
           </h2>
-          <DeckList themes={allThemes} selected={p1Theme} onSelect={setP1Theme} />
+          <DeckBoxCarousel options={deckBoxOptions} selectedId={p1Theme} onSelect={handleSelectP1} />
         </div>
 
         {/* VS divider */}
@@ -151,7 +142,7 @@ function SetupPage() {
           <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', letterSpacing: '0.05em' }}>
             {vsAI ? '🤖 電腦' : '玩家 2'}
           </h2>
-          <DeckList themes={allThemes} selected={p2Theme} onSelect={setP2Theme} />
+          <DeckBoxCarousel options={deckBoxOptions} selectedId={p2Theme} onSelect={setP2Theme} />
         </div>
       </div>
 

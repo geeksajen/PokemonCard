@@ -19,6 +19,14 @@ const ELEMENT_LABELS = {
   [EnergyTypes.NORMAL]: '一般',
 };
 
+const ELEMENT_EMOJI = {
+  [EnergyTypes.FIRE]: '🔥', [EnergyTypes.WATER]: '💧', [EnergyTypes.GRASS]: '🌿',
+  [EnergyTypes.ELECTRIC]: '⚡', [EnergyTypes.PSYCHIC]: '🔮', [EnergyTypes.FIGHTING]: '👊',
+  [EnergyTypes.NORMAL]: '⭐',
+};
+
+export const elementEmoji = (energyType) => ELEMENT_EMOJI[energyType] || '🃏';
+
 export const elementColorVar = (energyType) =>
   ELEMENT_COLOR_VARS[energyType] || 'var(--palette-element-neutral)';
 

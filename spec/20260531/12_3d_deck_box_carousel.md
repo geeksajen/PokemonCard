@@ -1,4 +1,10 @@
-# 12. 實體感「牌盒」輪播選擇器 (3D Deck Box Carousel)
+# 12. 實體感「牌盒」輪播選擇器 (3D Deck Box Carousel) ✅ 已完成
+
+> 實作摘要（2026-05-31）— 純 CSS 3D，未引入新套件：
+> - 新增 `features/lobby/DeckBoxCarousel.jsx` + `features/lobby/lobby.css`：以 `perspective` + `rotateY` 做 coverflow，選中牌盒置中放大、盒蓋（`.deckbox-lid`）微掀並發光，兩側傾斜淡出；‹ › 箭頭或點擊側盒切換。
+> - `SetupPage`：把原本 P1／P2 的純文字 `DeckList` 按鈕欄換成牌盒輪播。每個牌盒依牌組「主要能量屬性」自動上色（`elementColorVar`）與配屬性圖示（`elementEmoji`）——starter 牌組的 id 即屬性 key，自訂牌組以 `getDominantEnergy` 推導。
+> - 選 P1 牌組時同步寫入 `setSelectedDeck`（自訂牌組帶 deckId），與 spec 11 大廳王牌看板連動。
+> - 顏色全走 token；移除原本內嵌的 `DeckList` 死碼。
 
 ## 痛點分析
 大廳中若僅使用下拉式選單 (Dropdown) 或純文字列表來選擇出戰牌組，操作體驗較為扁平死板，缺乏收集實體卡牌遊戲的樂趣。

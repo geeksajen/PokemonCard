@@ -1,0 +1,92 @@
+/* ============================================================
+   Lobby / Setup feature styles (specs 12–14)
+   顏色一律走 --theme-* / --palette-* token。
+   ============================================================ */
+
+/* ---- 3D 牌盒輪播 (spec 12) ---- */
+.deckbox-carousel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  user-select: none;
+}
+.deckbox-arrow {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--theme-glass-border);
+  background: var(--theme-panel-light);
+  color: var(--theme-text-main);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.deckbox-arrow:hover { background: var(--theme-panel-base); transform: scale(1.1); }
+
+.deckbox-stage {
+  position: relative;
+  flex: 1;
+  height: 230px;
+  perspective: 900px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.deckbox {
+  position: absolute;
+  width: 150px;
+  height: 200px;
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.4s ease, filter 0.4s ease;
+  cursor: pointer;
+}
+.deckbox-face {
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--theme-glass-border);
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.35), 0 12px 28px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+/* 盒蓋：選中時微微掀開 */
+.deckbox-lid {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.18);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  transform-origin: top center;
+  transition: transform 0.4s ease;
+}
+.deckbox.active .deckbox-lid { transform: rotateX(-55deg); }
+.deckbox.active .deckbox-face {
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.25), 0 18px 40px rgba(0, 0, 0, 0.55),
+              0 0 26px var(--palette-player1-glow);
+  border-color: var(--theme-text-main);
+}
+.deckbox-emoji {
+  font-size: 2.6rem;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+}
+.deckbox-name {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #fff;
+  text-align: center;
+  padding: 0 8px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
