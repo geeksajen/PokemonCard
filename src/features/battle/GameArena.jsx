@@ -53,6 +53,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
     coinFlip,
     turnBanner,
     evolvedCardId,
+    cinematicAttack,
     toggleBGM,
     toggleSFX,
     handleReadyClick,
@@ -169,8 +170,8 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
       {/* 戰鬥區 */}
       <div
         ref={registerZone('board')}
-        className=""
-        style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', justifyContent: 'center', padding: '10px 0', gap: '20px', overflowY: 'auto', transition: 'filter 0.3s ease' }}
+        className={`board-stage ${cinematicAttack ? 'cinematic-attack' : ''}`}
+        style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', justifyContent: 'center', padding: '10px 0', gap: '20px', overflowY: 'auto', transition: 'transform 0.3s ease-out, filter 0.3s ease' }}
       >
         {faintAnim && (
           <div style={{ position: 'absolute', zIndex: 60, top: '50%', left: '50%', pointerEvents: 'none' }}>

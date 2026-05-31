@@ -66,6 +66,9 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
   const [cardToConsume, setCardToConsume] = useState(null);
   const [deckSearchTopN, setDeckSearchTopN] = useState(null); // null=全牌庫；數字=只看牌庫頂 N 張
   const [attackAnim, setAttackAnim] = useState(null);
+  // 電影級攻擊聚焦：涵蓋整個攻擊→傷害→擊倒結算的期間（比 attackAnim 的投射物飛行更長），
+  // 由 GameArena 套用縮放/變暗 class，結算完畢後平滑復原。
+  const [cinematicAttack, setCinematicAttack] = useState(false);
   const [drawnCardAnim, setDrawnCardAnim] = useState(null);
   const [faintAnim, setFaintAnim] = useState(null);
   // 結算演出階段：null（未結束）| 'cinematic'（VICTORY/DEFEAT 大字）| 'panel'（結算面板）
@@ -492,6 +495,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
   const performAttack = (state, attackerId, defenderIsTop, onDone) => {
     const attacker = state.players[attackerId].activePokemon;
     sfxAttack();
+    setCinematicAttack(true); // 進入電影聚焦：棋盤微幅放大、周邊變暗
     // toTop：投射物飛行方向，朝被攻擊方（defender 在上 → 往上，在下 → 往下）
     setAttackAnim({ type: attacker.energyType || 'fire', toTop: defenderIsTop });
 
@@ -521,10 +525,13 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
           const { state: resolved, winner } = resolveKnockout(afterDamage, attackerId, faintedPokemon);
           setGameState(resolved);
           if (winner) sfxVictory();
+          setCinematicAttack(false); // 擊倒結算完畢，鏡頭平滑拉回
           if (onDone) onDone(resolved);
         }, 1000);
-      } else if (onDone) {
-        onDone(afterDamage);
+      } else {
+        // 無擊倒：讓傷害跳字的爆發演完後再拉回鏡頭
+        setTimeout(() => setCinematicAttack(false), 500);
+        if (onDone) onDone(afterDamage);
       }
     }, 400);
   };
@@ -568,6 +575,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
     coinFlip,
     turnBanner,
     evolvedCardId,
+    cinematicAttack,
     // 動作
     handleReadyClick,
     handleCoinFlipDone,

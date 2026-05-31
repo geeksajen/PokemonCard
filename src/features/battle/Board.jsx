@@ -82,7 +82,7 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
       <div
         ref={!isTopPlayer && registerZone ? registerZone('my-active') : undefined}
         onClick={() => !activePokemon && onActiveClick && onActiveClick()}
-        className={`${getZoneClass(activePokemon, false, 'my-active')} ${showAttackReady ? 'attack-ready-glow' : ''}`}
+        className={`board-active ${getZoneClass(activePokemon, false, 'my-active')} ${showAttackReady ? 'attack-ready-glow' : ''}`}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -123,7 +123,7 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
       </div>
 
       {/* 備戰區 (Bench) */}
-      <div style={{
+      <div className="board-bench" style={{
         display: 'flex',
         gap: '0px',
         justifyContent: 'center',

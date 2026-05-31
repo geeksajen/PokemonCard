@@ -1128,3 +1128,24 @@ button:disabled {
   opacity: 0;
   animation: evolve-flash-wash 0.8s ease-out forwards;
 }
+
+/* --- 電影級攻擊聚焦 (Cinematic Attack Zoom) --- */
+/* 攻擊期間：整個棋盤微幅放大，備戰區（與牌堆）變暗，雙方出戰寶可夢提亮並打上聚光，
+   結算後平滑復原。縮放/亮度過渡皆 0.3s ease-out。 */
+.board-bench {
+  transition: filter 0.3s ease-out, opacity 0.3s ease-out;
+}
+.board-active {
+  transition: filter 0.3s ease-out;
+}
+.board-stage.cinematic-attack {
+  transform: scale(1.05);
+  overflow: hidden; /* 放大時裁掉外溢，避免出現捲軸 */
+}
+.board-stage.cinematic-attack .board-bench {
+  filter: brightness(0.4) saturate(0.85);
+  opacity: 0.85;
+}
+.board-stage.cinematic-attack .board-active {
+  filter: brightness(1.12) drop-shadow(0 0 18px rgba(255, 255, 255, 0.25));
+}
