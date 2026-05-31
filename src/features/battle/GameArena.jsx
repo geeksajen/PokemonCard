@@ -20,8 +20,8 @@ import { getValidTargets, canRetreat, canAttack } from '../../game/rules';
 
 const EMPTY_ZONES = new Set();
 
-const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onReturnLobby }) => {
-  const engine = useGameEngine(p1Theme, p2Theme, vsAI, weaknessEnabled);
+const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onReturnLobby, onGameOver }) => {
+  const engine = useGameEngine(p1Theme, p2Theme, vsAI, weaknessEnabled, onGameOver);
   const { dragState, startDrag, registerZone, cancelDrag } = useDragDrop();
 
   // 純 UI 開關，與遊戲邏輯無關，留在此處管理

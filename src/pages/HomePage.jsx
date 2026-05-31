@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuthStore, useCardStore } from '../store';
+import { useAuthStore, useCardStore, useStatsStore } from '../store';
 import { activePack } from '../themes/active';
 import { cardRepository } from '../api/CardRepository';
-import { getAceCard, getDominantEnergy } from '../utils/deckInsights';
+import { getAceCard, getDominantEnergy, elementLabel, elementEmoji } from '../utils/deckInsights';
+import PlayerStatsModal from '../features/lobby/PlayerStatsModal';
 
 const STARS_COUNT = 90;
 
@@ -35,6 +36,16 @@ function HomePage() {
   const navigate  = useNavigate();
   const { currentUser } = useAuthStore();
   const { decks, selectedDeckId } = useCardStore();
+  const stats = useStatsStore();
+  const { wins, games, elementCounts } = stats;
+  const [showStats, setShowStats] = useState(false);
+
+  const winRate = games > 0 ? Math.round((wins / games) * 100) : 0;
+  const favElement = useMemo(() => {
+    let top = null, max = 0;
+    for (const [k, n] of Object.entries(elementCounts)) if (n > max) { max = n; top = k; }
+    return top;
+  }, [elementCounts]);
 
   // 滑鼠視差偏移（讓王牌看板有立體感）
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
@@ -97,8 +108,17 @@ function HomePage() {
         padding: '14px 28px',
         background: 'linear-gradient(180deg, var(--page-lobby-bg) 0%, transparent 100%)',
       }}>
-        {/* Player card */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Player card（點擊展開生涯戰績） */}
+        <div
+          onClick={() => setShowStats(true)}
+          title="查看生涯戰績"
+          style={{
+            display: 'flex', alignItems: 'center', gap: '12px',
+            cursor: 'pointer', padding: '6px 12px 6px 6px', borderRadius: '14px',
+            border: '1px solid var(--theme-glass-border)',
+            background: 'var(--theme-panel-light)', backdropFilter: 'var(--theme-blur)',
+          }}
+        >
           <div style={{
             width: '46px', height: '46px', borderRadius: '50%',
             background: 'linear-gradient(135deg, var(--palette-player1) 0%, var(--palette-class-stage1-mid) 100%)',
@@ -110,21 +130,24 @@ function HomePage() {
             🎴
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '1rem', letterSpacing: '0.01em' }}>
-              {currentUser?.username || '玩家'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontWeight: 700, fontSize: '1rem', letterSpacing: '0.01em' }}>
+                {currentUser?.username || '玩家'}
+              </span>
+              {favElement && (
+                <span style={{
+                  fontSize: '0.72rem', padding: '2px 8px', borderRadius: '10px',
+                  background: 'color-mix(in srgb, var(--color-energy) 22%, transparent)',
+                  border: '1px solid var(--color-energy)', color: 'var(--color-energy)', fontWeight: 700,
+                }}>
+                  {elementEmoji(favElement)} {elementLabel(favElement)}屬性訓練家
+                </span>
+              )}
             </div>
-            <div style={{ display: 'flex', gap: '8px', marginTop: '3px' }}>
-              <span style={{
-                fontSize: '0.72rem', padding: '2px 7px', borderRadius: '4px',
-                background: 'color-mix(in srgb, var(--palette-player1) 18%, transparent)',
-                border: '1px solid var(--palette-player1-glow)',
-                color: 'var(--color-primary-hover)', fontWeight: 600,
-              }}>
-                Lv. 1
-              </span>
-              <span style={{ fontSize: '0.78rem', color: 'var(--color-energy)', alignSelf: 'center' }}>
-                💰 1,000
-              </span>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '3px', fontSize: '0.78rem' }}>
+              <span style={{ color: 'var(--color-success)', fontWeight: 700 }}>🏆 {wins} 勝</span>
+              <span style={{ color: 'var(--theme-text-muted)' }}>勝率 {winRate}%</span>
+              <span style={{ color: 'var(--theme-text-muted)' }}>{games} 場</span>
             </div>
           </div>
         </div>
@@ -279,6 +302,8 @@ function HomePage() {
           點擊開始對戰
         </div>
       </div>
+
+      {showStats && <PlayerStatsModal stats={stats} onClose={() => setShowStats(false)} />}
     </div>
   );
 }

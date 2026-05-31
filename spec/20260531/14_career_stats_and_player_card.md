@@ -1,4 +1,10 @@
-# 14. 生涯戰績與個人名片 (Career Stats & Player Card)
+# 14. 生涯戰績與個人名片 (Career Stats & Player Card) ✅ 已完成
+
+> 實作摘要（2026-05-31）：
+> - 新增 `useStatsStore`（zustand + persist）：`wins/losses/games`、`elementCounts`（各屬性使用場數）、`history`（近 50 場）、`recordResult()`。
+> - 戰績記錄：`useGameEngine` 新增 `onGameOver` 回呼（以 ref 確保整場僅觸發一次，於 winner 出現時呼叫）；`GameArena` 透傳；`BattlePage` 注入 `handleGameOver`，以人類玩家（player1）視角、依 p1 牌組主要屬性記錄勝負（vsAI 時）。
+> - `HomePage` 個人名片：常駐顯示暱稱、代表頭像、🏆 勝場／勝率／總場數，並依 `elementCounts` 最大值頒發「最愛屬性訓練家」徽章；點擊名片開啟 `PlayerStatsModal` 檢視總覽與歷史對戰（對手、使用屬性、勝負、日期）。
+> - 顏色全走 token；統計資料皆來自 store，UI 僅讀取渲染。
 
 ## 痛點分析
 長期遊玩卡牌遊戲的玩家需要成就感與目標感。如果大廳沒有展示玩家的累積努力，很容易讓人覺得「打完一場什麼都沒留下」，影響長期黏著度。

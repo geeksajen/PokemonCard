@@ -49,10 +49,11 @@ const EVOLVE_FLASH_MS = 800;
 
 // 集中管理遊戲狀態、UI 狀態與所有副作用（state 更新 / 音效 / 動畫 / 提示）。
 // 規則判定一律委派給 src/game/rules.js 的純函式。
-export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance = true) => {
+export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance = true, onGameOver = null) => {
   const [gameState, setGameState] = useState(null);
   const aiActiveRef = useRef(false);
   const aiSetupRef = useRef(false);
+  const gameOverFiredRef = useRef(false); // 確保結算回呼只觸發一次
   const [coinFlip, setCoinFlip] = useState(null); // { firstPlayer, firstPlayerLabel, state }
   const [selectedCard, setSelectedCard] = useState(null);
   const [damageAnim, setDamageAnim] = useState(null);
@@ -135,8 +136,14 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
       return;
     }
     setGameOverStage('cinematic');
+    // 通知外層（記錄戰績），確保整場只觸發一次
+    if (onGameOver && !gameOverFiredRef.current) {
+      gameOverFiredRef.current = true;
+      onGameOver({ winner: gameState.winner, winReason: gameState.winReason });
+    }
     const t = setTimeout(() => setGameOverStage('panel'), 2000);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.winner]);
 
   // 進化高光：依規則層回傳的 didEvolve metadata 觸發專屬音效與短暫的閃光狀態。
