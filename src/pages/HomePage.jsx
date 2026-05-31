@@ -1,7 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuthStore } from '../store';
+import { useAuthStore, useCardStore } from '../store';
 import { activePack } from '../themes/active';
+import { cardRepository } from '../api/CardRepository';
+import { getAceCard, getDominantEnergy } from '../utils/deckInsights';
 
 const STARS_COUNT = 90;
 
@@ -32,8 +34,30 @@ function StarField({ stars }) {
 function HomePage() {
   const navigate  = useNavigate();
   const { currentUser } = useAuthStore();
+  const { decks, selectedDeckId } = useCardStore();
 
-  const ace = activePack.aceShowcase[activePack.defaultAceKey];
+  // 滑鼠視差偏移（讓王牌看板有立體感）
+  const [parallax, setParallax] = useState({ x: 0, y: 0 });
+  const handleParallax = (e) => {
+    setParallax({
+      x: (e.clientX / window.innerWidth - 0.5) * 30,
+      y: (e.clientY / window.innerHeight - 0.5) * 20,
+    });
+  };
+
+  // 動態王牌：掃描「目前選定牌組」(或第一個自訂牌組) 取出最具代表性的寶可夢；
+  // 無自訂牌組或無立繪時，回退到主題包預設王牌。
+  const allCards = useMemo(() => cardRepository.getAllCards(), []);
+  const packAce = activePack.aceShowcase[activePack.defaultAceKey];
+  const ace = useMemo(() => {
+    const deck = decks.find((d) => d.deckId === selectedDeckId) || decks[0];
+    if (!deck) return packAce;
+    const aceCard = getAceCard(deck.cardIds, allCards);
+    if (!aceCard || !aceCard.image) return packAce;
+    const domEl = getDominantEnergy(deck.cardIds, allCards);
+    const glow = activePack.aceShowcase[domEl]?.glow || 'var(--palette-player1-glow)';
+    return { name: aceCard.name, image: aceCard.image, glow };
+  }, [decks, selectedDeckId, allCards, packAce]);
 
   const stars = useMemo(() =>
     Array.from({ length: STARS_COUNT }, (_, i) => ({
@@ -48,11 +72,14 @@ function HomePage() {
   []);
 
   return (
-    <div style={{
-      width: '100vw', height: '100vh', overflow: 'hidden',
-      position: 'relative', background: 'var(--page-lobby-bg)',
-      fontFamily: "'Inter', system-ui, sans-serif", color: 'var(--theme-text-main)',
-    }}>
+    <div
+      onMouseMove={handleParallax}
+      style={{
+        width: '100vw', height: '100vh', overflow: 'hidden',
+        position: 'relative', background: 'var(--page-lobby-bg)',
+        fontFamily: "'Inter', system-ui, sans-serif", color: 'var(--theme-text-main)',
+      }}
+    >
       {/* ── Starfield ── */}
       <StarField stars={stars} />
 
@@ -170,7 +197,9 @@ function HomePage() {
       {/* ── Ace Pokémon showcase (centre-right) ── */}
       <div style={{
         position: 'absolute',
-        right: '18%', top: '50%', transform: 'translateY(-52%)',
+        right: '18%', top: '50%',
+        transform: `translate(${parallax.x}px, calc(-52% + ${parallax.y}px))`,
+        transition: 'transform 0.25s ease-out',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         zIndex: 10, pointerEvents: 'none',
       }}>

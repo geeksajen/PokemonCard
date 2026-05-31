@@ -6,6 +6,9 @@ export const useCardStore = create(
     (set) => ({
       customCards: [],
       decks: [],
+      selectedDeckId: null, // 玩家當前選定的出戰牌組（大廳王牌看板/牌盒輪播用）
+
+      setSelectedDeck: (deckId) => set({ selectedDeckId: deckId }),
 
       addCustomCard: (card) =>
         set((state) => ({

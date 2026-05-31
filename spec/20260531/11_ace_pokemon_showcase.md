@@ -1,4 +1,11 @@
-# 11. 王牌寶可夢「看板展示」 (Ace Pokemon Showcase)
+# 11. 王牌寶可夢「看板展示」 (Ace Pokemon Showcase) ✅ 已完成
+
+> 實作摘要（2026-05-31）：
+> - 新增純函式 util `utils/deckInsights.js`（theme-agnostic）：`getAceCard`（先比進化階級再比 HP）、`getDominantEnergy`、`elementColorVar`，供 11/12/13 共用。
+> - `useCardStore` 新增持久化 `selectedDeckId` + `setSelectedDeck`（大廳/輪播共用「目前選定牌組」）。
+> - `HomePage`：王牌看板改為動態——掃描選定牌組（或第一個自訂牌組）取最具代表性的寶可夢立繪，光暈依牌組主要屬性；無自訂牌組/無立繪時回退主題包預設王牌（保留原行為）。
+> - 視覺：保留既有 `floatPokemon` 呼吸浮動，並新增滑鼠視差（`onMouseMove` 偏移王牌看板 ±約 15px，0.25s ease 平滑）。
+> - 顏色走 token/pack 資料，未在 JSX 寫死色值字面量；未動引擎層。
 
 ## 痛點分析
 目前大廳可能只使用靜態的背景圖，隨著遊玩時間增加容易產生視覺疲勞，且無法展現玩家當前使用的牌組特色，缺乏個人化的代入感。
