@@ -21,6 +21,93 @@
   gap: 10px;
   margin-bottom: 20px;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ---- Visual Icon Filters (spec 06) ---- */
+.lib-search-input {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--theme-glass-border);
+  background: var(--theme-panel-dark);
+  color: var(--theme-text-main);
+  outline: none;
+}
+.lib-search-input::placeholder { color: var(--theme-text-muted); }
+.lib-search-input:focus { border-color: var(--color-primary); }
+
+.lib-filter-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.lib-filter-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--theme-glass-border);
+  margin: 0 2px;
+}
+
+/* 類型圖示按鈕（多選） */
+.lib-type-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--theme-panel-light);
+  border: 1px solid var(--theme-glass-border);
+  color: var(--theme-text-main);
+  padding: 7px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.lib-type-btn .lib-type-icon { font-size: 1.1rem; line-height: 1; }
+.lib-type-btn:hover {
+  border-color: var(--color-primary-hover);
+  transform: translateY(-2px);
+}
+.lib-type-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary-hover);
+  color: white;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.45);
+}
+
+/* 能量屬性圓形圖示（多選）：背景為 --palette-element-* token */
+.lib-energy-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0.55;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.lib-energy-btn:hover { opacity: 0.85; transform: translateY(-2px); }
+.lib-energy-btn.active {
+  opacity: 1;
+  transform: scale(1.12);
+  border-color: var(--theme-text-main);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
+}
+
+.lib-filter-clear {
+  background: transparent;
+  border: 1px solid var(--theme-glass-border);
+  color: var(--theme-text-muted);
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.lib-filter-clear:hover {
+  color: var(--theme-text-main);
+  border-color: var(--theme-text-muted);
 }
 
 .filter-btn {
