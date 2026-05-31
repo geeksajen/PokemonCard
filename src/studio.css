@@ -197,6 +197,66 @@
   color: var(--theme-text-muted);
 }
 
+/* ---- Dynamic Deck Analytics (spec 07) ---- */
+.deck-analytics {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.deck-comp-bar {
+  display: flex;
+  width: 100%;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--theme-panel-light);
+  border: 1px solid var(--theme-glass-border);
+}
+.comp-seg {
+  height: 100%;
+  transition: width 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+.comp-pokemon { background: var(--color-primary); }
+.comp-trainer { background: var(--color-energy); }
+.comp-energy  { background: var(--color-success); }
+
+.deck-comp-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.8rem;
+  color: var(--theme-text-muted);
+  flex-wrap: wrap;
+}
+.comp-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.comp-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+/* 無基礎寶可夢警示：閃爍黃色 ! */
+@keyframes deck-warn-blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.35; transform: scale(0.9); }
+}
+.deck-comp-warning {
+  margin-left: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-energy);
+  color: #000;
+  font-weight: 900;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  animation: deck-warn-blink 1s ease-in-out infinite;
+}
+
 .deck-list {
   flex: 1;
   overflow-y: auto;

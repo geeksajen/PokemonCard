@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CardTypes } from '../../models/cards';
+
+const DECK_MAX = 27;
 
 const DeckList = ({ deckCards, onRemoveCard, onSave, onClear, onAutoBuild, onCoverSelect, coverCardId }) => {
   const totalCount = deckCards.length;
-  
+
   // Group cards by ID to show counts
   const groupedCards = deckCards.reduce((acc, card) => {
     if (!acc[card.id]) {
@@ -18,6 +20,13 @@ const DeckList = ({ deckCards, onRemoveCard, onSave, onClear, onAutoBuild, onCov
   const pokemons = uniqueCards.filter(c => c.type === CardTypes.POKEMON);
   const trainers = uniqueCards.filter(c => c.type === CardTypes.TRAINER || c.type === CardTypes.ITEM);
   const energies = uniqueCards.filter(c => c.type === CardTypes.ENERGY);
+
+  // 構成統計（依實際張數，非種類數）。基礎寶可夢＝寶可夢且無 evolvesFrom，供開局防呆。
+  const pokemonCount = deckCards.filter(c => c.type === CardTypes.POKEMON).length;
+  const trainerCount = deckCards.filter(c => c.type === CardTypes.TRAINER || c.type === CardTypes.ITEM).length;
+  const energyCount = deckCards.filter(c => c.type === CardTypes.ENERGY).length;
+  const basicCount = deckCards.filter(c => c.type === CardTypes.POKEMON && !c.evolvesFrom).length;
+  const pct = (n) => `${(n / DECK_MAX) * 100}%`;
 
   const renderGroup = (title, cards) => {
     if (cards.length === 0) return null;
@@ -48,7 +57,25 @@ const DeckList = ({ deckCards, onRemoveCard, onSave, onClear, onAutoBuild, onCov
     <div className="deck-builder-panel">
       <div className="deck-header">
         <h2 className="deck-count">{totalCount} <span>/ 27 張</span></h2>
-        <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>右鍵點擊清單內的卡牌可設為封面圖</p>
+
+        {/* 構成比例進度條（依 27 張為滿格，區塊寬度即時伸縮） */}
+        <div className="deck-analytics">
+          <div className="deck-comp-bar">
+            <div className="comp-seg comp-pokemon" style={{ width: pct(pokemonCount) }} />
+            <div className="comp-seg comp-trainer" style={{ width: pct(trainerCount) }} />
+            <div className="comp-seg comp-energy" style={{ width: pct(energyCount) }} />
+          </div>
+          <div className="deck-comp-legend">
+            <span className="comp-legend-item"><i className="comp-dot comp-pokemon" />寶可夢 {pokemonCount}</span>
+            <span className="comp-legend-item"><i className="comp-dot comp-trainer" />訓練家 {trainerCount}</span>
+            <span className="comp-legend-item"><i className="comp-dot comp-energy" />能量 {energyCount}</span>
+            {basicCount === 0 && (
+              <span className="deck-comp-warning" title="必須至少包含一張基礎寶可夢">!</span>
+            )}
+          </div>
+        </div>
+
+        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--theme-text-muted)' }}>右鍵點擊清單內的卡牌可設為封面圖</p>
       </div>
 
       <div className="deck-list">
