@@ -90,3 +90,57 @@
   text-overflow: ellipsis;
   max-width: 100%;
 }
+
+/* ---- Elemental BATTLE button (spec 13) ---- */
+@keyframes battle-aura-pulse {
+  0%, 100% { box-shadow: 0 0 26px var(--aura), 0 0 0 transparent; }
+  50%      { box-shadow: 0 0 46px var(--aura), 0 0 80px var(--aura); }
+}
+@keyframes battle-particle-rise {
+  0%   { transform: translateY(0) scale(1);    opacity: 0; }
+  15%  { opacity: 0.9; }
+  100% { transform: translateY(-72px) scale(0.35); opacity: 0; }
+}
+
+.battle-btn {
+  position: relative;
+  overflow: visible;
+  padding: 18px 80px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  /* 預設（無屬性）走玩家主色 */
+  --aura: var(--palette-player1-glow);
+  background: linear-gradient(135deg, var(--palette-player1) 0%, var(--palette-class-stage1-mid) 100%);
+  box-shadow: 0 0 30px var(--aura);
+  animation: battle-aura-pulse 1.9s ease-in-out infinite;
+  transition: transform 0.12s ease;
+}
+.battle-btn:hover { transform: scale(1.05); }
+.battle-btn:active { transform: scale(0.9); } /* 爆發性點擊回饋：向內收縮 */
+.battle-btn-label { position: relative; z-index: 2; }
+
+/* 屬性連動光環色（box-shadow 需實色，故於 CSS 定義對應 rgba） */
+.battle-btn-fire     { --aura: rgba(239, 68, 68, 0.7);  background: var(--palette-element-1); }
+.battle-btn-water    { --aura: rgba(59, 130, 246, 0.7); background: var(--palette-element-2); }
+.battle-btn-grass    { --aura: rgba(34, 197, 94, 0.7);  background: var(--palette-element-3); }
+.battle-btn-electric { --aura: rgba(234, 179, 8, 0.7);  background: var(--palette-element-4); }
+.battle-btn-psychic  { --aura: rgba(168, 85, 247, 0.7); background: var(--palette-element-5); }
+.battle-btn-fighting { --aura: rgba(249, 115, 22, 0.7); background: var(--palette-element-6); }
+.battle-btn-normal   { --aura: rgba(148, 163, 184, 0.7); background: var(--palette-element-neutral); }
+
+.battle-particle {
+  position: absolute;
+  bottom: 10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--aura);
+  pointer-events: none;
+  opacity: 0;
+  animation: battle-particle-rise 2.2s ease-in infinite;
+}

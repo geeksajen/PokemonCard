@@ -4,7 +4,9 @@ import { useCardStore } from '../store';
 import { activePack } from '../themes/active';
 import { cardRepository } from '../api/CardRepository';
 import { getDominantEnergy, elementColorVar, elementEmoji } from '../utils/deckInsights';
+import { sfxBattleStart } from '../utils/sounds';
 import DeckBoxCarousel from '../features/lobby/DeckBoxCarousel';
+import '../features/lobby/lobby.css';
 
 const themes = activePack.starterDecks;
 
@@ -40,10 +42,19 @@ function SetupPage() {
     setSelectedDeck(t?.isCustom ? t.deck.deckId : null);
   };
 
+  // P1 牌組主要屬性（驅動出戰按鈕的屬性光環）
+  const p1Element = useMemo(() => {
+    const t = allThemes.find((x) => x.id === p1Theme);
+    if (!t) return 'normal';
+    return (t.isCustom ? getDominantEnergy(t.deck.cardIds, allCards) : t.id) || 'normal';
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p1Theme, decks, allCards]);
+
   const p1Color = allThemes.find(t => t.id === p1Theme)?.color || themes[0].color;
   const p2Color = allThemes.find(t => t.id === p2Theme)?.color || themes[1].color;
 
   const handleStart = () => {
+    sfxBattleStart(); // 爆發性點擊回饋音
     const finalP1 = p1Theme.startsWith('custom_')
       ? customThemes.find(t => t.id === p1Theme).deck
       : p1Theme;
@@ -184,25 +195,16 @@ function SetupPage() {
 
         <button
           onClick={handleStart}
-          style={{
-            padding: '18px 80px', fontSize: '1.5rem', fontWeight: 800,
-            letterSpacing: '0.08em',
-            background: 'linear-gradient(135deg, var(--palette-player1) 0%, var(--palette-class-stage1-mid) 100%)',
-            color: 'white', border: 'none', borderRadius: '50px',
-            cursor: 'pointer',
-            boxShadow: '0 0 30px var(--palette-player1-glow)',
-            transition: 'transform 0.15s, box-shadow 0.15s',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.transform = 'scale(1.05)';
-            e.currentTarget.style.boxShadow = '0 0 50px var(--palette-player1)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 0 30px var(--palette-player1-glow)';
-          }}
+          className={`battle-btn battle-btn-${p1Element}`}
         >
-          確認出戰 ⚔️
+          {Array.from({ length: 6 }).map((_, i) => (
+            <span
+              key={i}
+              className="battle-particle"
+              style={{ left: `${12 + i * 14}%`, animationDelay: `${i * 0.32}s` }}
+            />
+          ))}
+          <span className="battle-btn-label">確認出戰 ⚔️</span>
         </button>
       </div>
     </div>

@@ -118,6 +118,14 @@ export const sfxTurnStart = () => {
   setTimeout(() => playTone(1320, 'triangle', 0.2, 0.13, 0.004, 0.2), 60); // 上揚泛音
 };
 
+// ⚔️ 確認出戰：極具重量感的衝擊＋上行警報，點燃決鬥情緒
+export const sfxBattleStart = () => {
+  playTone(160, 'sawtooth', 0.3, 0.2, 0.005, 0.3);   // 重低音衝擊
+  playNoise(0.25, 0.18, 600);                         // 爆發
+  setTimeout(() => playTone(523, 'square', 0.18, 0.12, 0.005, 0.18), 120);
+  setTimeout(() => playTone(784, 'square', 0.26, 0.12, 0.005, 0.26), 220); // 上行
+};
+
 // 🃏 牌組工坊：加入卡牌（清脆的「裝入卡套」摩擦聲＋上揚雙音）
 export const sfxDeckAdd = () => {
   playNoise(0.05, 0.08, 4200);

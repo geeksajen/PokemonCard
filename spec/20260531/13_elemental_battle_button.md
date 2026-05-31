@@ -1,4 +1,10 @@
-# 13. 帶有屬性特效的「快速對戰」大按鈕 (Elemental 'BATTLE' Button)
+# 13. 帶有屬性特效的「快速對戰」大按鈕 (Elemental 'BATTLE' Button) ✅ 已完成
+
+> 實作摘要（2026-05-31）：
+> - `SetupPage`：把「確認出戰」改造為英雄級大按鈕，依 **P1 牌組主要屬性**（`getDominantEnergy`／starter 的屬性 key）套上 `battle-btn battle-btn-<element>` class。
+> - 屬性連動光環：`lobby.css` 各屬性 class 設 `--aura`（box-shadow 需實色，故於 CSS 定義對應 rgba）與屬性漸層背景（`--palette-element-*`），搭配 `@keyframes battle-aura-pulse` 呼吸光暈與向上飄散的 `.battle-particle` 粒子（顏色綁 `--aura`）。
+> - 爆發性點擊回饋：`:active` 時 `scale(0.9)` 向內收縮，並在 `handleStart` 觸發 `sfxBattleStart`（重低音衝擊＋上行警報，新增於 `sounds.js`）。
+> - 顏色實色僅存在於 CSS 層；JSX 只掛 class 與 token，未寫死色值。
 
 ## 痛點分析
 「開始遊戲」按鈕是整個遊戲最重要的 Call to Action (CTA)，如果設計得太過普通，將無法點燃玩家即將進入決鬥的熱血情緒。
