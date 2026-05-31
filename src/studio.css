@@ -596,6 +596,15 @@
   background: rgba(59, 130, 246, 0.3);
 }
 
+.deck-card-btn.duplicate {
+  color: var(--color-energy);
+  border-left: 1px solid var(--theme-glass-border);
+}
+
+.deck-card-btn.duplicate:hover {
+  background: color-mix(in srgb, var(--color-energy) 22%, transparent);
+}
+
 .deck-card-btn.delete {
   color: var(--color-danger);
   border-left: 1px solid var(--theme-glass-border);
@@ -603,6 +612,28 @@
 
 .deck-card-btn.delete:hover {
   background: rgba(239, 68, 68, 0.2);
+}
+
+/* Toast 進場動畫（由 StudioPage 與牌組列表頁共用） */
+@keyframes slideInFast {
+  from { opacity: 0; transform: translate(-50%, -16px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* 牌組列表頁 Toast（複製 / 匯入回饋） */
+.studio-toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-primary);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  z-index: 300;
+  font-weight: bold;
+  box-shadow: var(--theme-shadow);
+  animation: slideInFast 0.3s;
 }
 
 .deck-card.create-new {

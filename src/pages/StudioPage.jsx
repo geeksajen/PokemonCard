@@ -7,6 +7,7 @@ import CardLibrary from '../features/studio/CardLibrary';
 import DeckList from '../features/studio/DeckList';
 import CardInspectModal from '../features/battle/CardInspectModal';
 import { sfxDeckAdd, sfxDeckRemove } from '../utils/sounds';
+import { encodeDeck } from '../utils/deckCode';
 import '../studio.css';
 
 function StudioPage() {
@@ -152,6 +153,21 @@ function StudioPage() {
     showToast('牌組儲存成功！');
   };
 
+  // 匯出分享代碼：將目前牌組編碼後複製到剪貼簿（失敗則以 prompt 供手動複製）
+  const handleExportCode = async () => {
+    if (deckCards.length === 0) {
+      showToast('牌組是空的，無法匯出！');
+      return;
+    }
+    const code = encodeDeck({ name: deckName, cardIds: deckCards.map((c) => c.id) });
+    try {
+      await navigator.clipboard.writeText(code);
+      showToast('已複製分享代碼到剪貼簿！');
+    } catch {
+      window.prompt('複製以下牌組分享代碼：', code);
+    }
+  };
+
   // 各卡張數（供卡牌庫判定同名卡是否已達上限而變暗）
   const deckCardCounts = useMemo(() => {
     const counts = {};
@@ -201,7 +217,9 @@ function StudioPage() {
               </span>
             )}
           </div>
-          <div style={{ width: '90px' }} />
+          <button onClick={handleExportCode} className="studio-back-btn" title="複製牌組分享代碼">
+            🔗 分享代碼
+          </button>
         </div>
         <DeckList
           deckCards={deckCards}

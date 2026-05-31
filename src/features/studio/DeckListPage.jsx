@@ -3,13 +3,45 @@ import { useNavigate } from 'react-router-dom';
 import { useCardStore } from '../../store';
 import { cardRepository } from '../../api/CardRepository';
 import { CardTypes } from '../../models/cards';
+import { decodeDeck } from '../../utils/deckCode';
 import '../../studio.css';
 
 function DeckListPage() {
   const navigate = useNavigate();
-  const { decks, deleteDeck } = useCardStore();
+  const { decks, deleteDeck, createDeck } = useCardStore();
   const allCards = useMemo(() => cardRepository.getAllCards(), []);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [toast, setToast] = useState('');
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
+  };
+
+  // 一鍵複製：以原牌組內容建立「(原名) - 副本」，供安心微調實驗
+  const handleDuplicate = (deck) => {
+    createDeck(`${deck.deckName} - 副本`, [...deck.cardIds], Date.now(), deck.coverCardId);
+    showToast(`已複製「${deck.deckName}」`);
+  };
+
+  // 從分享代碼匯入：解析後僅保留目前卡庫存在的卡，建立新牌組並進入編輯
+  const handleImport = () => {
+    const code = window.prompt('貼上牌組分享代碼：');
+    if (!code) return;
+    const decoded = decodeDeck(code);
+    if (!decoded) {
+      showToast('無效的牌組代碼！');
+      return;
+    }
+    const validIds = decoded.cardIds.filter((id) => allCards.some((c) => c.id === id));
+    if (validIds.length === 0) {
+      showToast('代碼中沒有可用的卡牌！');
+      return;
+    }
+    const newId = Date.now();
+    createDeck(`${decoded.name} (匯入)`, validIds, newId, null);
+    navigate(`/studio/edit/${newId}`);
+  };
 
   const resolveCover = (deck) => {
     const coverId =
@@ -24,6 +56,8 @@ function DeckListPage() {
 
   return (
     <div className="deck-list-page">
+      {toast && <div className="studio-toast">{toast}</div>}
+
       <div className="deck-list-page-header">
         <h1>卡牌工坊 <span>/ 我的牌組</span></h1>
       </div>
@@ -32,6 +66,11 @@ function DeckListPage() {
         <div className="deck-card create-new" onClick={() => navigate('/studio/new')}>
           <div className="create-new-icon">➕</div>
           <div className="create-new-label">建立新牌組</div>
+        </div>
+
+        <div className="deck-card create-new" onClick={handleImport}>
+          <div className="create-new-icon">📥</div>
+          <div className="create-new-label">從代碼匯入</div>
         </div>
 
         {decks.map((deck) => {
@@ -61,6 +100,13 @@ function DeckListPage() {
                   onClick={() => navigate(`/studio/edit/${deck.deckId}`)}
                 >
                   編輯
+                </button>
+                <button
+                  className="deck-card-btn duplicate"
+                  onClick={() => handleDuplicate(deck)}
+                  title="複製為副本"
+                >
+                  複製
                 </button>
                 <button
                   className="deck-card-btn delete"
