@@ -1,4 +1,10 @@
-# 15. 情境白噪音與無縫 BGM 轉場 (Ambient Audio & Seamless Transition)
+# 15. 情境白噪音與無縫 BGM 轉場 (Ambient Audio & Seamless Transition) ✅ 已完成
+
+> 實作摘要（2026-05-31）：
+> - `sounds.js`：BGM 改走獨立的主 gain 節點（與 SFX 分離），新增 `fadeBGM(target, duration)` 做線性漸弱/漸強；`startBGM` 重啟時還原主音量（清除前次漸弱）。
+> - **大廳環境音**：`HomePage` 於第一次互動後啟動既有 8-bit BGM（規避瀏覽器自動播放限制），右上角提供 🔊/🔇 開關；離開大廳不停止，讓音樂延續到對戰設定頁。
+> - **無縫轉場**：`SetupPage`「確認出戰」時 → `sfxBattleStart`（兼遇敵警報）＋ `fadeBGM(0, 0.8)` 漸弱 ＋ 黑屏遮罩 `.battle-transition-veil` 淡入，約 1 秒後 `stopBGM()` 並 `navigate('/battle')`，營造平靜→緊張的情緒曲線。
+> - 戰鬥中 BGM 維持原本的設定開關（預設靜音），未自動強制播放。
 
 ## 痛點分析
 大廳若是完全靜音，會顯得過於數位化與死寂；但如果切換進戰鬥畫面時，音樂瞬間生硬地切斷重播，則會嚴重破壞沉浸感。聽覺體驗往往是許多開發者容易忽略的細節。

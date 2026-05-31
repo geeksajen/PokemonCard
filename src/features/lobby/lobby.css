@@ -253,3 +253,17 @@
 .stats-history-deck { flex: 1; }
 .stats-history-opp { color: var(--theme-text-muted); }
 .stats-history-date { color: var(--theme-text-muted); font-size: 0.75rem; }
+
+/* ---- Seamless battle transition veil (spec 15) ---- */
+@keyframes battle-veil-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.battle-transition-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #000;
+  pointer-events: all;
+  animation: battle-veil-in 0.9s ease-in forwards;
+}

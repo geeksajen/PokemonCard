@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore, useCardStore, useStatsStore } from '../store';
 import { activePack } from '../themes/active';
 import { cardRepository } from '../api/CardRepository';
 import { getAceCard, getDominantEnergy, elementLabel, elementEmoji } from '../utils/deckInsights';
 import PlayerStatsModal from '../features/lobby/PlayerStatsModal';
+import { startBGM, stopBGM } from '../utils/sounds';
 
 const STARS_COUNT = 90;
 
@@ -46,6 +47,20 @@ function HomePage() {
     for (const [k, n] of Object.entries(elementCounts)) if (n > max) { max = n; top = k; }
     return top;
   }, [elementCounts]);
+
+  // 大廳環境音效：因瀏覽器自動播放限制，於第一次互動後才啟動（可由右上角按鈕開關）。
+  // 不在離開大廳時停止，讓 BGM 延續到對戰設定頁，再由「確認出戰」漸弱收尾。
+  const [bgmOn, setBgmOn] = useState(true);
+  useEffect(() => {
+    if (!bgmOn) return;
+    const start = () => { startBGM(); window.removeEventListener('pointerdown', start); };
+    window.addEventListener('pointerdown', start);
+    return () => window.removeEventListener('pointerdown', start);
+  }, [bgmOn]);
+  const toggleBgm = () => setBgmOn((on) => {
+    if (on) stopBGM(); else startBGM();
+    return !on;
+  });
 
   // 滑鼠視差偏移（讓王牌看板有立體感）
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
@@ -163,8 +178,21 @@ function HomePage() {
           </span>
         </div>
 
-        {/* Right spacer (mirrors player card width) */}
-        <div style={{ width: '200px' }} />
+        {/* Right: ambience toggle (mirrors player card width) */}
+        <div style={{ width: '200px', display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onClick={toggleBgm}
+            title={bgmOn ? '關閉大廳音樂' : '開啟大廳音樂'}
+            style={{
+              width: '42px', height: '42px', borderRadius: '50%',
+              background: 'var(--theme-panel-light)', border: '1px solid var(--theme-glass-border)',
+              color: 'var(--theme-text-main)', cursor: 'pointer', fontSize: '1.1rem',
+              backdropFilter: 'var(--theme-blur)',
+            }}
+          >
+            {bgmOn ? '🔊' : '🔇'}
+          </button>
+        </div>
       </div>
 
       {/* ── Left sidebar ── */}

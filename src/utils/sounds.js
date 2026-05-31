@@ -155,6 +155,29 @@ export const sfxEvolve = () => {
 
 let bgmInterval = null;
 let currentStep = 0;
+let bgmGain = null; // BGM 主音量節點，供無縫漸弱/漸強
+
+// BGM 專用的主 gain（與 SFX 分離，方便整體淡入淡出）
+const getBgmGain = () => {
+  const c = getCtx();
+  if (!bgmGain) {
+    bgmGain = c.createGain();
+    bgmGain.gain.setValueAtTime(1, c.currentTime);
+    bgmGain.connect(c.destination);
+  }
+  return bgmGain;
+};
+
+// 將 BGM 主音量在 duration 秒內線性漸變到 target（0=靜音）。
+export const fadeBGM = (target, duration = 0.8) => {
+  if (!bgmGain) return;
+  const c = getCtx();
+  const now = c.currentTime;
+  const current = bgmGain.gain.value;
+  bgmGain.gain.cancelScheduledValues(now);
+  bgmGain.gain.setValueAtTime(current, now);
+  bgmGain.gain.linearRampToValueAtTime(Math.max(0, target), now + duration);
+};
 
 // 簡單的寶可夢風格冒險和弦行進 (C -> F -> G -> C)
 const melody = [
@@ -186,7 +209,7 @@ const playBGMStep = () => {
     mGain.gain.setValueAtTime(0.04, time); // 背景音量小一點
     mGain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
     mOsc.connect(mGain);
-    mGain.connect(c.destination);
+    mGain.connect(getBgmGain());
     mOsc.start(time);
     mOsc.stop(time + 0.15);
   }
@@ -202,7 +225,7 @@ const playBGMStep = () => {
       bGain.gain.setValueAtTime(0.08, time);
       bGain.gain.exponentialRampToValueAtTime(0.001, time + 0.3);
       bOsc.connect(bGain);
-      bGain.connect(c.destination);
+      bGain.connect(getBgmGain());
       bOsc.start(time);
       bOsc.stop(time + 0.3);
     }
@@ -214,8 +237,10 @@ const playBGMStep = () => {
 export const startBGM = () => {
   if (bgmInterval) return; // 已經在播放
   currentStep = 0;
-  getCtx().resume(); // 喚醒 AudioContext
+  const c = getCtx();
+  c.resume(); // 喚醒 AudioContext
   AudioSettings.bgmMuted = false;
+  getBgmGain().gain.setValueAtTime(1, c.currentTime); // 還原主音量（清除前次漸弱）
   bgmInterval = setInterval(playBGMStep, 150); // 150ms 的 step (節奏輕快)
 };
 

@@ -4,7 +4,7 @@ import { useCardStore } from '../store';
 import { activePack } from '../themes/active';
 import { cardRepository } from '../api/CardRepository';
 import { getDominantEnergy, elementColorVar, elementEmoji } from '../utils/deckInsights';
-import { sfxBattleStart } from '../utils/sounds';
+import { sfxBattleStart, fadeBGM, stopBGM } from '../utils/sounds';
 import DeckBoxCarousel from '../features/lobby/DeckBoxCarousel';
 import '../features/lobby/lobby.css';
 
@@ -17,6 +17,7 @@ function SetupPage() {
   const [p1Theme, setP1Theme] = useState(themes[0]?.id ?? '');
   const [p2Theme, setP2Theme] = useState(themes[1]?.id ?? themes[0]?.id ?? '');
   const [weaknessEnabled, setWeaknessEnabled] = useState(true); // 屬性相剋，預設啟用
+  const [transitioning, setTransitioning] = useState(false); // 黑屏轉場中
   const vsAI = true; // 雙人熱座模式暫時關閉（未來改為連線對戰）
 
   const customThemes = decks.map(d => ({
@@ -54,14 +55,21 @@ function SetupPage() {
   const p2Color = allThemes.find(t => t.id === p2Theme)?.color || themes[1].color;
 
   const handleStart = () => {
-    sfxBattleStart(); // 爆發性點擊回饋音
+    if (transitioning) return;
+    sfxBattleStart();        // 爆發性點擊回饋音（兼作遇敵警報）
+    fadeBGM(0, 0.8);         // 大廳 BGM 無縫漸弱
+    setTransitioning(true);  // 黑屏轉場
     const finalP1 = p1Theme.startsWith('custom_')
       ? customThemes.find(t => t.id === p1Theme).deck
       : p1Theme;
     const finalP2 = p2Theme.startsWith('custom_')
       ? customThemes.find(t => t.id === p2Theme).deck
       : p2Theme;
-    navigate('/battle', { state: { p1Theme: finalP1, p2Theme: finalP2, vsAI, weaknessEnabled } });
+    // 等漸弱與黑屏動畫完整播放（約 1 秒）後再進場
+    setTimeout(() => {
+      stopBGM();
+      navigate('/battle', { state: { p1Theme: finalP1, p2Theme: finalP2, vsAI, weaknessEnabled } });
+    }, 1000);
   };
 
   return (
@@ -207,6 +215,9 @@ function SetupPage() {
           <span className="battle-btn-label">確認出戰 ⚔️</span>
         </button>
       </div>
+
+      {/* 無縫黑屏轉場：配合 BGM 漸弱，平滑進入對戰 */}
+      {transitioning && <div className="battle-transition-veil" />}
     </div>
   );
 }
