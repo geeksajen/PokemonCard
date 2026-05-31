@@ -25,7 +25,26 @@ const toggle = (arr, value) =>
 
 const COPY_LIMIT = 4; // 同名卡上限（基本能量除外）
 
-const CardLibrary = ({ allCards, onAddCard, onInspectCard, deckCount, deckCardCounts = {} }) => {
+// 跨區拖曳的自訂 MIME 型別（型別名本身即可在 dragover 階段辨識來源）
+const DRAG_FROM_LIBRARY = 'application/x-pk-from-library';
+const DRAG_FROM_DECK = 'application/x-pk-from-deck';
+
+const CardLibrary = ({ allCards, onAddCard, onInspectCard, deckCount, deckCardCounts = {}, onDropRemoveCard }) => {
+  // 拖曳移除：牌組項目拖到卡牌庫放開 → 移除一張
+  const [dropActive, setDropActive] = useState(false);
+  const handleLibDragOver = (e) => {
+    if (!e.dataTransfer.types.includes(DRAG_FROM_DECK)) return;
+    e.preventDefault();
+    setDropActive(true);
+  };
+  const handleLibDragLeave = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) setDropActive(false);
+  };
+  const handleLibDrop = (e) => {
+    const cardId = e.dataTransfer.getData(DRAG_FROM_DECK);
+    setDropActive(false);
+    if (cardId && onDropRemoveCard) onDropRemoveCard(cardId);
+  };
   // 多選篩選（空陣列＝不限）。屬性與類型以 AND 組合，達成「所見即所搜」。
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedElements, setSelectedElements] = useState([]);
@@ -54,7 +73,12 @@ const CardLibrary = ({ allCards, onAddCard, onInspectCard, deckCount, deckCardCo
   const hasActiveFilter = selectedTypes.length > 0 || selectedElements.length > 0;
 
   return (
-    <div className="card-library">
+    <div
+      className={`card-library ${dropActive ? 'studio-drop-active' : ''}`}
+      onDragOver={handleLibDragOver}
+      onDragLeave={handleLibDragLeave}
+      onDrop={handleLibDrop}
+    >
       <div className="library-filters">
         <input
           type="text"
@@ -115,6 +139,11 @@ const CardLibrary = ({ allCards, onAddCard, onInspectCard, deckCount, deckCardCo
             <div
               key={card.id}
               className={`library-card-wrapper ${isDisabled ? 'disabled' : ''}`}
+              draggable={!isDisabled}
+              onDragStart={(e) => {
+                e.dataTransfer.setData(DRAG_FROM_LIBRARY, card.id);
+                e.dataTransfer.effectAllowed = 'copy';
+              }}
               onClick={() => !isDisabled && onAddCard(card)}
               onContextMenu={(e) => { e.preventDefault(); onInspectCard(card); }}
             >

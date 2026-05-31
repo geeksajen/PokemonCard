@@ -1,10 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CardTypes } from '../../models/cards';
 
 const DECK_MAX = 27;
+const DRAG_FROM_LIBRARY = 'application/x-pk-from-library';
+const DRAG_FROM_DECK = 'application/x-pk-from-deck';
 
-const DeckList = ({ deckCards, onRemoveCard, onSave, onClear, onAutoBuild, onCoverSelect, coverCardId }) => {
+const DeckList = ({ deckCards, onRemoveCard, onSave, onClear, onAutoBuild, onCoverSelect, coverCardId, onDropAddCard }) => {
   const totalCount = deckCards.length;
+
+  // 拖曳加入：庫存卡拖到此面板放開 → 加入牌組
+  const [dropActive, setDropActive] = useState(false);
+  const handleDeckDragOver = (e) => {
+    if (!e.dataTransfer.types.includes(DRAG_FROM_LIBRARY)) return;
+    e.preventDefault();
+    setDropActive(true);
+  };
+  const handleDeckDragLeave = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) setDropActive(false);
+  };
+  const handleDeckDrop = (e) => {
+    const cardId = e.dataTransfer.getData(DRAG_FROM_LIBRARY);
+    setDropActive(false);
+    if (cardId && onDropAddCard) onDropAddCard(cardId);
+  };
 
   // Group cards by ID to show counts
   const groupedCards = deckCards.reduce((acc, card) => {
@@ -36,9 +54,14 @@ const DeckList = ({ deckCards, onRemoveCard, onSave, onClear, onAutoBuild, onCov
           {title} ({cards.reduce((sum, c) => sum + c.count, 0)})
         </h3>
         {cards.map(card => (
-          <div 
-            key={card.id} 
+          <div
+            key={card.id}
             className="deck-list-item"
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData(DRAG_FROM_DECK, card.id);
+              e.dataTransfer.effectAllowed = 'move';
+            }}
             onClick={() => onRemoveCard(card.id)}
             onContextMenu={(e) => { e.preventDefault(); onCoverSelect(card.id); }}
           >
@@ -54,7 +77,12 @@ const DeckList = ({ deckCards, onRemoveCard, onSave, onClear, onAutoBuild, onCov
   };
 
   return (
-    <div className="deck-builder-panel">
+    <div
+      className={`deck-builder-panel ${dropActive ? 'studio-drop-active' : ''}`}
+      onDragOver={handleDeckDragOver}
+      onDragLeave={handleDeckDragLeave}
+      onDrop={handleDeckDrop}
+    >
       <div className="deck-header">
         <h2 className="deck-count">{totalCount} <span>/ 27 張</span></h2>
 

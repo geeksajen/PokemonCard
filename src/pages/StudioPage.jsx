@@ -6,6 +6,7 @@ import { CardTypes } from '../models/cards';
 import CardLibrary from '../features/studio/CardLibrary';
 import DeckList from '../features/studio/DeckList';
 import CardInspectModal from '../features/battle/CardInspectModal';
+import { sfxDeckAdd, sfxDeckRemove } from '../utils/sounds';
 import '../studio.css';
 
 function StudioPage() {
@@ -53,9 +54,16 @@ function StudioPage() {
     }
 
     setDeckCards(prev => [...prev, card]);
+    sfxDeckAdd();
     if (!coverCardId && card.type === CardTypes.POKEMON) {
       setCoverCardId(card.id);
     }
+  };
+
+  // 拖曳：把左側庫存卡拖到右側牌組區放開 → 依 id 解析後加入
+  const handleDropAddCard = (cardId) => {
+    const card = allCards.find(c => c.id === cardId);
+    if (card) handleAddCard(card);
   };
 
   const handleRemoveCard = (cardId) => {
@@ -64,6 +72,7 @@ function StudioPage() {
     const newDeck = [...deckCards];
     newDeck.splice(idx, 1);
     setDeckCards(newDeck);
+    sfxDeckRemove();
     // 若封面卡已不在牌組中，改指向剩餘的第一隻寶可夢，否則清除
     if (coverCardId && !newDeck.some(c => c.id === coverCardId)) {
       const fallback = newDeck.find(c => c.type === CardTypes.POKEMON);
@@ -167,6 +176,7 @@ function StudioPage() {
         onInspectCard={setInspectCard}
         deckCount={deckCards.length}
         deckCardCounts={deckCardCounts}
+        onDropRemoveCard={handleRemoveCard}
       />
       
       <div style={{ flex: 4, display: 'flex', flexDirection: 'column' }}>
@@ -193,14 +203,15 @@ function StudioPage() {
           </div>
           <div style={{ width: '90px' }} />
         </div>
-        <DeckList 
-          deckCards={deckCards} 
-          onRemoveCard={handleRemoveCard} 
-          onSave={handleSave} 
+        <DeckList
+          deckCards={deckCards}
+          onRemoveCard={handleRemoveCard}
+          onSave={handleSave}
           onClear={handleClear}
           onAutoBuild={handleAutoBuild}
           onCoverSelect={setCoverCardId}
           coverCardId={coverCardId}
+          onDropAddCard={handleDropAddCard}
         />
       </div>
 

@@ -118,6 +118,19 @@ export const sfxTurnStart = () => {
   setTimeout(() => playTone(1320, 'triangle', 0.2, 0.13, 0.004, 0.2), 60); // 上揚泛音
 };
 
+// 🃏 牌組工坊：加入卡牌（清脆的「裝入卡套」摩擦聲＋上揚雙音）
+export const sfxDeckAdd = () => {
+  playNoise(0.05, 0.08, 4200);
+  playTone(660, 'triangle', 0.08, 0.11, 0.003, 0.08);
+  setTimeout(() => playTone(990, 'triangle', 0.08, 0.09, 0.003, 0.08), 40);
+};
+
+// 🃏 牌組工坊：移除卡牌（輕快的「抽出」下行聲）
+export const sfxDeckRemove = () => {
+  playTone(520, 'sine', 0.08, 0.10, 0.003, 0.08);
+  setTimeout(() => playTone(360, 'sine', 0.1, 0.09, 0.003, 0.1), 45);
+};
+
 // ✨ 進化高光：上行琶音＋閃亮泛音，營造蛻變的史詩感
 export const sfxEvolve = () => {
   const notes = [523, 659, 784, 1047, 1319]; // C5 E5 G5 C6 E6 上行
