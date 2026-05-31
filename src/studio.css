@@ -151,9 +151,13 @@
 }
 
 .library-card-wrapper.disabled {
+  cursor: not-allowed;
+}
+
+/* 變暗只作用於卡面本身，讓「已達上限」標籤維持清晰 */
+.library-card-wrapper.disabled .lib-card-inner {
   opacity: 0.4;
   filter: grayscale(100%);
-  cursor: not-allowed;
 }
 
 .library-card-wrapper.disabled:hover {
@@ -292,13 +296,48 @@
   gap: 10px;
 }
 
+/* 同名卡數量圓形徽章（spec 08） */
 .deck-list-item .item-count {
-  background: rgba(0,0,0,0.5);
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: bold;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--theme-panel-dark);
+  border: 1px solid var(--theme-glass-border);
+  font-weight: 800;
   font-family: monospace;
+  font-size: 0.85rem;
   color: var(--color-energy);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+/* 達到同名上限（4 張）→ 金色實心徽章 */
+.deck-list-item .item-count.maxed {
+  background: var(--color-energy);
+  color: #000;
+  border-color: var(--color-energy);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-energy) 70%, transparent);
+}
+
+/* 卡牌庫：同名卡達上限時的「已達上限」標籤 */
+.lib-limit-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-8deg);
+  background: var(--color-danger);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 5;
 }
 
 .deck-actions {

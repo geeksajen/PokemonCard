@@ -43,7 +43,7 @@ const DeckList = ({ deckCards, onRemoveCard, onSave, onClear, onAutoBuild, onCov
             onContextMenu={(e) => { e.preventDefault(); onCoverSelect(card.id); }}
           >
             <div className="item-info">
-              <span className="item-count">x{card.count}</span>
+              <span className={`item-count ${card.type !== CardTypes.ENERGY && card.count >= 4 ? 'maxed' : ''}`}>×{card.count}</span>
               <span>{card.name}</span>
             </div>
             {coverCardId === card.id && <span style={{ fontSize: '0.8rem', color: '#fbbf24' }}>★ 封面</span>}

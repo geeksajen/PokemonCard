@@ -23,7 +23,9 @@ const ELEMENT_FILTERS = [
 const toggle = (arr, value) =>
   arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
 
-const CardLibrary = ({ allCards, onAddCard, onInspectCard, deckCount }) => {
+const COPY_LIMIT = 4; // 同名卡上限（基本能量除外）
+
+const CardLibrary = ({ allCards, onAddCard, onInspectCard, deckCount, deckCardCounts = {} }) => {
   // 多選篩選（空陣列＝不限）。屬性與類型以 AND 組合，達成「所見即所搜」。
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedElements, setSelectedElements] = useState([]);
@@ -105,7 +107,10 @@ const CardLibrary = ({ allCards, onAddCard, onInspectCard, deckCount }) => {
 
       <div className="library-grid">
         {filteredCards.map((card) => {
-          const isDisabled = deckCount >= 27;
+          // 同名卡達上限（基本能量不限）→ 變暗且不可再加入
+          const atLimit = card.type !== CardTypes.ENERGY && (deckCardCounts[card.id] || 0) >= COPY_LIMIT;
+          const deckFull = deckCount >= 27;
+          const isDisabled = deckFull || atLimit;
           return (
             <div
               key={card.id}
@@ -113,7 +118,10 @@ const CardLibrary = ({ allCards, onAddCard, onInspectCard, deckCount }) => {
               onClick={() => !isDisabled && onAddCard(card)}
               onContextMenu={(e) => { e.preventDefault(); onInspectCard(card); }}
             >
-              <Card card={card} isFaceDown={false} />
+              <div className="lib-card-inner">
+                <Card card={card} isFaceDown={false} />
+              </div>
+              {atLimit && <span className="lib-limit-badge">已達上限</span>}
             </div>
           );
         })}

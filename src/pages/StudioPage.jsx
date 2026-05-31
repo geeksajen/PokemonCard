@@ -143,6 +143,13 @@ function StudioPage() {
     showToast('牌組儲存成功！');
   };
 
+  // 各卡張數（供卡牌庫判定同名卡是否已達上限而變暗）
+  const deckCardCounts = useMemo(() => {
+    const counts = {};
+    for (const c of deckCards) counts[c.id] = (counts[c.id] || 0) + 1;
+    return counts;
+  }, [deckCards]);
+
   const coverCard = coverCardId ? allCards.find(c => c.id === coverCardId) : null;
   const coverImageUrl = coverCard ? coverCard.image : '';
 
@@ -156,9 +163,10 @@ function StudioPage() {
 
       <CardLibrary
         allCards={allCards}
-        onAddCard={handleAddCard} 
-        onInspectCard={setInspectCard} 
+        onAddCard={handleAddCard}
+        onInspectCard={setInspectCard}
         deckCount={deckCards.length}
+        deckCardCounts={deckCardCounts}
       />
       
       <div style={{ flex: 4, display: 'flex', flexDirection: 'column' }}>
