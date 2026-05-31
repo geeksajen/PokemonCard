@@ -11,6 +11,7 @@ import LogDrawer from './arena/LogDrawer';
 import TurnTransition from './arena/TurnTransition';
 import TurnBanner from './arena/TurnBanner';
 import DeckSearchModal from './arena/DeckSearchModal';
+import DiscardViewerModal from './arena/DiscardViewerModal';
 import GameOverPanel from './arena/GameOverPanel';
 import CoinFlipScreen from './arena/CoinFlipScreen';
 import { useGameEngine } from '../../hooks/useGameEngine';
@@ -27,6 +28,8 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
   const [showSettings, setShowSettings] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [inspectCard, setInspectCard] = useState(null);
+  // 棄牌堆檢視器（純 UI）：{ title, cards } 或 null
+  const [discardView, setDiscardView] = useState(null);
   // 結算後的盤面檢視模式（純 UI toggle）：隱藏結算面板讓玩家覆盤、截圖
   const [showReviewMode, setShowReviewMode] = useState(false);
 
@@ -199,6 +202,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
             discardTop={topPlayer.discardPile[topPlayer.discardPile.length - 1]}
             discardCount={topPlayer.discardPile.length}
             labelOnTop={false}
+            onDiscardClick={() => setDiscardView({ title: `${topLabel} 的棄牌堆`, cards: topPlayer.discardPile })}
           />
         </div>
 
@@ -209,6 +213,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
             discardTop={bottomPlayer.discardPile[bottomPlayer.discardPile.length - 1]}
             discardCount={bottomPlayer.discardPile.length}
             labelOnTop={true}
+            onDiscardClick={() => setDiscardView({ title: `${bottomLabel} 的棄牌堆`, cards: bottomPlayer.discardPile })}
           />
         </div>
 
@@ -340,6 +345,16 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
 
       {/* 拖曳浮層 - 最上層 */}
       <DragOverlay dragState={dragState} />
+
+      {/* 棄牌堆檢視器 */}
+      {discardView && (
+        <DiscardViewerModal
+          title={discardView.title}
+          cards={discardView.cards}
+          onClose={() => setDiscardView(null)}
+          onInspect={setInspectCard}
+        />
+      )}
 
       {/* 卡牌檢視器 */}
       <CardInspectModal card={inspectCard} onClose={() => setInspectCard(null)} />

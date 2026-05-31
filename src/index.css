@@ -1149,3 +1149,89 @@ button:disabled {
 .board-stage.cinematic-attack .board-active {
   filter: brightness(1.12) drop-shadow(0 0 18px rgba(255, 255, 255, 0.25));
 }
+
+/* --- 牌堆計數徽章 & 可點擊棄牌堆 (Deck Count Badge & Discard Click) --- */
+.pile-count-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #fff;
+  border: 2px solid var(--theme-panel-dark);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  z-index: 2;
+  pointer-events: none;
+}
+.pile-slot-clickable {
+  cursor: pointer;
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+.pile-slot-clickable:hover {
+  transform: translateY(-4px) scale(1.04);
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+}
+
+/* --- 棄牌堆檢視器 (Discard Pile Viewer) --- */
+.discard-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--theme-panel-dark);
+  backdrop-filter: var(--theme-blur);
+  -webkit-backdrop-filter: var(--theme-blur);
+  cursor: pointer;
+  animation: inspect-overlay-in 0.25s ease-out forwards;
+}
+.discard-viewer-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(92vw, 900px);
+  max-height: 86vh;
+  padding: 20px 22px;
+  border-radius: 18px;
+  background: var(--theme-panel-base);
+  border: 1px solid var(--theme-glass-border);
+  box-shadow: var(--theme-shadow);
+  cursor: default;
+  animation: inspect-card-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.discard-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--theme-text-main);
+  margin-bottom: 14px;
+}
+.discard-viewer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 16px;
+  justify-items: center;
+  overflow-y: auto;
+  padding: 6px 4px 12px;
+}
+.discard-viewer-empty {
+  text-align: center;
+  color: var(--theme-text-muted);
+  padding: 48px 0;
+  font-size: 1rem;
+}
+.discard-viewer-hint {
+  text-align: center;
+  color: var(--theme-text-muted);
+  font-size: 0.78rem;
+  margin-top: 12px;
+}
