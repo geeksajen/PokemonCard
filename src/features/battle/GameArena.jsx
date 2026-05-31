@@ -155,7 +155,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
         />
       )}
 
-      <LogDrawer open={showLog} logs={gameState.logs} onClose={() => setShowLog(false)} />
+      <LogDrawer open={showLog} logs={gameState.logs} onClose={() => setShowLog(false)} vsAI={vsAI} />
 
       {showTurnTransition && !gameState.winner && (
         <TurnTransition isPlayer1Turn={isPlayer1Turn} onContinue={handleTurnTransitionClick} vsAI={vsAI} />

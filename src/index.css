@@ -550,6 +550,7 @@ button:disabled {
 }
 .log-player1 { color: #60a5fa; font-weight: bold; }
 .log-player2 { color: #f87171; font-weight: bold; }
+.log-system { color: var(--color-energy); font-weight: bold; }
 .log-time { color: var(--theme-text-muted); font-size: 0.8rem; margin-top: 4px; display: block; }
 
 /* Turn Transition Splash Screen */
