@@ -14,7 +14,7 @@ const getEnergyColor = (type) => {
   }
 };
 
-const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
+const Card = ({ card, onClick, isSelectable, isFaceDown, isEvolving = false, onField = false }) => {
   if (isFaceDown) {
     return (
       <div 
@@ -44,9 +44,18 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
   const rarity  = getCardRarity(card);
   const bgStyle = rarity.background ?? getEnergyColor(card.energyType);
 
+  // 疊牌陰影：場上已進化的寶可夢（stage≥1）以位移的卡片輪廓陰影模擬「底下墊著退化型」，
+  // 層數依進化階級（stage1 一層、stage2 兩層）。顏色一律走 token，box-shadow 會跟著卡片圓角。
+  const stackLayer = (o) =>
+    `${o}px ${o}px 0 0 var(--palette-card-stack), ${o}px ${o}px 0 1px var(--palette-card-stack-edge)`;
+  const stage = onField && card.type === CardTypes.POKEMON ? (card.stage || 0) : 0;
+  const stackShadow = stage >= 2 ? `${stackLayer(5)}, ${stackLayer(10)}` : stage >= 1 ? stackLayer(5) : '';
+  const baseShadow = isSelectable ? rarity.cardShadow.selected : rarity.cardShadow.normal;
+  const boxShadow = stackShadow ? `${stackShadow}, ${baseShadow}` : baseShadow;
+
   return (
     <div
-      className={`glass-panel card-shine-host ${isSelectable ? 'animate-fade-in' : ''}`}
+      className={`glass-panel card-shine-host ${isEvolving ? 'evolve-flash' : ''} ${isSelectable ? 'animate-fade-in' : ''}`}
       onClick={isSelectable ? () => onClick(card) : undefined}
       style={{
         width: 'var(--card-width)',
@@ -60,7 +69,7 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
         cursor: isSelectable ? 'pointer' : 'default',
         transform: isSelectable ? 'translateY(0)' : 'none',
         transition: 'all 0.2s ease',
-        boxShadow: isSelectable ? rarity.cardShadow.selected : rarity.cardShadow.normal,
+        boxShadow,
         border: rarity.border,
       }}
       onMouseEnter={(e) => {
@@ -178,6 +187,9 @@ const Card = ({ card, onClick, isSelectable, isFaceDown }) => {
 
       {/* 閃卡反光層：懸停時掃光；高稀有度（rarity.foil）走彩虹雷射，其餘為素白 */}
       <div className={`card-shine ${rarity.foil ? 'card-shine-holo' : ''}`} />
+
+      {/* 進化高光：剛完成進化時的瞬間白色閃光 */}
+      {isEvolving && <div className="evolve-flash-overlay" />}
     </div>
   );
 };

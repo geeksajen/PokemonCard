@@ -3,7 +3,7 @@ import Card from './Card';
 
 const EMPTY_VALID_ZONES = new Set();
 
-const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, combatText, onBenchPointerDragStart, registerZone, dragState, onInspect, pendingAction, validZones = EMPTY_VALID_ZONES, faceDown = false, attackReady = false }) => {
+const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick, onDropActive, onDropBench, combatText, onBenchPointerDragStart, registerZone, dragState, onInspect, pendingAction, validZones = EMPTY_VALID_ZONES, faceDown = false, attackReady = false, evolvedCardId = null }) => {
   // 攻擊就緒：出戰寶可夢能量已滿足招式需求（由 GameArena 經 canAttack 判定後傳入）
   const showAttackReady = attackReady && !!activePokemon;
 
@@ -113,6 +113,8 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
               isFaceDown={faceDown}
               isSelectable={!faceDown && !!onActiveClick}
               onClick={() => onActiveClick && onActiveClick(activePokemon)}
+              onField
+              isEvolving={!faceDown && evolvedCardId === activePokemon.instanceId}
             />
           </div>
         ) : (
@@ -172,6 +174,8 @@ const Board = ({ activePokemon, bench, isTopPlayer, onActiveClick, onBenchClick,
                     isFaceDown={faceDown}
                     isSelectable={!faceDown && !!onBenchClick}
                     onClick={() => onBenchClick && onBenchClick(benchPokemon, idx)}
+                    onField
+                    isEvolving={!faceDown && evolvedCardId === benchPokemon.instanceId}
                   />
                 </div>
               ) : (

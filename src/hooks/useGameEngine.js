@@ -36,6 +36,7 @@ import {
   sfxVictory,
   sfxError,
   sfxTurnStart,
+  sfxEvolve,
   AudioSettings,
   startBGM,
   stopBGM,
@@ -43,6 +44,8 @@ import {
 
 // 「你的回合」橫幅顯示時長（ms）；之後才開始抽牌
 const TURN_BANNER_MS = 1100;
+// 進化高光動畫時長（ms），與 .evolve-flash CSS 動畫一致
+const EVOLVE_FLASH_MS = 800;
 
 // 集中管理遊戲狀態、UI 狀態與所有副作用（state 更新 / 音效 / 動畫 / 提示）。
 // 規則判定一律委派給 src/game/rules.js 的純函式。
@@ -69,6 +72,8 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
   const [gameOverStage, setGameOverStage] = useState(null);
   // 「你的回合」過場橫幅：null 或 { id }（id 變更即重播動畫）
   const [turnBanner, setTurnBanner] = useState(null);
+  // 進化高光：剛完成進化的卡牌 instanceId（短暫存在，供 Card 播放閃光動畫）
+  const [evolvedCardId, setEvolvedCardId] = useState(null);
 
   useEffect(() => {
     const initialState = createInitialGameState(p1Theme, p2Theme, { weaknessResistance });
@@ -129,12 +134,22 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
     return () => clearTimeout(t);
   }, [gameState?.winner]);
 
+  // 進化高光：依規則層回傳的 didEvolve metadata 觸發專屬音效與短暫的閃光狀態。
+  // 人類與 AI 兩條出牌路徑共用，確保兩側進化都有一致演出。
+  const flashEvolution = (result) => {
+    if (!result.ok || !result.didEvolve) return;
+    sfxEvolve();
+    setEvolvedCardId(result.evolvedInstanceId);
+    setTimeout(() => setEvolvedCardId(null), EVOLVE_FLASH_MS);
+  };
+
   // 套用一個規則層回傳的 { ok, state, error }：成功播音效，失敗時視情況提示
   const applyResult = (result) => {
     if (result.ok) {
       setGameState(result.state);
       setSelectedCard(null);
       sfxPlace();
+      flashEvolution(result);
     } else if (result.error) {
       showToast(result.error);
       sfxError();
@@ -207,6 +222,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
       working = result.state;
       setGameState(result.state);
       sfxPlace();
+      flashEvolution(result); // AI 進化也播放高光，與人類一致
       setTimeout(step, 650);
     };
 
@@ -551,6 +567,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
     gameOverStage,
     coinFlip,
     turnBanner,
+    evolvedCardId,
     // 動作
     handleReadyClick,
     handleCoinFlipDone,

@@ -30,6 +30,10 @@
   --palette-card-back:        linear-gradient(135deg, #1e40af, #1e3a8a);
   --palette-card-back-accent: #facc15;
 
+  /* Evolved-pokemon stack indicator (offset card silhouettes peeking out) */
+  --palette-card-stack:       #cbd5e1;
+  --palette-card-stack-edge:  #475569;
+
   /* Card class frames (consumed by RARITY_CONFIG in models/cards.js) */
   --palette-class-basic:          linear-gradient(135deg, #334155, #0f172a);
   --palette-class-stage1:         linear-gradient(135deg, #4f46e5, #a855f7, #eab308);
@@ -115,6 +119,10 @@
 
   --card-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
   --card-shadow-hover: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+
+  /* 淺色主題下的疊牌色：偏白卡身、淺灰邊 */
+  --palette-card-stack:       #f1f5f9;
+  --palette-card-stack-edge:  #94a3b8;
 }
 
 * {
@@ -1093,4 +1101,30 @@ button:disabled {
   text-shadow: 3px 3px 0 #000, 0 0 24px rgba(255, 255, 255, 0.8);
   white-space: nowrap;
   transform: skewX(12deg);  /* 抵銷橫幅的傾斜，讓文字保持正立 */
+}
+
+/* --- 進化高光 (Evolution Flash) --- */
+/* 卡牌進化瞬間：整張卡 brightness 暴衝 + 一層白色 wash 由不透明淡出，模擬經典進化發光。 */
+@keyframes evolve-brighten {
+  0%   { filter: brightness(1) saturate(1); }
+  20%  { filter: brightness(2) saturate(1.5); }
+  100% { filter: brightness(1) saturate(1); }
+}
+.evolve-flash {
+  animation: evolve-brighten 0.8s ease-out;
+}
+@keyframes evolve-flash-wash {
+  0%   { opacity: 0; }
+  12%  { opacity: 0.95; }
+  100% { opacity: 0; }
+}
+.evolve-flash-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(circle at 50% 45%, #ffffff, rgba(255, 255, 255, 0.85));
+  opacity: 0;
+  animation: evolve-flash-wash 0.8s ease-out forwards;
 }

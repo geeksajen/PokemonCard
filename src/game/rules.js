@@ -92,7 +92,8 @@ const playPokemon = (state, playerId, card, location) => {
     } else {
       pushLog(newState, playerId, `將${zoneLabel}的 ${existing.name} 進化成 ${evolved.name}！`);
     }
-    return { ok: true, state: newState };
+    // 回傳進化 metadata（比照 applyAttackDamage 的慣例），供編排層觸發進化高光動畫。
+    return { ok: true, state: newState, didEvolve: true, evolvedInstanceId: evolved.instanceId };
   }
 
   if (!existing && card.stage) {

@@ -118,6 +118,18 @@ export const sfxTurnStart = () => {
   setTimeout(() => playTone(1320, 'triangle', 0.2, 0.13, 0.004, 0.2), 60); // 上揚泛音
 };
 
+// ✨ 進化高光：上行琶音＋閃亮泛音，營造蛻變的史詩感
+export const sfxEvolve = () => {
+  const notes = [523, 659, 784, 1047, 1319]; // C5 E5 G5 C6 E6 上行
+  notes.forEach((freq, i) => {
+    setTimeout(() => playTone(freq, 'triangle', 0.22, 0.13, 0.01, 0.22), i * 70);
+  });
+  setTimeout(() => {
+    playTone(2093, 'sine', 0.5, 0.10, 0.01, 0.5); // 高亮泛音收尾
+    playNoise(0.4, 0.05, 6000);                   // 細微閃亮噪音
+  }, 360);
+};
+
 // ========== 8-bit 背景音樂引擎 ==========
 
 let bgmInterval = null;
