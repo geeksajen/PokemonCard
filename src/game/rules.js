@@ -5,7 +5,7 @@
 // 慣例：
 //  - 成功的「放置/動作」會直接寫入 state.logs，並回傳 { ok: true, state }
 //  - 失敗時回傳 { ok: false, error }（error 為 null 代表「靜默無效」，不顯示提示）
-import { CardTypes, EnergyTypes, cardDatabase } from '../models/cards';
+import { CardTypes, EnergyTypes, cardDatabase, getAttacks } from '../models/cards';
 import { BENCH_MAX, PROFESSOR_DRAW, ENERGY_RETRIEVAL_MAX } from './constants';
 
 export const getOpponentId = (playerId) =>
@@ -16,7 +16,15 @@ export const pushLog = (state, player, action) => {
   state.logs.push({ player, action, time: Date.now() });
 };
 
-// 進化：繼承能量與既有傷害
+// 清除特殊狀態（離開戰鬥區時呼叫，對應實體 TCG 規則）
+const clearConditions = (pokemon) => {
+  if (!pokemon) return;
+  pokemon.poisoned = false;
+  pokemon.specialCondition = null;
+};
+
+// 進化：繼承能量與既有傷害。
+// 特殊狀態不繼承（回傳物以 evoCard 為基底，poisoned / specialCondition 自然歸零）＝進化解狀態。
 const evolveCard = (oldCard, evoCard) => {
   const damage = oldCard.maxHp - oldCard.currentHp;
   return {
@@ -150,6 +158,7 @@ const applyPotion = (state, playerId, card, location) => {
   const zoneLabel = location.zone === 'active' ? '戰鬥區' : '備戰區';
   target.currentHp = Math.min(target.maxHp, target.currentHp + heal);
   discardFromHand(p, card.instanceId);
+  if (card.type === CardTypes.TRAINER) newState.hasPlayedSupporterThisTurn = true;
   pushLog(newState, playerId, `對${zoneLabel}的 ${target.name} 使用了${card.name}，回復 ${heal} 點 HP`);
   return { ok: true, state: newState };
 };
@@ -166,10 +175,73 @@ const applySwitch = (state, playerId, card, location) => {
     return { ok: false, error: '戰鬥區沒有寶可夢可供交換，請直接推派上場！' };
   }
   const active = p.activePokemon;
+  clearConditions(active); // 離開戰鬥區即解除特殊狀態
   p.activePokemon = benchPokemon;
   p.bench[location.index] = active;
   discardFromHand(p, card.instanceId);
+  if (card.type === CardTypes.TRAINER) newState.hasPlayedSupporterThisTurn = true;
   pushLog(newState, playerId, `使用了寶可夢交換器，將 ${active.name} 換下、${benchPokemon.name} 上場`);
+  return { ok: true, state: newState };
+};
+
+// ---- 充電器：從棄牌區抽 1 張能量直附目標（不佔每回合手動填附）--------------
+const applyAttachFromDiscard = (state, playerId, card, location) => {
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+  const target = readSlot(p, location);
+  if (!target) return { ok: false, error: null };
+  // 由棄牌區頂端往下找：優先同屬性能量，其次任意能量
+  const findEnergyIdx = (predicate) => {
+    for (let i = p.discardPile.length - 1; i >= 0; i--) {
+      if (p.discardPile[i].type === CardTypes.ENERGY && predicate(p.discardPile[i])) return i;
+    }
+    return -1;
+  };
+  let idx = findEnergyIdx((e) => e.energyType === target.energyType);
+  if (idx === -1) idx = findEnergyIdx(() => true);
+  if (idx === -1) return { ok: false, error: '棄牌區沒有能量卡可以附加！' };
+  const [energy] = p.discardPile.splice(idx, 1);
+  target.attachedEnergy = [...(target.attachedEnergy || []), energy];
+  discardFromHand(p, card.instanceId);
+  if (card.type === CardTypes.TRAINER) newState.hasPlayedSupporterThisTurn = true;
+  const zoneLabel = location.zone === 'active' ? '戰鬥區' : '備戰區';
+  pushLog(newState, playerId, `使用了${card.name}，從棄牌區將 ${energy.name} 附加給${zoneLabel}的 ${target.name}`);
+  return { ok: true, state: newState };
+};
+
+// ---- 支援者：抽牌（比爾）---------------------------------------------------
+export const playDraw = (state, playerId, card) => {
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+  if (p.deck.length === 0) return { ok: false, error: '牌庫已經空了！' };
+  if (card.type === CardTypes.TRAINER) newState.hasPlayedSupporterThisTurn = true;
+  discardFromHand(p, card.instanceId);
+  const count = card.effect?.count ?? 2;
+  let drawn = 0;
+  for (let i = 0; i < count && p.deck.length > 0; i++) {
+    p.hand.push(p.deck.pop());
+    drawn++;
+  }
+  pushLog(newState, playerId, `使用了${card.name}，抽了 ${drawn} 張牌`);
+  return { ok: true, state: newState };
+};
+
+// ---- 支援者：手牌洗回牌庫再抽（希羅娜）------------------------------------
+export const playShuffleDraw = (state, playerId, card) => {
+  const newState = structuredClone(state);
+  const p = newState.players[playerId];
+  if (card.type === CardTypes.TRAINER) newState.hasPlayedSupporterThisTurn = true;
+  discardFromHand(p, card.instanceId); // 此卡本身進棄牌區，不洗回牌庫
+  p.deck.push(...p.hand);
+  p.hand = [];
+  p.deck.sort(() => Math.random() - 0.5);
+  const count = card.effect?.count ?? 6;
+  let drawn = 0;
+  for (let i = 0; i < count && p.deck.length > 0; i++) {
+    p.hand.push(p.deck.pop());
+    drawn++;
+  }
+  pushLog(newState, playerId, `使用了${card.name}，將手牌洗回牌庫並抽了 ${drawn} 張牌`);
   return { ok: true, state: newState };
 };
 
@@ -194,11 +266,13 @@ export const resolveBossOrders = (state, playerId, targetBenchIndex) => {
   if (!target) return { ok: false, error: '無效的目標' };
   
   const active = opp.activePokemon;
+  clearConditions(active); // 離開戰鬥區即解除特殊狀態
   opp.activePokemon = target;
   opp.bench[targetBenchIndex] = active;
-  
+
   discardFromHand(me, newState.pendingAction.cardId);
   newState.pendingAction = null;
+  newState.hasPlayedSupporterThisTurn = true;
   pushLog(newState, playerId, `使用老大的指令，將對手戰鬥區的 ${active.name} 與備戰區的 ${target.name} 互換！`);
   return { ok: true, state: newState };
 };
@@ -220,6 +294,7 @@ export const applyEscapeRope = (state, playerId, card) => {
     const randIdx = Math.floor(Math.random() * opp.bench.length);
     const target = opp.bench[randIdx];
     const active = opp.activePokemon;
+    clearConditions(active); // 離開戰鬥區即解除特殊狀態
     opp.activePokemon = target;
     opp.bench[randIdx] = active;
     pushLog(newState, 'system', `對手受到離洞繩影響，將 ${active.name} 替換為 ${target.name}`);
@@ -244,11 +319,12 @@ export const resolveEscapeRope = (state, playerId, targetBenchIndex) => {
   
   const target = me.bench[targetBenchIndex];
   if (!target) return { ok: false, error: '無效的目標' };
-  
+
   const active = me.activePokemon;
+  clearConditions(active); // 離開戰鬥區即解除特殊狀態
   me.activePokemon = target;
   me.bench[targetBenchIndex] = active;
-  
+
   discardFromHand(me, newState.pendingAction.cardId);
   newState.pendingAction = null;
   pushLog(newState, playerId, `離洞繩發動：將 ${active.name} 替換為 ${target.name}`);
@@ -266,10 +342,14 @@ export const playCardOnPokemon = (state, playerId, card, location) => {
   }
   if (card.type === CardTypes.POKEMON) return playPokemon(state, playerId, card, location);
   if (card.type === CardTypes.ENERGY) return attachEnergy(state, playerId, card, location);
-  if (card.type === CardTypes.ITEM) {
+  if (card.type === CardTypes.ITEM || card.type === CardTypes.TRAINER) {
+    if (card.type === CardTypes.TRAINER && state.hasPlayedSupporterThisTurn) {
+      return { ok: false, error: '每回合只能使用一張支援者卡！' };
+    }
     const kind = card.effect?.kind;
     if (kind === 'heal') return applyPotion(state, playerId, card, location);
     if (kind === 'switchActive') return applySwitch(state, playerId, card, location);
+    if (kind === 'attachFromDiscard') return applyAttachFromDiscard(state, playerId, card, location);
   }
   return { ok: false, error: null };
 };
@@ -289,6 +369,7 @@ export const promoteFromBench = (state, playerId, benchIndex) => {
 export const playProfessor = (state, playerId, card) => {
   const newState = structuredClone(state);
   const p = newState.players[playerId];
+  newState.hasPlayedSupporterThisTurn = true;
   p.discardPile.push(card);
   p.discardPile.push(...p.hand);
   p.hand = [];
@@ -380,19 +461,42 @@ const applyTypeEffectiveness = (baseDamage, attacker, defender) => {
   return { damage: baseDamage, effectiveness: null };
 };
 
+// 純查詢：attacker 攻擊 defender 的最終傷害（依對戰選項套用弱點/抵抗）。
+// 供 AI 計算擊殺線（老大的指令選目標、撤退判斷）與傷害結算共用。
+export const getEffectiveDamage = (state, attacker, defender, attack) => {
+  const atk = attack ?? getAttacks(attacker)[0];
+  const base = atk?.damage ?? 0;
+  if (!state.options?.weaknessResistance) return base;
+  return applyTypeEffectiveness(base, attacker, defender).damage;
+};
+
 // ---- 攻擊 ----------------------------------------------------------------
-// 攻擊前置檢查，回傳 { ok, error }
-export const canAttack = (state, attackerId) => {
+// 攻擊前置檢查（可指定招式），回傳 { ok, error }
+export const canAttack = (state, attackerId, attackIndex = 0) => {
   const me = state.players[attackerId];
   const opp = state.players[getOpponentId(attackerId)];
   if (state.hasAttackedThisTurn) return { ok: false, error: '這回合已經攻擊過了！' };
+  // turn 以「玩家回合」為單位遞增，turn === 1 必為先攻方的第一個回合
+  if (state.turn === 1) return { ok: false, error: '先攻方的第一個回合無法攻擊！' };
   if (!me.activePokemon) return { ok: false, error: '你的戰鬥區沒有寶可夢！' };
+  if (me.activePokemon.specialCondition === 'asleep')
+    return { ok: false, error: `${me.activePokemon.name} 正在睡眠中，無法攻擊！` };
+  if (me.activePokemon.specialCondition === 'paralyzed')
+    return { ok: false, error: `${me.activePokemon.name} 麻痺了，無法攻擊！` };
   if (!opp.activePokemon)
     return { ok: false, error: '對手戰鬥區沒有寶可夢，請先結束回合讓對手派出寶可夢！' };
+  const attack = getAttacks(me.activePokemon)[attackIndex];
+  if (!attack) return { ok: false, error: null };
   const attachedEnergy = me.activePokemon.attachedEnergy || [];
-  const cost = me.activePokemon.attack.cost || [];
+  const cost = attack.cost || [];
 
-  const pool = attachedEnergy.map(e => e.energyType);
+  // pool 以「能量單位」展開：provides > 1 的卡（如雙倍無色）算多個單位。
+  // 展開出的單位保留原屬性（無色單位不會匹配到屬性費用，只能填無色費）。
+  const pool = [];
+  for (const e of attachedEnergy) {
+    const units = e.provides ?? 1;
+    for (let i = 0; i < units; i++) pool.push(e.energyType);
+  }
 
   // 首先滿足指定的屬性能量
   for (const c of cost) {
@@ -415,35 +519,105 @@ export const canAttack = (state, attackerId) => {
   return { ok: true };
 };
 
+// 純查詢：列出某玩家戰鬥區的所有招式與其可用性（供招式選單與 AI 共用）。
+// 回傳：[{ attack, index, usable, error }]
+export const getUsableAttacks = (state, playerId) => {
+  const active = state.players[playerId]?.activePokemon;
+  return getAttacks(active).map((attack, index) => {
+    const check = canAttack(state, playerId, index);
+    return { attack, index, usable: check.ok, error: check.error };
+  });
+};
+
+// ---- 攻擊效果註冊表（spec/20260704/03）------------------------------------
+// 傷害結算後執行的招式附帶效果。handler 直接改寫 newState 並回傳 metadata
+// （合併進 applyAttackDamage 的回傳值）。新增效果 kind：cards.js 的招式設
+// effect，此處加一行對應。inflict（特殊狀態）由 spec/20260704/04 實作。
+const attackEffectHandlers = {
+  // 棄掉攻擊者自身 count 張能量（大招代價）
+  discardSelfEnergy: (state, attackerId, attacker, effect) => {
+    const count = effect.count ?? 1;
+    const discarded = (attacker.attachedEnergy || []).splice(-count, count);
+    state.players[attackerId].discardPile.push(...discarded);
+    pushLog(state, attackerId, `${attacker.name} 棄掉了 ${discarded.length} 張能量`);
+    return {};
+  },
+  // 攻擊者受到反作用傷害（不套弱點/抵抗），可能自我擊倒
+  selfDamage: (state, attackerId, attacker, effect) => {
+    const amount = effect.amount ?? 0;
+    attacker.currentHp -= amount;
+    pushLog(state, attackerId, `${attacker.name} 受到 ${amount} 點反作用傷害`);
+    if (attacker.currentHp <= 0) {
+      const selfFaintedPokemon = structuredClone(attacker);
+      state.players[attackerId].activePokemon = null;
+      pushLog(state, attackerId, `${attacker.name} 因反作用力倒下了！`);
+      return { selfKnockedOut: true, selfFaintedPokemon };
+    }
+    return {};
+  },
+  // 攻擊者回復自身 HP
+  healSelf: (state, attackerId, attacker, effect) => {
+    const heal = Math.min(effect.amount ?? 0, attacker.maxHp - attacker.currentHp);
+    if (heal > 0) {
+      attacker.currentHp += heal;
+      pushLog(state, attackerId, `${attacker.name} 回復了 ${heal} 點 HP`);
+    }
+    return { healedSelf: heal };
+  },
+  // 使防禦方陷入特殊狀態（spec/20260704/04）。
+  // 中毒可與睡眠/麻痺並存；睡眠與麻痺互斥（後蓋前）。被本次攻擊直接擊倒則不施加。
+  inflict: (state, attackerId, _attacker, effect) => {
+    const defender = state.players[getOpponentId(attackerId)].activePokemon;
+    if (!defender) return {};
+    if (effect.condition === 'poisoned') {
+      defender.poisoned = true;
+      pushLog(state, attackerId, `${defender.name} 中毒了！`);
+    } else if (effect.condition === 'asleep' || effect.condition === 'paralyzed') {
+      defender.specialCondition = effect.condition;
+      pushLog(state, attackerId, `${defender.name} ${effect.condition === 'asleep' ? '睡著了' : '麻痺了'}！`);
+    }
+    return { inflicted: effect.condition, inflictedName: defender.name };
+  },
+};
+
 // 結算傷害（不含擊倒後的棄牌/獎賞，那由 resolveKnockout 處理）
-// 回傳 { state, damage, knockedOut, faintedPokemon }
-export const applyAttackDamage = (state, attackerId) => {
+// 回傳 { state, damage, knockedOut, faintedPokemon, effectiveness, attack,
+//        selfKnockedOut?, selfFaintedPokemon?, healedSelf? }
+export const applyAttackDamage = (state, attackerId, attackIndex = 0) => {
   const newState = structuredClone(state);
   const opponentId = getOpponentId(attackerId);
   const attacker = newState.players[attackerId].activePokemon;
+  const attack = getAttacks(attacker)[attackIndex] ?? { name: '攻擊', damage: 0, cost: [] };
   const opp = newState.players[opponentId];
 
   // 弱點 / 抵抗力修正（僅在對戰選項啟用時生效）
-  let damage = attacker.attack.damage;
+  let damage = attack.damage;
   let effectiveness = null;
   if (newState.options?.weaknessResistance) {
     ({ damage, effectiveness } = applyTypeEffectiveness(damage, attacker, opp.activePokemon));
   }
 
   opp.activePokemon.currentHp -= damage;
-  pushLog(newState, attackerId, `使用 ${attacker.name} 發動攻擊，造成 ${damage} 點傷害`);
+  pushLog(newState, attackerId, `${attacker.name} 使用「${attack.name}」發動攻擊，造成 ${damage} 點傷害`);
 
   let knockedOut = false;
   let faintedPokemon = null;
   if (opp.activePokemon.currentHp <= 0) {
     knockedOut = true;
-    pushLog(newState, attackerId, `擊倒了對手的 ${opp.activePokemon.name}！拿取一張獎賞卡。`);
+    pushLog(newState, attackerId, `擊倒了對手的 ${opp.activePokemon.name}！拿取 ${opp.activePokemon.prizeYield || 1} 張獎賞卡。`);
     faintedPokemon = structuredClone(opp.activePokemon);
     opp.activePokemon = null; // 從戰鬥區隱藏（棄牌延後到動畫結束）
   }
 
+  // 招式附帶效果（傷害結算後執行；效果作用於攻擊者自身或後續狀態）
+  let effectMeta = {};
+  const handler = attack.effect && attackEffectHandlers[attack.effect.kind];
+  if (handler) {
+    effectMeta = handler(newState, attackerId, attacker, attack.effect) || {};
+  }
+
   newState.hasAttackedThisTurn = true;
-  return { ok: true, state: newState, damage, knockedOut, faintedPokemon, effectiveness };
+  return { ok: true, state: newState, damage, knockedOut, faintedPokemon, effectiveness, attack, ...effectMeta };
 };
 
 // 擊倒後結算：放入棄牌區、扣除獎賞卡、判定勝負
@@ -459,7 +633,12 @@ export const resolveKnockout = (state, attackerId, faintedPokemon) => {
     opp.discardPile.push(...faintedPokemon.attachedEnergy);
   }
 
-  me.prizes -= 1;
+  // 多重獎賞（spec/20260704/01）：EX 級寶可夢被擊倒時掉多張獎賞卡
+  const prizeYield = faintedPokemon.prizeYield || 1;
+  me.prizes = Math.max(0, me.prizes - prizeYield);
+  if (prizeYield > 1) {
+    pushLog(newState, attackerId, `擊倒了 EX 級的 ${faintedPokemon.name}，一次拿取 ${prizeYield} 張獎賞卡！`);
+  }
   let winner = null;
   if (me.prizes <= 0) {
     winner = attackerId;
@@ -475,15 +654,55 @@ export const resolveKnockout = (state, attackerId, faintedPokemon) => {
 };
 
 // ---- 回合流程 ------------------------------------------------------------
-// 結束回合：切換玩家並重置旗標。回傳 state（驗證由呼叫端負責）
+// 回合間結算（checkup，spec/20260704/04）：中毒傷害 → 睡眠擲硬幣 → 麻痺解除。
+// 直接改寫傳入的 state（由 endTurnState 的 newState 呼叫）。
+// 中毒可能擊倒戰鬥區寶可夢：移出戰鬥區並回傳 [{ ownerId, faintedPokemon }] 供引擎結算。
+const runCheckup = (state, endingPlayerId) => {
+  const knockouts = [];
+  for (const playerId of ['player1', 'player2']) {
+    const p = state.players[playerId];
+    const active = p.activePokemon;
+    if (!active) continue;
+    if (active.poisoned) {
+      active.currentHp -= 10;
+      pushLog(state, 'system', `${active.name} 受到中毒傷害 10 點`);
+      if (active.currentHp <= 0) {
+        pushLog(state, 'system', `${active.name} 因中毒倒下了！`);
+        knockouts.push({ ownerId: playerId, faintedPokemon: structuredClone(active) });
+        p.activePokemon = null;
+        continue; // 已離場，不再處理睡眠/麻痺
+      }
+    }
+    if (active.specialCondition === 'asleep') {
+      if (Math.random() < 0.5) {
+        active.specialCondition = null;
+        pushLog(state, 'system', `擲硬幣：正面！${active.name} 醒來了`);
+      } else {
+        pushLog(state, 'system', `擲硬幣：反面…${active.name} 仍在沉睡`);
+      }
+    }
+    // 麻痺只影響自己的下一個回合：結束回合方的麻痺於此解除
+    if (active.specialCondition === 'paralyzed' && playerId === endingPlayerId) {
+      active.specialCondition = null;
+      pushLog(state, 'system', `${active.name} 的麻痺解除了`);
+    }
+  }
+  return knockouts;
+};
+
+// 結束回合：執行回合間結算、切換玩家並重置旗標。
+// 回傳 { ok, state, checkupKnockouts }；checkupKnockouts 非空時由引擎呼叫 resolveKnockout 逐筆結算。
 export const endTurnState = (state) => {
   const newState = structuredClone(state);
   pushLog(newState, state.currentPlayer, '結束了回合');
+  const checkupKnockouts = runCheckup(newState, state.currentPlayer);
   newState.currentPlayer = getOpponentId(state.currentPlayer);
+  newState.turn += 1;
   newState.hasAttachedEnergyThisTurn = false;
   newState.hasAttackedThisTurn = false;
   newState.hasRetreatedThisTurn = false;
-  return { ok: true, state: newState };
+  newState.hasPlayedSupporterThisTurn = false;
+  return { ok: true, state: newState, checkupKnockouts };
 };
 
 // ---- 效果註冊表：不需指定目標的訓練家 / 物品卡 (#1) --------------------
@@ -493,9 +712,15 @@ const boardCardHandlers = {
   energyRetrieval: retrieveEnergy,
   bossOrders:      applyBossOrders,
   escapeRope:      applyEscapeRope,
+  draw:            playDraw,
+  shuffleDraw:     playShuffleDraw,
 };
 
 export const resolveBoardCardEffect = (state, playerId, card) => {
+  // 支援者每回合限用一張（spec/20260704/01）；物品不受限
+  if (card.type === CardTypes.TRAINER && state.hasPlayedSupporterThisTurn) {
+    return { ok: false, error: '每回合只能使用一張支援者卡！' };
+  }
   const handler = boardCardHandlers[card.effect?.kind];
   if (handler) return handler(state, playerId, card);
   return { ok: false, error: null };
@@ -543,13 +768,18 @@ export const getValidTargets = (state, playerId, card) => {
     if (state.hasAttachedEnergyThisTurn) return [];
     return pick((s) => !!s.pokemon);
   }
-  // 物品（依 effect.kind）
-  if (card.type === CardTypes.ITEM) {
+  // 物品與部分可指定目標的支援者（依 effect.kind）
+  if (card.type === CardTypes.ITEM || card.type === CardTypes.TRAINER) {
+    if (card.type === CardTypes.TRAINER && state.hasPlayedSupporterThisTurn) return [];
     const kind = card.effect?.kind;
     if (kind === 'heal') return pick((s) => s.pokemon && s.pokemon.currentHp < s.pokemon.maxHp);
     if (kind === 'switchActive') {
       if (!p.activePokemon) return [];
       return pick((s) => s.zone === 'bench' && s.pokemon);
+    }
+    if (kind === 'attachFromDiscard') {
+      if (!p.discardPile.some((c) => c.type === CardTypes.ENERGY)) return [];
+      return pick((s) => !!s.pokemon);
     }
   }
   return [];
@@ -560,6 +790,7 @@ export const getValidTargets = (state, playerId, card) => {
 // 細部前置條件（如棄牌區有無能量）仍由執行層在實際打出時回報。
 export const canPlayCard = (state, playerId, card) => {
   if (!card) return false;
+  if (card.type === CardTypes.TRAINER && state.hasPlayedSupporterThisTurn) return false;
   if (getValidTargets(state, playerId, card).length > 0) return true;
   const kind = card.effect?.kind;
   if (kind === 'searchDeck') return true;
@@ -618,10 +849,15 @@ export const resolveSetup = (state) => {
 export const canRetreat = (state, playerId) => {
   const p = state.players[playerId];
   if (!p.activePokemon) return { ok: false, error: null };
+  if (p.activePokemon.specialCondition === 'asleep')
+    return { ok: false, error: '睡眠中的寶可夢無法撤退！' };
+  if (p.activePokemon.specialCondition === 'paralyzed')
+    return { ok: false, error: '麻痺中的寶可夢無法撤退！' };
   if (state.hasRetreatedThisTurn) return { ok: false, error: '這回合已經撤退過了！' };
   if (p.bench.length === 0) return { ok: false, error: '備戰區沒有寶可夢可以替換！' };
   const cost = p.activePokemon.retreatCost ?? 1;
-  if ((p.activePokemon.attachedEnergy || []).length < cost)
+  const totalUnits = (p.activePokemon.attachedEnergy || []).reduce((sum, e) => sum + (e.provides ?? 1), 0);
+  if (totalUnits < cost)
     return { ok: false, error: `撤退費用不足！需要 ${cost} 個能量。` };
   return { ok: true };
 };
@@ -641,8 +877,16 @@ export const resolveRetreat = (state, playerId, targetBenchIndex) => {
   if (!target) return { ok: false, error: '無效的目標' };
   const active = p.activePokemon;
   const cost = active.retreatCost ?? 1;
-  const energyToDiscard = active.attachedEnergy.splice(-cost, cost);
+  // 以「能量單位」計費：從最近附加的能量往回棄，湊滿為止（雙倍無色可能超付，對應實體規則）
+  const energyToDiscard = [];
+  let unitsToPay = cost;
+  while (unitsToPay > 0 && active.attachedEnergy.length > 0) {
+    const energyCard = active.attachedEnergy.pop();
+    energyToDiscard.push(energyCard);
+    unitsToPay -= energyCard.provides ?? 1;
+  }
   p.discardPile.push(...energyToDiscard);
+  clearConditions(active); // 離開戰鬥區即解除特殊狀態
   p.activePokemon = target;
   p.bench[targetBenchIndex] = active;
   newState.pendingAction = null;

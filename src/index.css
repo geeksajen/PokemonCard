@@ -34,6 +34,11 @@
   --palette-card-stack:       #cbd5e1;
   --palette-card-stack-edge:  #475569;
 
+  /* Special condition badges（中毒 / 睡眠 / 麻痺，戰鬥區狀態徽章） */
+  --palette-status-poison:    linear-gradient(135deg, #a855f7, #6b21a8);
+  --palette-status-sleep:     linear-gradient(135deg, #64748b, #334155);
+  --palette-status-paralysis: linear-gradient(135deg, #fde047, #a16207);
+
   /* Card class frames (consumed by RARITY_CONFIG in models/cards.js) */
   --palette-class-basic:          linear-gradient(135deg, #334155, #0f172a);
   --palette-class-stage1:         linear-gradient(135deg, #4f46e5, #a855f7, #eab308);
@@ -123,6 +128,11 @@
   /* 淺色主題下的疊牌色：偏白卡身、淺灰邊 */
   --palette-card-stack:       #f1f5f9;
   --palette-card-stack-edge:  #94a3b8;
+
+  /* 淺色主題下的狀態徽章：稍亮的底色維持對比 */
+  --palette-status-poison:    linear-gradient(135deg, #c084fc, #7e22ce);
+  --palette-status-sleep:     linear-gradient(135deg, #94a3b8, #475569);
+  --palette-status-paralysis: linear-gradient(135deg, #fef08a, #ca8a04);
 }
 
 * {

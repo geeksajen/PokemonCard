@@ -16,7 +16,7 @@ import GameOverPanel from './arena/GameOverPanel';
 import CoinFlipScreen from './arena/CoinFlipScreen';
 import { useGameEngine } from '../../hooks/useGameEngine';
 import { useDragDrop } from '../../hooks/useDragDrop';
-import { getValidTargets, canRetreat, canAttack } from '../../game/rules';
+import { getValidTargets, canRetreat, getUsableAttacks } from '../../game/rules';
 
 const EMPTY_ZONES = new Set();
 
@@ -90,9 +90,10 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
   // 結算後鎖定所有操作（攻擊/撤退/出牌/結束回合），但保留右鍵檢視卡牌供覆盤
   const humanCanAct = (!vsAI || isPlayer1Turn) && !gameState.winner;
   const retreatDisabled = !humanCanAct || !canRetreat(gameState, currentPlayerId).ok;
-  // 攻擊就緒提示：我方回合、本回合未攻擊、出戰寶可夢能量已滿足招式需求時發光。
-  // canAttack 已涵蓋上述三項判定（含對手戰鬥區須有寶可夢），準備階段不適用。
-  const attackReady = !isSetup && humanCanAct && canAttack(gameState, currentPlayerId).ok;
+  // 招式清單與可用性（唯一真相：rules.getUsableAttacks），供攻擊選單與就緒光暈共用。
+  const attackOptions = isSetup ? [] : getUsableAttacks(gameState, currentPlayerId);
+  // 攻擊就緒提示：我方回合、本回合未攻擊、任一招式能量已滿足時發光。準備階段不適用。
+  const attackReady = !isSetup && humanCanAct && attackOptions.some((a) => a.usable);
   const readyDisabled = !bottomPlayer.activePokemon || bottomPlayer.isReady;
   const topLabel = vsAI ? '🤖 電腦' : (isPlayer1Turn ? '玩家 2' : '玩家 1');
   const bottomLabel = vsAI ? '玩家 1' : (isPlayer1Turn ? '玩家 1' : '玩家 2');
@@ -134,6 +135,7 @@ const GameArena = ({ p1Theme, p2Theme, vsAI = false, weaknessEnabled = true, onR
         topPlayer={topPlayer}
         bottomPlayer={bottomPlayer}
         hasAttackedThisTurn={gameState.hasAttackedThisTurn}
+        attackOptions={attackOptions}
         onOpenLog={() => setShowLog(true)}
         onOpenSettings={() => setShowSettings(true)}
         onAttack={handleAttackClick}

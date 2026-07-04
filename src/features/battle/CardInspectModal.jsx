@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { CardTypes, EnergyTypes, getCardRarity } from '../../models/cards';
+import { CardTypes, EnergyTypes, getCardRarity, getAttacks } from '../../models/cards';
 
 /* ---- 能量屬性色票（綁定 --palette-element-* tokens）---- */
 const energyGradient = (type) => {
@@ -196,7 +196,23 @@ const CardInspectModal = ({ card, onClose }) => {
                   fontSize: '0.75rem', padding: '3px 10px', borderRadius: '12px',
                   background: 'var(--theme-panel-light)', border: '1px solid var(--theme-glass-border)',
                 }}>
-                  {energyLabel(card.energyType)} 能量
+                  {energyLabel(card.energyType)} 能量{(card.provides ?? 1) > 1 ? ` ×${card.provides}` : ''}
+                </span>
+              )}
+              {/* 目前的特殊狀態 */}
+              {isPokemon && card.poisoned && (
+                <span style={{ fontSize: '0.75rem', padding: '3px 10px', borderRadius: '12px', background: 'var(--palette-status-poison)', color: '#fff' }}>
+                  ☠️ 中毒
+                </span>
+              )}
+              {isPokemon && card.specialCondition === 'asleep' && (
+                <span style={{ fontSize: '0.75rem', padding: '3px 10px', borderRadius: '12px', background: 'var(--palette-status-sleep)', color: '#fff' }}>
+                  💤 睡眠
+                </span>
+              )}
+              {isPokemon && card.specialCondition === 'paralyzed' && (
+                <span style={{ fontSize: '0.75rem', padding: '3px 10px', borderRadius: '12px', background: 'var(--palette-status-paralysis)', color: '#000' }}>
+                  ⚡ 麻痺
                 </span>
               )}
             </div>
@@ -231,31 +247,47 @@ const CardInspectModal = ({ card, onClose }) => {
               )}
             </div>
 
-            {/* ---- 寶可夢技能區 ---- */}
-            {isPokemon && card.attack && (
+            {/* ---- 寶可夢技能區（多招式）---- */}
+            {isPokemon && getAttacks(card).length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {getAttacks(card).map((atk, idx) => (
+                  <div key={idx} style={{
+                    background: 'var(--theme-panel-base)', borderRadius: '12px', padding: '14px',
+                    border: '1px solid var(--theme-glass-border)', position: 'relative', zIndex: 1,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 700 }}>{atk.name}</span>
+                      <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--color-danger)', textShadow: '0 0 8px var(--palette-player2-glow)' }}>
+                        {atk.damage}
+                      </span>
+                    </div>
+                    {/* 能量費用 */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>費用：</span>
+                      {(atk.cost || []).map((costType, i) => (
+                        <EnergyOrb key={i} type={costType} size={20} />
+                      ))}
+                    </div>
+                    {/* 技能描述（如有） */}
+                    {atk.description && (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: '6px 0 0', lineHeight: 1.4 }}>
+                        {atk.description}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ---- EX 級提示：被擊倒時對手多拿獎賞卡 ---- */}
+            {isPokemon && card.prizeYield > 1 && (
               <div style={{
-                background: 'var(--theme-panel-base)', borderRadius: '12px', padding: '14px',
-                border: '1px solid var(--theme-glass-border)', position: 'relative', zIndex: 1,
+                marginTop: '10px', padding: '8px 12px', borderRadius: '8px',
+                background: 'var(--theme-panel-base)', border: '1px solid var(--color-energy)',
+                fontSize: '0.8rem', color: 'var(--color-energy)', fontWeight: 700,
+                position: 'relative', zIndex: 1,
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 700 }}>{card.attack.name}</span>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--color-danger)', textShadow: '0 0 8px var(--palette-player2-glow)' }}>
-                    {card.attack.damage}
-                  </span>
-                </div>
-                {/* 能量費用 */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>費用：</span>
-                  {card.attack.cost.map((costType, i) => (
-                    <EnergyOrb key={i} type={costType} size={20} />
-                  ))}
-                </div>
-                {/* 技能描述（如有） */}
-                {card.attack.description && (
-                  <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: '6px 0 0', lineHeight: 1.4 }}>
-                    {card.attack.description}
-                  </p>
-                )}
+                ⚠️ EX 級：這隻寶可夢被擊倒時，對手獲得 {card.prizeYield} 張獎賞卡。
               </div>
             )}
 
@@ -279,8 +311,8 @@ const CardInspectModal = ({ card, onClose }) => {
               </div>
             )}
 
-            {/* ---- 訓練家 / 物品 效果描述 ---- */}
-            {isTrainerOrItem && card.description && (
+            {/* ---- 訓練家 / 物品 / 特殊能量 效果描述 ---- */}
+            {(isTrainerOrItem || isEnergy) && card.description && (
               <div style={{
                 background: 'var(--theme-panel-base)', borderRadius: '12px', padding: '14px',
                 border: '1px solid var(--theme-glass-border)', position: 'relative', zIndex: 1,
@@ -300,7 +332,12 @@ const CardInspectModal = ({ card, onClose }) => {
               }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>已附加能量：</span>
                 {card.attachedEnergy.map((energy, i) => (
-                  <EnergyOrb key={i} type={energy.energyType} size={20} />
+                  <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                    <EnergyOrb type={energy.energyType} size={20} />
+                    {(energy.provides ?? 1) > 1 && (
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-energy)' }}>×{energy.provides}</span>
+                    )}
+                  </span>
                 ))}
               </div>
             )}

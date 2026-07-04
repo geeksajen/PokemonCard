@@ -31,6 +31,7 @@ export const createInitialGameState = (player1Theme = _defaultP1, player2Theme =
     hasAttachedEnergyThisTurn: false,
     hasAttackedThisTurn: false,
     hasRetreatedThisTurn: false,
+    hasPlayedSupporterThisTurn: false, // 支援者（TRAINER）每回合限用一張
 
     logs: [], // 對戰紀錄
 

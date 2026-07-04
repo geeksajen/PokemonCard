@@ -18,6 +18,12 @@ export const newInstanceId = (prefix) => `${prefix}-${++_instanceSeq}`;
 // ---- 卡牌資料庫（來自 active pack）---------------------------------------
 export const cardDatabase = activePack.cardDatabase;
 
+// ---- 招式存取（多招式相容層，spec/20260704/03）----------------------------
+// 唯一取用入口：新格式為 attacks 陣列；尚未遷移的主題包（fantasy/zeus）與
+// 自訂卡仍用單數 attack，靠此 shim 相容。遊戲程式一律經由此函式讀招式。
+export const getAttacks = (card) =>
+  card?.attacks ?? (card?.attack ? [card.attack] : []);
+
 // ---- 卡片實例化 -----------------------------------------------------------
 const defaultInstantiate = (cardId) => {
   const card = cardDatabase[cardId];

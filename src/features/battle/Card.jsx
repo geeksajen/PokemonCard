@@ -1,5 +1,5 @@
 import React from 'react';
-import { CardTypes, EnergyTypes, getCardRarity } from '../../models/cards';
+import { CardTypes, EnergyTypes, getCardRarity, getAttacks } from '../../models/cards';
 
 const getEnergyColor = (type) => {
   switch (type) {
@@ -100,11 +100,36 @@ const Card = ({ card, onClick, isSelectable, isFaceDown, isEvolving = false, onF
               {rarity.badge.label}
             </span>
           )}
+          {/* EX 角標：prizeYield > 1 的高風險高報酬寶可夢（被擊倒時對手多拿獎賞卡） */}
+          {card.prizeYield > 1 && (
+            <span style={{
+              fontSize: '0.6rem', padding: '1px 3px', borderRadius: '4px',
+              fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0,
+              background: 'var(--color-energy)', color: '#000',
+            }}>
+              EX
+            </span>
+          )}
         </div>
         {card.type === CardTypes.POKEMON && (
           <span style={{ fontSize: '0.7rem', color: 'var(--color-danger)', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>HP {card.currentHp}</span>
         )}
       </div>
+
+      {/* 特殊狀態徽章（僅場上）：中毒 / 睡眠 / 麻痺 */}
+      {onField && card.type === CardTypes.POKEMON && (card.poisoned || card.specialCondition) && (
+        <div style={{ position: 'absolute', top: '26px', left: '4px', display: 'flex', flexDirection: 'column', gap: '3px', zIndex: 3 }}>
+          {card.poisoned && (
+            <span title="中毒" style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--palette-status-poison)', border: '1px solid var(--theme-glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem' }}>☠️</span>
+          )}
+          {card.specialCondition === 'asleep' && (
+            <span title="睡眠" style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--palette-status-sleep)', border: '1px solid var(--theme-glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem' }}>💤</span>
+          )}
+          {card.specialCondition === 'paralyzed' && (
+            <span title="麻痺" style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--palette-status-paralysis)', border: '1px solid var(--theme-glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem' }}>⚡</span>
+          )}
+        </div>
+      )}
 
       {card.type === CardTypes.POKEMON && (
         <>
@@ -116,14 +141,16 @@ const Card = ({ card, onClick, isSelectable, isFaceDown, isEvolving = false, onF
             )}
           </div>
           
-          <div style={{ background: 'var(--theme-panel-dark)', padding: '6px', borderRadius: '6px', zIndex: 1 }}>
-            <div style={{ fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-              <span>{card.attack.name}</span>
-              <span style={{ color: 'var(--color-danger)' }}>{card.attack.damage}</span>
-            </div>
-            <div style={{ fontSize: '0.6rem', marginTop: '4px', color: 'var(--color-text-muted)' }}>
-              需要: {card.attack.cost.length} 能量
-            </div>
+          <div style={{ background: 'var(--theme-panel-dark)', padding: '6px', borderRadius: '6px', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            {getAttacks(card).map((atk, i) => (
+              <div key={i} style={{ fontSize: '0.72rem', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '4px' }}>
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{atk.name}</span>
+                <span style={{ flexShrink: 0, display: 'flex', gap: '4px', alignItems: 'baseline' }}>
+                  <span style={{ fontSize: '0.55rem', color: 'var(--color-text-muted)' }}>{atk.cost?.length ?? 0}能量</span>
+                  <span style={{ color: 'var(--color-danger)', fontWeight: 'bold' }}>{atk.damage}</span>
+                </span>
+              </div>
+            ))}
           </div>
 
           {/* 弱點 / 抵抗力（欄位不存在則整列不顯示） */}
@@ -154,8 +181,10 @@ const Card = ({ card, onClick, isSelectable, isFaceDown, isEvolving = false, onF
                    width: '16px', height: '16px', borderRadius: '50%',
                    background: getEnergyColor(energy.energyType),
                    border: '1px solid var(--theme-glass-border)', marginLeft: '-6px',
-                   boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
-                 }}></div>
+                   boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                   display: 'flex', alignItems: 'center', justifyContent: 'center',
+                   fontSize: '0.5rem', fontWeight: 'bold', color: '#fff',
+                 }}>{(energy.provides ?? 1) > 1 ? `×${energy.provides}` : ''}</div>
                ))}
              </div>
           )}
@@ -163,7 +192,7 @@ const Card = ({ card, onClick, isSelectable, isFaceDown, isEvolving = false, onF
       )}
 
       {card.type === CardTypes.ENERGY && (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', zIndex: 1 }}>
           <div style={{
             width: '60px', height: '60px', borderRadius: '50%',
             background: 'var(--theme-panel-light)', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -171,6 +200,11 @@ const Card = ({ card, onClick, isSelectable, isFaceDown, isEvolving = false, onF
           }}>
             ⚡
           </div>
+          {(card.provides ?? 1) > 1 && (
+            <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--color-energy)' }}>
+              ×{card.provides}
+            </span>
+          )}
         </div>
       )}
 

@@ -14,6 +14,7 @@ import {
   resolveKnockout,
   endTurnState,
   drawForTurn,
+  applyBossOrders,
   resolveBossOrders,
   resolveEscapeRope,
   cancelPendingAction,
@@ -127,6 +128,23 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
 
   const showToast = (message) => setToast({ id: Date.now(), message });
 
+  // 回合間結算（中毒）造成的擊倒：結算獎賞與勝負後回傳最終 state。
+  // faint 動畫因換手時序複雜暫以 toast + log 呈現（詳 spec/20260704/04）。
+  // 定義於 AI 回合 effect 之前，供其 finishTurn 與下方 endTurnFrom 共用。
+  const finalizeEndTurn = (endResult) => {
+    let cur = endResult.state;
+    for (const k of endResult.checkupKnockouts || []) {
+      const { state: resolved, winner } = resolveKnockout(cur, getOpponentId(k.ownerId), k.faintedPokemon);
+      cur = resolved;
+      showToast(`${k.faintedPokemon.name} 因中毒倒下了！`);
+      if (winner) {
+        sfxVictory();
+        break;
+      }
+    }
+    return cur;
+  };
+
   // ---- 結算演出編排 ------------------------------------------------------
   // winner 出現後，先播 VICTORY/DEFEAT 大字（cinematic），約 2 秒後再揭開結算面板。
   // 動畫狀態屬編排層，依設計留在 useGameEngine（GameArena 僅持有 showReviewMode 純 UI toggle）。
@@ -201,7 +219,12 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
 
     const finishTurn = () => {
       aiActiveRef.current = false;
-      proceedToDraw(endTurnState(working).state);
+      const ended = finalizeEndTurn(endTurnState(working));
+      if (ended.winner) {
+        setGameState(ended);
+        return;
+      }
+      proceedToDraw(ended);
     };
 
     const step = () => {
@@ -221,14 +244,32 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
             return;
           }
           setTimeout(step, 800);
-        });
+        }, action.attackIndex ?? 0);
         return;
       }
 
-      const result =
-        action.kind === 'promote'
-          ? promoteFromBench(working, 'player2', action.benchIndex)
-          : playCardOnPokemon(working, 'player2', action.card, action.location);
+      // 依動作類型分派到規則層。useCard 的多步驟卡（老大指令/檢索球/撤退）
+      // 由此直接串完兩段純函式，跳過人類玩家用的 pendingAction / modal 流程。
+      const executeAIAction = () => {
+        if (action.kind === 'promote') return promoteFromBench(working, 'player2', action.benchIndex);
+        if (action.kind === 'retreat') {
+          const initiated = initiateRetreat(working, 'player2');
+          return initiated.ok ? resolveRetreat(initiated.state, 'player2', action.benchIndex) : initiated;
+        }
+        if (action.kind === 'useCard') {
+          const kind = action.card.effect?.kind;
+          if (kind === 'searchDeck') return pullPokemonFromDeck(working, 'player2', action.pickInstanceId, action.card);
+          if (kind === 'bossOrders') {
+            const applied = applyBossOrders(working, 'player2', action.card);
+            return applied.ok ? resolveBossOrders(applied.state, 'player2', action.benchIndex) : applied;
+          }
+          // 需指定我方目標的卡（傷藥/交換器等）走 playCardOnPokemon；其餘走無目標分派
+          if (action.location) return playCardOnPokemon(working, 'player2', action.card, action.location);
+          return resolveBoardCardEffect(working, 'player2', action.card);
+        }
+        return playCardOnPokemon(working, 'player2', action.card, action.location);
+      };
+      const result = executeAIAction();
 
       if (!result.ok) return finishTurn(); // 決策無法執行就結束，避免卡死
       working = result.state;
@@ -477,9 +518,13 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
 
   // 從指定 state 結束回合並交給對手（供手動結束與攻擊後自動結束共用）
   const endTurnFrom = (state) => {
-    const ended = endTurnState(state).state;
+    const ended = finalizeEndTurn(endTurnState(state));
     setSelectedCard(null);
     sfxEndTurn();
+    if (ended.winner) {
+      setGameState(ended); // 中毒反殺分出勝負：直接進結算演出
+      return;
+    }
     if (vsAI) {
       // 單人模式不需要「換手過場」，直接抽牌交給對手；AI 回合由下方 effect 接手
       proceedToDraw(ended);
@@ -505,8 +550,8 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
 
   // ---- 攻擊 --------------------------------------------------------------
   // 共用攻擊流程（人類與 AI 皆走此處）。defenderIsTop 決定擊倒動畫位置，
-  // onDone(finalState) 在攻擊完全結算後呼叫。
-  const performAttack = (state, attackerId, defenderIsTop, onDone) => {
+  // onDone(finalState) 在攻擊完全結算後呼叫。attackIndex 指定發動的招式。
+  const performAttack = (state, attackerId, defenderIsTop, onDone, attackIndex = 0) => {
     const attacker = state.players[attackerId].activePokemon;
     sfxAttack();
     setCinematicAttack(true); // 進入電影聚焦：棋盤微幅放大、周邊變暗
@@ -517,13 +562,25 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
       setAttackAnim(null);
       sfxDamage();
 
-      const { state: afterDamage, damage, knockedOut, faintedPokemon, effectiveness } = applyAttackDamage(
-        state,
-        attackerId
-      );
+      const {
+        state: afterDamage,
+        damage,
+        knockedOut,
+        faintedPokemon,
+        effectiveness,
+        selfKnockedOut,
+        selfFaintedPokemon,
+        inflicted,
+        inflictedName,
+      } = applyAttackDamage(state, attackerId, attackIndex);
       setGameState(afterDamage);
       if (effectiveness === 'weakness') showToast('效果絕佳！');
       else if (effectiveness === 'resistance') showToast('效果不好…');
+      // 特殊狀態施加提示（若與相剋提示同時出現，錯開時間讓兩則都能被看到）
+      if (inflicted) {
+        const label = inflicted === 'poisoned' ? '中毒了' : inflicted === 'asleep' ? '睡著了' : '麻痺了';
+        setTimeout(() => showToast(`${inflictedName} ${label}！`), effectiveness ? 900 : 0);
+      }
       // 浮動戰鬥文字：攻擊一律命中對手戰鬥區，紅色負數。
       setDamageAnim({ amount: damage, kind: 'damage', isTopPlayer: defenderIsTop, zone: 'active' });
       if (damage >= 80) {
@@ -532,16 +589,39 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
       }
       setTimeout(() => setDamageAnim(null), 850);
 
-      if (knockedOut) {
-        setFaintAnim({ pokemon: faintedPokemon, isTopPlayer: defenderIsTop });
+      // 擊倒結算佇列：先結算防守方，再結算自傷反殺（捨身衝撞可能雙方倒下）。
+      // 每筆依序播放 faint 動畫 → resolveKnockout；一旦分出勝負即中止後續結算。
+      const knockouts = [];
+      if (knockedOut) knockouts.push({ prizeTakerId: attackerId, fainted: faintedPokemon, isTopPlayer: defenderIsTop });
+      if (selfKnockedOut) knockouts.push({ prizeTakerId: getOpponentId(attackerId), fainted: selfFaintedPokemon, isTopPlayer: !defenderIsTop });
+
+      const resolveNext = (curState, queue) => {
+        if (queue.length === 0) {
+          setCinematicAttack(false); // 結算完畢，鏡頭平滑拉回
+          if (onDone) onDone(curState);
+          return;
+        }
+        const [next, ...rest] = queue;
+        setFaintAnim({ pokemon: next.fainted, isTopPlayer: next.isTopPlayer });
         setTimeout(() => {
           setFaintAnim(null);
-          const { state: resolved, winner } = resolveKnockout(afterDamage, attackerId, faintedPokemon);
+          const { state: resolved, winner } = resolveKnockout(curState, next.prizeTakerId, next.fainted);
+          if ((next.fainted.prizeYield || 1) > 1) {
+            showToast(`擊倒 EX 級寶可夢！一次獲得 ${next.fainted.prizeYield} 張獎賞卡！`);
+          }
           setGameState(resolved);
-          if (winner) sfxVictory();
-          setCinematicAttack(false); // 擊倒結算完畢，鏡頭平滑拉回
-          if (onDone) onDone(resolved);
+          if (winner) {
+            sfxVictory();
+            setCinematicAttack(false);
+            if (onDone) onDone(resolved);
+            return;
+          }
+          resolveNext(resolved, rest);
         }, 1000);
+      };
+
+      if (knockouts.length > 0) {
+        resolveNext(afterDamage, knockouts);
       } else {
         // 無擊倒：讓傷害跳字的爆發演完後再拉回鏡頭
         setTimeout(() => setCinematicAttack(false), 500);
@@ -550,8 +630,8 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
     }, 400);
   };
 
-  const handleAttackClick = () => {
-    const check = canAttack(gameState, currentPlayerId);
+  const handleAttackClick = (attackIndex = 0) => {
+    const check = canAttack(gameState, currentPlayerId, attackIndex);
     if (!check.ok) {
       showToast(check.error);
       sfxError();
@@ -562,7 +642,7 @@ export const useGameEngine = (p1Theme, p2Theme, vsAI = false, weaknessResistance
     performAttack(gameState, currentPlayerId, true, (resolved) => {
       if (resolved.winner) return;
       endTurnFrom(resolved);
-    });
+    }, attackIndex);
   };
 
   return {

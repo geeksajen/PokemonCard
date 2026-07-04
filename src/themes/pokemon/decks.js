@@ -16,18 +16,28 @@ export const themeMap = {
   normal:   { basic: 'p-143',                                     energy: 'e-normal' },
 };
 
-export const buildComposition = (t) => [
-  { id: t.basic, count: t.ev1 ? 6 : 9 },
-  ...(t.ev1 ? [{ id: t.ev1, count: 3 }] : []),
-  ...(t.ev2 ? [{ id: t.ev2, count: 2 }] : []),
-  { id: t.energy,        count: 6 },
-  { id: 't-potion',      count: 1 },
-  { id: 'i-hyperpotion', count: 1 },
-  { id: 'i-switch',      count: 1 },
-  { id: 't-pokeball',    count: 1 },
-  { id: 'i-greatball',   count: 1 },
-  { id: 't-prof',        count: 2 },
-  { id: 'i-rarecandy',   count: 1 },
-  { id: 'i-escaperope',  count: 1 },
-  { id: 't-boss',        count: 1 },
-];
+export const buildComposition = (t) => {
+  // 無色支線坦（EX 級，prizeYield 2 的高風險高報酬）：無色招式吃任何能量，
+  // 任何主題都能運作；normal 主題本體就是卡比獸，改配超夢支線。
+  const splashTank = t.basic === 'p-143' ? 'p-150' : 'p-143';
+  return [
+    { id: t.basic, count: t.ev1 ? 6 : 9 },
+    ...(t.ev1 ? [{ id: t.ev1, count: 3 }] : []),
+    ...(t.ev2 ? [{ id: t.ev2, count: 2 }] : []),
+    { id: splashTank,      count: 1 },
+    { id: t.energy,        count: 6 },
+    { id: 'e-dce',         count: 2 }, // 加速支線坦與撤退
+    { id: 't-potion',      count: 1 },
+    { id: 'i-hyperpotion', count: 1 },
+    { id: 'i-switch',      count: 1 },
+    { id: 't-pokeball',    count: 1 },
+    { id: 'i-greatball',   count: 1 },
+    { id: 't-prof',        count: 2 },
+    { id: 't-bill',        count: 1 },
+    { id: 't-cynthia',     count: 1 },
+    { id: 'i-rarecandy',   count: 1 },
+    { id: 'i-escaperope',  count: 1 },
+    { id: 'i-charger',     count: 1 },
+    { id: 't-boss',        count: 1 },
+  ];
+};
